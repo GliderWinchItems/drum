@@ -1,0 +1,36 @@
+drum-node-features.txt
+08/21/2020
+
+
+
+A. DiscoveryF4 w perf-board
+
+   1. CAN inteface sub-board
+       dc-dc set to 5v
+
+   2. FTDI header (or interface)
+
+	3. Stepper optocoupler drivers
+      gnd
+      +5v
+      Direction
+      Enable
+      Step pulse
+
+   4. Brake air solenoid driver
+      solenoid gnd
+      solenoid +12v
+      solenoid drive (FET drain)
+     
+   5. Shaft encoder
+      gnd
+      +5v
+      channel A
+      channel B
+      index
+
+   6. Air pressure sensor
+      Hose connection
+
+	7. 6. USB ST-link connector access
+ 

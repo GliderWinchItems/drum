@@ -1,0 +1,96 @@
+pin_peripheral.txt - DiscoveryF4 3D platform simulator for GSM Control Panel
+10/06/2019
+
+Control Panel pin/peripherals
+
+* - Used pin
+
+ PA
+  0 - ADC123_IN0 (Blue pushbutton)
+  1 - ADC123_IN1 TIM1_CH5 GPS 1 PPS input
+  2 - USART2 TX UARTGATE (blu)
+  3 - USART2 RX UARTGATE (wht)
+  4 LRCK Audio part spare(?)
+  5 ADC12_IN5
+  6 ADC12_IN6
+  7 ADC12_IN7
+ ?8 Output:pushpull - Beeper (TIM1CH1)
+  9 USB
+ 10 USB
+ 11 USB
+ 12 USB
+ 13 SWDIO
+ 14 SWD CLK
+ 15
+
+ PB
+  0 ADC12_IN8
+  1 Input:pullup - control panel detection pin/jumper
+  2
+  3 T_SWO
+  4
+  5 [CAN2 RX]
+  6 [CAN2 TX] SCL Audio part
+  7
+ ?8 TIM10_CH1 Beeper
+  9 SDC Audio part
+ 10 [USART3 TX UARTLCD Onboard part MP45DT02 CLK in
+ 11 [USART3 RX UARTLCD
+*12 [CAN2 TX (wht)] SPI2 NSS serial/parallel port
+*13 [CAN2 RS (blu) SPI2 SCK  serial/parallel port
+*14 SPI2 MISO serial/parallel port
+*15 SPI2 MOSI serial/parallel port
+
+ PC
+  0 OTG_FS_PowerSwitchOn
+ *1 ADC12_IN11 - CL reading
+ *2 ADC12_IN12 - +12 Raw
+  3 PDM out onboard part
+ *4 ADC12_IN14 - 5v supply ##### ALSO! CAN driver RS output:pushpull
+ *5 ADC12_IN15 - spare adc input
+ *6 USART6 TX XPRT/UARTLCD (blu)
+ *7 USART6 RX XPRT/UARTLCD (wht)
+  8
+  9
+ 10
+ 11
+ 12 SD in audio part
+ 13
+ 14
+ 15
+
+ PD
+ *0 CAN1 RX (blu)
+ *1 CAN1 TX (wht)
+  2
+  3
+  4
+  5 USB FS overcurrent output
+  6
+  7
+ *8 USART3 TX XPRT/UARTGPS(blu)
+ *9 USART3 RX XPRT/UARTGPS(wht)
+ 10
+ 11
+*12 LED Green
+*13 LED Orange
+*14 LED Red
+*15 LED Blue
+
+PE
+ 0
+ 1
+ 2
+ 3
+ 4
+?5 TIM9_CH1 PWM Contactor
+?6 TIM9_CH2 PWN Panel dim
+ 8 TIM1_CH1
+ 9 TIM1_CH1N
+10 TIM1_CH2
+11 TIM1_CH2N
+12 TIM1_CH3
+13 TIM1_CH3N
+14 TIM1_CH4
+15 TIM1_CH4N
+

@@ -1,0 +1,15 @@
+F4
+
+CAN transceiver (with power conversion)
+
+Stepper optocoupler drivers
+
+Optical Encoder interface
+
+FTDI UART interface
+
+Brake air solenoid driver
+
+Air pressure sensor (?)
+
+ 

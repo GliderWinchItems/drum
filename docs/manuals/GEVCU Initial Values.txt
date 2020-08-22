@@ -1,0 +1,116 @@
+Build number: 1060
+Motor Controller Status: isRunning: 0 isFaulted: 0
+
+*************SYSTEM MENU *****************
+                                          Enable line endings of some sort (LF, CR, CRLF)
+                                                                                         Most commands case sensitive
+
+                                                                                                                     GENERAL SYSTEM CONFIGURATION
+
+                                                                                                                                                    E = dump system EEPROM values
+   h = help (displays this message)
+   LOGLEVEL=3 - set log level (0=debug, 1=info, 2=warn, 3=error, 4=off)
+   CAN0SPEED=500 - set first CAN bus speed (in thousands)
+   CAN1SPEED=500 - set second CAN bus speed (in thousands)
+
+DEVICE SELECTION AND ACTIVATION
+
+                                    a = Re-setup Adafruit BLE
+     q = Dump Device Table
+     Q = Reinitialize device table
+     S = show possible device IDs
+     NUKE=1 - Resets all device settings in EEPROM. You have been warned.
+
+  ENABLED devices: (DISABLE=0xFFFF to disable where FFFF is device number)
+
+     0x1031     Potentiometer (analog) accelerator
+     0x1000     DMOC645 Inverter
+     0x4400     Andromeda Interfaces EVIC Display
+
+  DISABLED devices: (ENABLE=0xFFFF to enable where FFFF is device number)
+
+     0x1033     CANBus accelerator
+     0x1032     Potentiometer (analog) brake
+     0x104F     Test/Debug Accelerator
+     0x1034     CANBus brake
+     0x1002     Coda UQM Powerphase 100 Inverter
+     0x1003     CK Inverter Ctrl Board
+     0x100F     Test Inverter
+     0x1050     Delphi DC-DC Converter
+     0x1001     Brusa DMC5 Inverter
+     0x2000     Think City BMS
+     0x2100     GEVCU Internal BMS
+     0x650     ELM327 Emulator over Bluetooth
+     0x1041     Adafruit BLE
+     0x700     PowerKey Pro 2600
+     0x3000     VehicleSpecific
+
+PRECHARGE CONTROLS
+
+                     PREDELAY=6500 - Precharge delay time in milliseconds
+   PRELAY=0 - Which output to use for precharge contactor (255 to disable)
+   MRELAY=1 - Which output to use for main contactor (255 to disable)
+
+MOTOR CONTROLS
+
+                 TORQ=3000 - Set torque upper limit (tenths of a Nm)
+   RPM=6000 - Set maximum RPM
+   REVLIM=50 - How much torque to allow in reverse (Tenths of a percent)
+   ENABLEIN=0 - Digital input to enable motor controller (0-3, 255 for none)
+   REVIN=1 - Digital input to reverse motor rotation (0-3, 255 for none)
+   TAPERHI=500 - Regen taper upper RPM (0 - 10000)
+   TAPERLO=75 - Regen taper lower RPM (0 - 10000)
+
+THROTTLE CONTROLS
+
+                    z = detect throttle min/max, num throttles and subtype
+   Z = save throttle values
+   TPOT=1 - Number of pots to use (1 or 2)
+   TTYPE=1 - Set throttle subtype (1=std linear, 2=inverse)
+   T1ADC=0 - Set throttle 1 ADC pin
+   T1MN=73 - Set throttle 1 min value
+   T1MX=3144 - Set throttle 1 max value
+   T2ADC=1 - Set throttle 2 ADC pin
+   T2MN=0 - Set throttle 2 min value
+   T2MX=0 - Set throttle 2 max value
+   TRGNMAX=0 - Tenths of a percent of pedal where regen is at max
+   TRGNMIN=270 - Tenths of a percent of pedal where regen is at min
+   TFWD=280 - Tenths of a percent of pedal where forward motion starts
+   TMAP=750 - Tenths of a percent of pedal where 50 throttle will be
+   TMINRN=0 - Percent of full torque to use for min throttle regen
+   TMAXRN=70 - Percent of full torque to use for max throttle regen
+   TCREEP=0 - Percent of full torque to use for creep (0=disable)
+
+OTHER VEHICLE CONTROLS
+
+                         COOLFAN=6 - Digital output to turn on cooling fan(0-7, 255 for none)
+   COOLON=40 - Inverter temperature C to turn cooling on
+   COOLOFF=35 - Inverter temperature C to turn cooling off
+   BRAKELT = 255 - Digital output to turn on brakelight (0-7, 255 for none)
+   REVLT=255 - Digital output to turn on reverse light (0-7, 255 for none)
+   NOMV=330 - Fully charged pack voltage that automatically resets kWh counter
+
+ANALOG AND DIGITAL IO
+
+                        A = Autocompensate ADC inputs
+   J = set all digital outputs low
+   K = set all digital outputs high
+   L = show raw analog/digital input/output values (toggle)
+   OUTPUT=<0-7> - toggles state of specified digital output
+   ADC0OFF=150 - set ADC0 offset
+   ADC0GAIN=1800 - set ADC0 gain (1024 is 1 gain)
+   ADC1OFF=150 - set ADC1 offset
+   ADC1GAIN=1800 - set ADC1 gain (1024 is 1 gain)
+   ADC2OFF=150 - set ADC2 offset
+   ADC2GAIN=1800 - set ADC2 gain (1024 is 1 gain)
+   ADC3OFF=150 - set ADC3 offset
+   ADC3GAIN=1800 - set ADC3 gain (1024 is 1 gain)
+   ADCPACKHOFF=65535 - set pack high ADC offset
+   ADCPACKHGAIN=65535 - set pack high ADC gain (1024 is 1 gain)
+   PACKHCAL=1000 - Give as parameter the current voltage on Pack High in 1/100V. 80v = 8000
+   ADCPACKLOFF=65535 - set pack low ADC offset
+   ADCPACKLGAIN=65535 - set pack low ADC gain (1024 is 1 gain)
+   PACKLCAL=1000 - Give as parameter the current voltage on Pack Low in 1/100V. 80v = 8000
+   ADCPACKCOFF=65535 - set pack current offset
+   ADCPACKCGAIN=65535 - set pack current gain (1024 is 1 gain)
+   PACKCCAL=1000 - Give as parameter the current amperage across the shunt in 1/100A. 80A = 8000

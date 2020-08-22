@@ -1,0 +1,391 @@
+From gsmoore50@bldegl.onmicrosoft.com Sun May 27 02:14:35 2018
+Return-Path: <gsmoore50@bldegl.onmicrosoft.com>
+Received: from NAM01-SN1-obe.outbound.protection.outlook.com
+ (mpq404.aol.prodcr.mail.ne1.yahoo.com [104.47.32.72]) (using TLSv1 with
+ cipher ECDHE-RSA-AES256-SHA (256/256 bits)) (No client certificate
+ requested) by mtaiw-mbc05.mx.aol.com (Internet Inbound) with ESMTPS id
+ D045370000083 for <dhaselwood@verizon.net>; Sun, 27 May 2018 02:14:35 -0400
+ (EDT)
+X-Apparently-To: dhaselwood@verizon.net; Sun, 27 May 2018 06:14:35 +0000
+Received-SPF: pass (domain of bldegl.onmicrosoft.com designates
+ 104.47.32.72 as permitted sender)
+X-YMailISG: 0h6DVWIWLDs5D4vyx3i79wcvB.56XxK_4JFNMmUi5TeuHH2k
+ DpWSGJFx8JgXWV_cgco9LVH9LKFK1ERmNZLoXqMyBwLQqG7LTX9ATrh6NTaG
+ fNVPV6MMZCVcGtKOz6fexikderaBqUnVXdBOh69Zekdh.2OBt9SVU8dnsyaU
+ B9CDWb_CmLSbzH8oKRcBRRXvHVPLSWa1MqbxwDPpnfaH04XarzJYeE9Ilgfy
+ ArR5taojL5b_YvWMge51.ZzFKQ1fMTAmyOuZU_tcJkEP9shjwa7EQ73vcv1e
+ 3btActOfJOgTPgFGCpu.q_u_Wb.3YzuAFZLUp8UeK_xF6vA68Erb5z5e7zZr
+ M54bwjmptE8sp2KkAhTY9wVwE2s_zYCbGkOtdtW0o2sivqJzG3Ocvpia.E.5
+ dN8NMYwzvnu6A.hBEWAzyIo9c1i8RqkslNKSXJszgJHSMoThoDuWlhZlgQ6c
+ IZ7gEK5825ExurvtaxPeV8KyRl33IcgePVTQcgylcF0.YzzXtsvT08Dg.6gj
+ nU3nt7j5mBEXjfHsx8.0.J.Ce.CInskHeikMFnYjNkPks596yignuMRPlnZk
+ 2QJLGOXrSge5OvrK3Uxw0ziycnRjtrSTDV6nGXwQfT4QpzxHJFRJ0KHRMXZe
+ 0gGxjXLlcVSccBWWlnHxD7_kpr8VaLV6ai5iJWAbyTQGCevh3EqC_7dlEJu0
+ SA_1Z1XBYXZnyCiwTqjWq5yBP9.ULeQ5OFKD7ogASToRL2dalljKO9MAGEjZ
+ oJXRBMcqMStuNpyk8hLiz72BtoLBfLm8QtE5O2kCUwLGZnJE4Hrz3ZgE4sDq
+ JhQQfgRoS6SxobHHCs9BsqA3KpNp_e55j1nX5Z94FvAKq1MdMGld3h5awnpq
+ S6IjvrPRATnfkjyuolnP7fwUWV1k176MLDqcGEMdD36v2uvTSISlHfOYs4I3
+ Jhvv6YMIdv8W3ki33gWUGK8DztED1_sVOLqYAcILa8H_J2cyHCmjvRzSiGz2
+ 3lCbJG1LYQYSnotTWWGVXE_H7nNs30JMwg2m2R.JmXIVodwRXfKezSHEn86r
+ bouLAn90aaZFNtG5Nj551U9W1lxoPtenJk079P3sxx6q2uy7sInWsx7pglo6
+ 3e6NZQf.dZXpTm96nzhMCF5U11vgLp47F7FLfJ_4HF8VBym99UMB9IsBRI1P
+ P8OmzRGRUwtnZgTIUxvIq8YxLQQEI5d2x_xxtJ9Z1DTZc2KZTg6g7MEbVbbh
+ UVfSCappcNLQJzegMa280dDs0Fva5SQXaPo-
+X-Originating-IP: [104.47.32.72]
+Authentication-Results: mta4180.aol.mail.ne1.yahoo.com 
+ from=bldegl.onmicrosoft.com; domainkeys=neutral (no sig); 
+ from=bldegl.onmicrosoft.com; dkim=pass (ok)
+Received: from 127.0.0.1  (EHLO
+ NAM01-SN1-obe.outbound.protection.outlook.com) (104.47.32.72) by
+ mta4180.aol.mail.ne1.yahoo.com with SMTPS; Sun, 27 May 2018 06:14:35 +0000
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=bldegl.onmicrosoft.com; s=selector1-bldegl-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=pgYyRb+AdkdBV8mH3iH/VZt9UdOSfhU/lo7C3xxodWY=;
+ b=lgSuxAI2v02Km4PTyNzhswutqCmipAgQPBVIbSvkRybZSEGAhTXC17tEkrmdJRalhKNS72HkUvCsZ+cRm4QxOl3OIhq35UsytP8HFNkJhZh1T3VSCgpqxT9UWeccqdJ9kITYpAlC61LMtk6dnCktzpl5Zan8t+usYgQ6NF+QrsI=
+Received: from SN1PR14MB0510.namprd14.prod.outlook.com (10.164.44.144) by
+ SN1PR14MB0207.namprd14.prod.outlook.com (10.162.99.151) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P256)
+ id 15.20.797.11; Sun, 27 May 2018 06:14:31 +0000
+Received: from SN1PR14MB0510.namprd14.prod.outlook.com
+ ([fe80::18eb:e483:aa1d:11e2]) by SN1PR14MB0510.namprd14.prod.outlook.com
+ ([fe80::18eb:e483:aa1d:11e2%13]) with mapi id 15.20.0797.017; Sun, 27 May
+ 2018 06:14:30 +0000
+From: George Moore <gsmoore50@bldegl.onmicrosoft.com>
+To: Donald E Haselwood <dhaselwood@verizon.net>
+CC: c.wells <c.wells@tampabay.rr.com>
+Subject: Progress
+Thread-Topic: Progress
+Thread-Index: AdP1eTKE+gNkUJbIS3GWgsDzPhXTTA==
+Date: Sun, 27 May 2018 06:14:30 +0000
+Message-ID: <SN1PR14MB05104D4BE3AEE53C89EAD6A8816F0@SN1PR14MB0510.namprd14.prod.outlook.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: yes
+X-MS-TNEF-Correlator: 
+authentication-results: spf=none (sender IP is )
+ smtp.mailfrom=gsmoore50@bldegl.onmicrosoft.com; 
+x-originating-ip: [208.81.157.18]
+x-ms-publictraffictype: Email
+x-microsoft-exchange-diagnostics:
+ 1;SN1PR14MB0207;7:kqwQxR8G2KobafGvVzkqQfUfnzIcLsY1y8FrNfyYGxALXnvMmb4o0KVoA9DgSeT1Ug/pxm5ZUPV9XYZjd00inhe7SQEmIwqJufaKd7+YxGx6xvSSCoNUjVfVnwCE1uJOzeW2PMvWn8lbsTubJAPe82C9/FfOtHcINxZOUbiqZH1JNCWTGZqVBTiBvGmlQhgorwjcJiit8N01molmP4qb5ppLD3GU4VkbqJEMTmAw1JfmkumhEGU/Ry7TnQIen2Gn
+x-ms-exchange-antispam-srfa-diagnostics: SOS;
+x-microsoft-antispam:
+ UriScan:;BCL:0;PCL:0;RULEID:(7020095)(4652020)(7021125)(8989080)(5600026)(4534165)(7022125)(4603075)(4627221)(201702281549075)(8990040)(7048125)(7024125)(7027125)(7028125)(7023125)(2017052603328)(7153060)(49563074)(7193020);SRVR:SN1PR14MB0207;
+x-ms-traffictypediagnostic: SN1PR14MB0207:
+x-microsoft-antispam-prvs:
+ <SN1PR14MB02075D039CD19CFB56D94BAE816F0@SN1PR14MB0207.namprd14.prod.outlook.com>
+x-exchange-antispam-report-test: UriScan:(20558992708506);
+x-ms-exchange-senderadcheck: 1
+x-exchange-antispam-report-cfa-test:
+ BCL:0;PCL:0;RULEID:(102415395)(6040522)(2401047)(8121501046)(5005006)(10201501046)(93006095)(93001095)(3002001)(3231254)(944501410)(52105095)(149027)(150027)(6041310)(2016111802025)(20161123562045)(20161123560045)(20161123558120)(20161123564045)(6072148)(6043046)(201708071742011)(7699016);SRVR:SN1PR14MB0207;BCL:0;PCL:0;RULEID:;SRVR:SN1PR14MB0207;
+x-forefront-prvs: 0685122203
+x-forefront-antispam-report:
+ SFV:NSPM;SFS:(10009020)(346002)(366004)(376002)(39380400002)(396003)(39830400003)(199004)(189003)(6916009)(53936002)(8676002)(86442002)(9686003)(2900100001)(99936001)(86362001)(5250100002)(26005)(7696005)(486006)(8656006)(5890100001)(186003)(86902001)(105586002)(97736004)(106356001)(6506007)(99286004)(102836004)(476003)(86632001)(478600001)(3660700001)(7116003)(64872007)(5660300001)(14454004)(25786009)(966005)(3280700002)(74316002)(6436002)(6456002)(33656002)(66066001)(305945005)(81156014)(221733001)(4326008)(7736002)(6306002)(55016002)(3846002)(316002)(2906002)(6116002)(8936002)(81166006)(68736007)(3480700004);DIR:OUT;SFP:1101;SCL:1;SRVR:SN1PR14MB0207;H:SN1PR14MB0510.namprd14.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:0;MX:3;
+received-spf: None (protection.outlook.com: bldegl.onmicrosoft.com does not
+ designate permitted sender hosts)
+x-microsoft-antispam-message-info:
+ m8zc2ujLEsybon3CiOs7MdFXVykAuJYZDzIZieNhSoGfomDq6XaSHt8hx/MLacSiF+qZxMUTACR1ZQRmxyF05s0dpWPKiZH20MAJHVp7oYbKk4vQyl0/hF49x+NAKHP3WDVK3wJiLYwoo+InCOcRBhDztRAFn7VrG9zaHcQNH7SRxS2h3rMs2gLy7JFIm0E/
+spamdiagnosticoutput: 1:99
+spamdiagnosticmetadata: NSPM
+Content-Type: multipart/mixed; boundary="_002_SN1PR14MB05104D4BE3AEE53C89EAD6A8816F0SN1PR14MB0510namp_"
+MIME-Version: 1.0
+X-MS-Office365-Filtering-Correlation-Id:
+ cc9a6ffe-b768-419b-34b5-08d5c3991be0
+X-OriginatorOrg: bldegl.onmicrosoft.com
+X-MS-Exchange-CrossTenant-Network-Message-Id:
+ cc9a6ffe-b768-419b-34b5-08d5c3991be0
+X-MS-Exchange-CrossTenant-originalarrivaltime: 27 May 2018 06:14:30.5227
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: fdc6342c-7fcb-40eb-b84f-b7a58f4add51
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN1PR14MB0207
+x-aol-global-disposition: G
+X-AOL-VSS-INFO: 5800.7501/128933
+X-AOL-VSS-CODE: clean
+X-OATH-MIG-DATA:
+ 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
+x-aol-sid: 3039ac1add8b5b0a4ccb3ff4
+X-AOL-IP: 104.47.32.72
+X-AOL-SPF: domain : bldegl.onmicrosoft.com SPF : pass
+X-Evolution-POP3-UID: 97401.rAmsHgSEcTEeD39KB0GVGwlcc40=
+X-Evolution-Source: 1376709560.6289.0@dehmain
+
+
+--_002_SN1PR14MB05104D4BE3AEE53C89EAD6A8816F0SN1PR14MB0510namp_
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 8bit
+
+Don,
+
+Got the remaining crimping done for the throttle pot proxy and connected a DB9 connector to the debug serial port output from the DMOC. Then I slowly worked my way up applying power to successive units. I captured the response to the help command for the GEVCU to document the reported settings as it was received in case I want to get back to where I started from. A log of that output is attached. I am pretty certain I have sent you this before but here is a link to the GEVCU User Manual in case any questions arise.
+
+http://media3.ev-tv.me/gevcumanual6.pdf
+
+On the GEVCU I ran the throttle min/max calibration (z command) and could see the throttle pot was resulting in a shift. I switched the LOGLEVEL value from 3, Errors, to 0, Debug and started getting a stream of messages. Very reminiscent of cangate when it is streaming the CAN messages but with other debug stuff interwoven. A snippet of this from late this evening is included further down but let me finish with my progression before I discuss it. I put a scope on the CANBus signals and saw activity there at the correct rate (500 kHz) I then used the Z command following the z command to actually store the min and maximum values for the throttle in the EEPROM. You have to power cycle the unit for this to actually take effect but, when that was done, the correct values for my setup were stored. I have not modified the throttle/regen mapping parameters yet but likely will tomorrow. Mainly this is to kill regen. A repeated message was the current throttle setting and the commanded torque. I could see the throttle message changing appropriately with the throttle pot. I then brought up the DMOC low voltage and was gratified to immediately see a lot more activity in the debug log. From some of the messages, it was evident the DMOC was also communicating over the CANBus. My last power up was to apply 150V using the dc supply to the HV input of the DMOC. No discernable change in activity. A snippet of the log with everything powered follows. I will provide some interpretation and next steps regarding this snippet.
+
+223077 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223080 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223084 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0xA 0x52
+223087 - DEBUG: Throttle requested: 264
+223088 - DEBUG: Torque command: 0x75  0x30  0x75  0x30  0x75  0x30  0xA  CRC: 0xD1
+223092 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x31,0x69
+223097 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x31  0x0
+223100 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223103 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223105 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223108 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223110 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x35,0x65
+223112 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x35  0x0
+223116 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223120 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0xC 0x50
+223122 - DEBUG: Throttle requested: 264
+223124 - DEBUG: Torque command: 0x75  0x30  0x75  0x30  0x75  0x30  0xC  CRC: 0xCF
+223128 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223132 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223136 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x37,0x63
+223141 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x37  0x0
+223144 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223149 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223153 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223156 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0xE 0x4E
+223159 - DEBUG: Throttle requested: 264
+223161 - DEBUG: Torque command: 0x75  0x30  0x75  0x30  0x75  0x30  0xE  CRC: 0xCD
+223163 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x39,0x61
+223166 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x39  0x0
+223168 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23A ide=0x0 rtr=0x0 data=0x75,0x30,0x0,0x0,0x75,0x30,0x9,0x70
+223171 - DEBUG: DMOC CAN received: 0x23A  0x75  0x30  0x0  0x0  0x75  0x30  0x9  0x0
+223173 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223176 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223180 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223185 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223188 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x3D,0x5D
+223192 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x3D  0x0
+223196 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223199 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0x0 0x5C
+223202 - DEBUG: Throttle requested: 264
+223204 - DEBUG: Torque command: 0x75  0x30  0x75  0x30  0x75  0x30  0x0  CRC: 0xDB
+223207 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223212 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223216 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223220 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223224 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x31,0x69
+223227 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x31  0x0
+223229 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23A ide=0x0 rtr=0x0 data=0x75,0x30,0x0,0x0,0x75,0x30,0x1,0x78
+223232 - DEBUG: DMOC CAN received: 0x23A  0x75  0x30  0x0  0x0  0x75  0x30  0x1  0x0
+223234 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223236 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0x2 0x5A
+223238 - DEBUG: Throttle requested: 264
+223240 - DEBUG: Torque command: 0x75  0x30  0x75  0x30  0x75  0x30  0x2  CRC: 0xD9
+223243 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223248 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223252 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223256 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223260 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x35,0x65
+223265 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x35  0x0
+223268 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223273 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223277 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223280 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0x4 0x58
+223283 - DEBUG: Throttle requested: 264
+223285 - DEBUG: Torque command: 0x75  0x30  0x75  0x30  0x75  0x30  0x4  CRC: 0xD7
+223287 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223290 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223292 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x39,0x61
+223294 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x39  0x0
+223296 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23D ide=0x0 rtr=0x0 data=0xFF,0xFF,0x0,0x0,0x0,0x0,0x9,0xB9
+223299 - DEBUG: DMOC CAN received: 0x23D  0xFF  0xFF  0x0  0x0  0x0  0x0  0x9  0x0
+223300 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223303 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223305 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223310 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223314 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223317 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0x6 0x56
+223320 - DEBUG: Throttle requested: 264
+223321 - DEBUG: Torque command: 0x75  0x30  0x75  0x30  0x75  0x30  0x6  CRC: 0xD5
+223325 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x3D,0x5D
+223330 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x3D  0x0
+223333 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223338 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223342 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223346 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223350 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x31,0x69
+223355 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x31  0x0
+223359 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223362 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0x8 0x54
+223365 - DEBUG: Throttle requested: 264
+223366 - DEBUG: Torque command: 0x75  0x30  0x75  0x30  0x75  0x30  0x8  CRC: 0xD3
+223369 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223374 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223378 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x33,0x67
+223382 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x33  0x0
+223386 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223390 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223394 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223397 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0xA 0x52
+223400 - DEBUG: Throttle requested: 264
+223401 - DEBUG: Torque command: 0x75  0x30  0x75  0x30  0x75  0x30  0xA  CRC: 0xD1
+223405 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x35,0x65
+223410 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x35  0x0
+223413 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223418 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223422 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x23E ide=0x0 rtr=0x0 data=0x7D,0x1F,0x47,0xD1,0xF4,0x7D,0x37,0x63
+223426 - DEBUG: DMOC CAN received: 0x23E  0x7D  0x1F  0x47  0xD1  0xF4  0x7D  0x37  0x0
+223430 - DEBUG: CAN:0 dlc=0x8 fid=0x0 id=0x650 ide=0x0 rtr=0x0 data=0x6,0x6A,0x13,0x88,0xCE,0x0,0x0,0xFC
+223435 - DEBUG: DMOC CAN received: 0x650  0x6  0x6A  0x13  0x88  0xCE  0x0  0x0  0x0
+223439 - DEBUG: Enable Input Active? false         Reverse Input Active? false
+223442 - DEBUG: DMOC 0x232 tx: 0x4E 0x20 0x0 0x0 0x0 0x1 0xC 0x50
+223445 - DEBUG: Throttle requested: 264
+
+The left-most column is the time in millisecond since the GEVCU was last booted. Most of the others you can get a sense of what is going on. The concerning lines are those that talk about the Enable Input Active. Here is an example:
+
+223394 - DEBUG: Enable Input Active? false         Reverse Input Active? False
+
+There is a jumper called for on the DMOC AmpSeal connector that is called the Interlock Jumper. (It is shown on Page 12 of the User Manual.) I have the schematics for the Ford Transit that these motors and controllers were built for. In it the interlock snakes all over the vehicle passing through most of the critical subsystems. If anyone of these systems does not feel up to snuff, it can open this line up and disable to controller. It even includes the inertial crash switch; which makes sense. In the Transit both ends of this series link went into the Vehicle Control Unit. Obviously the VCU should be able to disable the DMOC but not sure why both ends go into the VCU. Possibly that relates to the Reverse Input Active element of this debug line. Unfortunately this jumper was the first wire I crimped and I was not that comfortable with it or my insertion of it into the connector. It is possible this is not making proper contact. I think my next step is to cut the wire and see if a voltage appears on one of the ends and if, when connected, this pulls this signal up or down (I assume it is a pull down for Enabled). If not, I will see if I can rectify the issue. In retrospect, I wish I had put in separate wires to the two connector positions and brought them out to a SPST switch. That would have given me a convenient disable switch. But for now I will just leave the two ends bare and use a twist connector to tie them together if they seem to be working properly. If they do need to be reworded, I will incorporate the switch into the rework. If this does not seem to be the problem my next step will likely be to go into the code for the GEVCU and see if there are comments or otherwise try to figure out what this is all about. I should be able to get a better idea of what the different data fields are in the various CAN messages in the log by studying the software.
+
+Some initial gleanings from studying the logs:
+
+The throttle values are in tenths of percent, i.e. from 0 to 1000.
+
+Messages seem to be occurring about every 3 to 5 milliseconds so a few hundred messages per second average rate.
+
+The time between throttle setting reports and the torque commands is about 37 or 38 milliseconds. This is not that much slower than what we were planning to use; about 15.6 ms (64 Hz). This is a torque command based on human input so it would not be expected to need to be that fast. 
+
+The torque commands seem to have sequence numbers that increase by 2 for each command.
+
+
+So all in all, a pretty productive day. I'll be flying tomorrow but while driving I will be thinking further about what is going on.
+
+Any comments or thoughts always welcome.
+
+-George
+
+
+
+--_002_SN1PR14MB05104D4BE3AEE53C89EAD6A8816F0SN1PR14MB0510namp_
+Content-Type: text/plain; name="GEVCU Initial Values.txt"
+Content-Description: GEVCU Initial Values.txt
+Content-Disposition: attachment; filename="GEVCU Initial Values.txt"; size=5372; creation-date="Sun, 27 May 2018 05:26:22 GMT"; modification-date="Sun, 27 May 2018 00:18:46 GMT"
+Content-Transfer-Encoding: 8bit
+
+Build number: 1060
+Motor Controller Status: isRunning: 0 isFaulted: 0
+
+*************SYSTEM MENU *****************
+                                          Enable line endings of some sort (LF, CR, CRLF)
+                                                                                         Most commands case sensitive
+
+                                                                                                                     GENERAL SYSTEM CONFIGURATION
+
+                                                                                                                                                    E = dump system EEPROM values
+   h = help (displays this message)
+   LOGLEVEL=3 - set log level (0=debug, 1=info, 2=warn, 3=error, 4=off)
+   CAN0SPEED=500 - set first CAN bus speed (in thousands)
+   CAN1SPEED=500 - set second CAN bus speed (in thousands)
+
+DEVICE SELECTION AND ACTIVATION
+
+                                    a = Re-setup Adafruit BLE
+     q = Dump Device Table
+     Q = Reinitialize device table
+     S = show possible device IDs
+     NUKE=1 - Resets all device settings in EEPROM. You have been warned.
+
+  ENABLED devices: (DISABLE=0xFFFF to disable where FFFF is device number)
+
+     0x1031     Potentiometer (analog) accelerator
+     0x1000     DMOC645 Inverter
+     0x4400     Andromeda Interfaces EVIC Display
+
+  DISABLED devices: (ENABLE=0xFFFF to enable where FFFF is device number)
+
+     0x1033     CANBus accelerator
+     0x1032     Potentiometer (analog) brake
+     0x104F     Test/Debug Accelerator
+     0x1034     CANBus brake
+     0x1002     Coda UQM Powerphase 100 Inverter
+     0x1003     CK Inverter Ctrl Board
+     0x100F     Test Inverter
+     0x1050     Delphi DC-DC Converter
+     0x1001     Brusa DMC5 Inverter
+     0x2000     Think City BMS
+     0x2100     GEVCU Internal BMS
+     0x650     ELM327 Emulator over Bluetooth
+     0x1041     Adafruit BLE
+     0x700     PowerKey Pro 2600
+     0x3000     VehicleSpecific
+
+PRECHARGE CONTROLS
+
+                     PREDELAY=6500 - Precharge delay time in milliseconds
+   PRELAY=0 - Which output to use for precharge contactor (255 to disable)
+   MRELAY=1 - Which output to use for main contactor (255 to disable)
+
+MOTOR CONTROLS
+
+                 TORQ=3000 - Set torque upper limit (tenths of a Nm)
+   RPM=6000 - Set maximum RPM
+   REVLIM=50 - How much torque to allow in reverse (Tenths of a percent)
+   ENABLEIN=0 - Digital input to enable motor controller (0-3, 255 for none)
+   REVIN=1 - Digital input to reverse motor rotation (0-3, 255 for none)
+   TAPERHI=500 - Regen taper upper RPM (0 - 10000)
+   TAPERLO=75 - Regen taper lower RPM (0 - 10000)
+
+THROTTLE CONTROLS
+
+                    z = detect throttle min/max, num throttles and subtype
+   Z = save throttle values
+   TPOT=1 - Number of pots to use (1 or 2)
+   TTYPE=1 - Set throttle subtype (1=std linear, 2=inverse)
+   T1ADC=0 - Set throttle 1 ADC pin
+   T1MN=73 - Set throttle 1 min value
+   T1MX=3144 - Set throttle 1 max value
+   T2ADC=1 - Set throttle 2 ADC pin
+   T2MN=0 - Set throttle 2 min value
+   T2MX=0 - Set throttle 2 max value
+   TRGNMAX=0 - Tenths of a percent of pedal where regen is at max
+   TRGNMIN=270 - Tenths of a percent of pedal where regen is at min
+   TFWD=280 - Tenths of a percent of pedal where forward motion starts
+   TMAP=750 - Tenths of a percent of pedal where 50 throttle will be
+   TMINRN=0 - Percent of full torque to use for min throttle regen
+   TMAXRN=70 - Percent of full torque to use for max throttle regen
+   TCREEP=0 - Percent of full torque to use for creep (0=disable)
+
+OTHER VEHICLE CONTROLS
+
+                         COOLFAN=6 - Digital output to turn on cooling fan(0-7, 255 for none)
+   COOLON=40 - Inverter temperature C to turn cooling on
+   COOLOFF=35 - Inverter temperature C to turn cooling off
+   BRAKELT = 255 - Digital output to turn on brakelight (0-7, 255 for none)
+   REVLT=255 - Digital output to turn on reverse light (0-7, 255 for none)
+   NOMV=330 - Fully charged pack voltage that automatically resets kWh counter
+
+ANALOG AND DIGITAL IO
+
+                        A = Autocompensate ADC inputs
+   J = set all digital outputs low
+   K = set all digital outputs high
+   L = show raw analog/digital input/output values (toggle)
+   OUTPUT=<0-7> - toggles state of specified digital output
+   ADC0OFF=150 - set ADC0 offset
+   ADC0GAIN=1800 - set ADC0 gain (1024 is 1 gain)
+   ADC1OFF=150 - set ADC1 offset
+   ADC1GAIN=1800 - set ADC1 gain (1024 is 1 gain)
+   ADC2OFF=150 - set ADC2 offset
+   ADC2GAIN=1800 - set ADC2 gain (1024 is 1 gain)
+   ADC3OFF=150 - set ADC3 offset
+   ADC3GAIN=1800 - set ADC3 gain (1024 is 1 gain)
+   ADCPACKHOFF=65535 - set pack high ADC offset
+   ADCPACKHGAIN=65535 - set pack high ADC gain (1024 is 1 gain)
+   PACKHCAL=1000 - Give as parameter the current voltage on Pack High in 1/100V. 80v = 8000
+   ADCPACKLOFF=65535 - set pack low ADC offset
+   ADCPACKLGAIN=65535 - set pack low ADC gain (1024 is 1 gain)
+   PACKLCAL=1000 - Give as parameter the current voltage on Pack Low in 1/100V. 80v = 8000
+   ADCPACKCOFF=65535 - set pack current offset
+   ADCPACKCGAIN=65535 - set pack current gain (1024 is 1 gain)
+   PACKCCAL=1000 - Give as parameter the current amperage across the shunt in 1/100A. 80A = 8000
+
+--_002_SN1PR14MB05104D4BE3AEE53C89EAD6A8816F0SN1PR14MB0510namp_--
+
