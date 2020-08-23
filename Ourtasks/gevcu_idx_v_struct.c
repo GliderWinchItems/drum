@@ -45,7 +45,6 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
 	p->cid_dmoc_cmd_regen  = 0x46800000;   // CANID_DMOC_CMD_REGEN: I16_I16_X_U8_U8,DMOC: cmd: watt,accel,degC,alive
 	// 
 
-
  // List of CAN ID's for setting up hw filter for incoming msgs
      // Contactor sends
 //	p->cid_cntctr_keepalive_r = 0xE3C00000; // CANID_CMD_CNTCTRKAR: U8_U8_U8: Contactor1: R KeepAlive response to poll
@@ -62,9 +61,7 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
    // Others send
 	p->cid_gps_sync     = 0x00400000; // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
 	// stepper repo: update100K sends
-	P->cid_drum_tst_stepcmd	=  0xE4600000; // CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position:
-
-
+	p->cid_drum_tst_stepcmd	=  0xE4600000; // CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position:
 
 	return;
 }

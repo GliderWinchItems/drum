@@ -214,7 +214,6 @@ struct GEVCUFUNCTION
 	uint32_t timesyncrcvctr; // Time sync CAN msgs received
 	uint32_t timesynclimit;
 
-
 	/* Pointers to incoming CAN msg mailboxes. */
 	struct MAILBOXCAN* pmbx_cid_cntctr_keepalive_r; // CANID_CMD_CNTCTRKAR: U8_VAR: Contactor1: R KeepAlive response to pollcid_gevcur_keepalive_i;
 	struct MAILBOXCAN* pmbx_cid_gevcur_keepalive_i; // CANID_CMD_GEVCURKAI:U8 : GEVCUr: I KeepAlive and connect command
@@ -226,8 +225,7 @@ struct GEVCUFUNCTION
 	struct MAILBOXCAN* pmbx_cid_dmoc_hv_status;  // CANID_DMOC_HV_STATUS: I16_I16_X6,'DMOC: HV volts:amps, status
 	struct MAILBOXCAN* pmbx_cid_dmoc_hv_temps;   // CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator
 	struct MAILBOXCAN* pmbx_cid_gps_sync;        // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
-	struct MAILBOXCAN* pmbx_cid_drum_CL;         // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
-
+	struct MAILBOXCAN* pmbx_cid_drum_tst_stepcmd;// CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
 
 	/* LCD buffer(s) */
 	struct SERIALSENDTASKBCB* pbuflcd1;

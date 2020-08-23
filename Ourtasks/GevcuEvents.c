@@ -25,6 +25,7 @@ The CL calibration and ADC->pct position is done via ADC new readings notificati
 #include "gevcu_msgs.h"
 #include "MailboxTask.h"
 #include "main.h"
+#include "stepper_items.h"
 
 /* *************************************************************************
  * void GevcuEvents_00(void);
@@ -80,6 +81,8 @@ void GevcuEvents_04(void)
 	gevcufunction.swtim1ctr += 1;
 	gevcufunction.evstat |= EVSWTIM1TICK; // Timer tick
 
+	/* Stepper CL keep-alive timeout. */
+	stepper_items_timeout();
 	return;
 }
 /* *************************************************************************
@@ -180,7 +183,7 @@ void GevcuEvents_14(void)
 void GevcuEvents_15(void)
 {
 	/* Received CAN msg with Control Lever position, direction and enable bits */
-	stepper_items_clupdate(&gevcufunction.pmbx_cid_drum_CL->ncan.can;
+	stepper_items_clupdate(&gevcufunction.pmbx_cid_drum_tst_stepcmd->ncan.can);
 	
 	return;
 }

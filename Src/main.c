@@ -1120,7 +1120,7 @@ void StartDefaultTask(void const * argument)
 osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
-//#define DISPLAYSTACKUSAGEFORTASKS
+#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
@@ -1250,7 +1250,7 @@ uint16_t pbpin = GPIOB->ODR;
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 13; showctr++)
+for (showctr = 0; showctr < 8; showctr++)
 {
 				switch (showctr)
 				{
@@ -1261,14 +1261,9 @@ case  2: stackwatermark_show(CanTxTaskHandle  ,&pbuf3,"CanTxTask----");break;
 case  3: stackwatermark_show(MailboxTaskHandle,&pbuf4,"MailboxTask--");break;
 case  4: stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------");break;
 case  5: stackwatermark_show(SerialTaskReceiveHandle,&pbuf2,"SerialRcvTask");break;
-case  6: stackwatermark_show(GatewayTaskHandle,&pbuf3,"GatewayTask--");break;
-case  7: stackwatermark_show(CdcTxTaskSendHandle,&pbuf4,"CdcTxTask----");break;
-case  8: stackwatermark_show(SpiOutTaskHandle, &pbuf1,"SpiOutTask---");break;
-case  9: stackwatermark_show(GevcuTaskHandle,  &pbuf2,"GevcuTask----");break;
-case 10: stackwatermark_show(BeepTaskHandle,   &pbuf3,"BeepTask-----");break;
-case 11: stackwatermark_show(LEDTaskHandle,    &pbuf4,"LEDTask------");break;
+case  6: stackwatermark_show(GevcuTaskHandle,  &pbuf2,"GevcuTask----");break;
 
-case 12:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+case 7:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;

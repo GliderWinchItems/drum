@@ -108,10 +108,8 @@ void StartGevcuTask(void const * argument)
 	if (bret != pdPASS) {morse_trap(405);}
 
 
-	/* Start stepper pulse (PU signal) timer. */
-extern TIM_HandleTypeDef htim9;
-	stepper_items_init(&htim9);
-//HAL_GPIO_TogglePin(GPIOD, LED_GREEN_Pin);
+	/* Stepper initialization starts timers. */
+	stepper_items_init();
 
   /* Infinite loop */
   for(;;)
@@ -131,17 +129,17 @@ extern TIM_HandleTypeDef htim9;
 			noteuse |= GEVCUBIT00;
 		}
 		if ((noteval & GEVCUBIT01) != 0)
-		{ // SAFE/ACTIVE switch changed state
+		{ // 
 			GevcuEvents_01();
 			noteuse |= GEVCUBIT01;
 		}
 		if ((noteval & GEVCUBIT02) != 0)
-		{ //  switch changed state
+		{ //  
 //			GevcuEvents_02();
 			noteuse |= GEVCUBIT02;
 		}
 		if ((noteval & GEVCUBIT03) != 0)
-		{ // Pushbutton notifications come here
+		{ // 
 			GevcuEvents_03();			
 			noteuse |= GEVCUBIT03;
 		}
