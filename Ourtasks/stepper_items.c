@@ -81,19 +81,39 @@ TIM_TypeDef  *pT14base; // Register base address
 /* Struct with all you want to know. */
 struct STEPPERSTUFF stepperstuff;
 
+/* CAN msgs */
+
+enum cididx
+{
+	CID_STEPPER_HB	
+};
+
+
 /* *************************************************************************
  * void stepper_idx_v_struct_hardcode_params(void);
  * 
  * @brief       : Initialization
  * *************************************************************************/
-void stepper_idx_v_struct_hardcode_params(void)
+void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 {
-        stepperstuff.clfactor  = 200.0f; // 100% gives max speed
-        stepperstuff.ledctr1   = 0;
-        stepperstuff.ledctr2   = 0;
-        stepperstuff.accumpos  = 0; // Position accumulator
-        stepperstuff.cltimectr = 0;
-        stepperstuff.cltimemax = 64; // Number of software time ticks max
+    p->ledctr1   = 0;
+    p->ledctr2   = 0;
+    p->accumpos  = 0; // Position accumulator
+    p->cltimectr = 0;
+    p->hbctr     = 0;
+    p->lc.clfactor  = (1.0f/65535.0f ); // 100% gives max speed
+    p->lc.cltimemax = 64; // Number of software time ticks max
+    p->lc.hbct      = 64; // Number of swctr ticks between heartbeats
+
+
+    /* Stepper sends these CAN msgs. */
+    p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
+
+    /* Pre-load CAN msg id and dlc. */
+	  // Stepper heartbeat
+	p->canmsg[CID_STEPPER_HB].can.id  = p->lc.cid_hb_stepper;
+	p->canmsg[CID_STEPPER_HB].can.dlc = 5; // U8_U32 payload
+	p->canmsg[CID_STEPPER_HB].pctl = pctl0;	
         return;
 }
 
@@ -104,11 +124,12 @@ void stepper_idx_v_struct_hardcode_params(void)
  * *************************************************************************/
 void stepper_items_init(void)
 {
-	stepper_idx_v_struct_hardcode_params();
+	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+	stepper_idx_v_struct_hardcode_params(p);
 
 	/* Bit positions for low overhead toggling. */
-	stepperstuff.ledbit1= (LED_GREEN_Pin);
-	stepperstuff.ledbit2= (LED_ORANGE_Pin);
+	p->ledbit1= (LED_GREEN_Pin);
+	p->ledbit2= (LED_ORANGE_Pin);
 
 	/* Save base addresses of timers for faster use later. */
 extern TIM_HandleTypeDef htim2;
@@ -139,6 +160,7 @@ extern TIM_HandleTypeDef htim14;
 	/* TIM4 Stepper reversal timer and faux encoder transitions. */
 	pT4base->DIER = 0x4; // CH2 interrupt enable, only.
 	pT4base->CCR2 = pT4base->CNT + 100; // 1 ms delay
+	pT4base->ARR  = 0xffff;
 
 	/* Start TIM4 counter. */
 	pT4base->CR1 |= 1;
@@ -151,7 +173,7 @@ extern TIM_HandleTypeDef htim14;
 void stepper_items_timeout(void)
 {
 	stepperstuff.cltimectr += 1;
-	if (stepperstuff.cltimectr > stepperstuff.cltimemax)
+	if (stepperstuff.cltimectr > stepperstuff.lc.cltimemax)
 	{ // We timed out! Stop the stepper
 		stepperstuff.iobits = 0;
 		stepperstuff.zerohold = 1;
@@ -159,62 +181,89 @@ void stepper_items_timeout(void)
 	return;
 }
 /* *************************************************************************
+ * void stepper_items_CANsend(void);
+ * @brief   : Send CAN msgs for stepper
+ * *************************************************************************/
+ void stepper_items_CANsend(void)
+ {
+ 	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+ 	p->hbctr += 1;
+ 	if (p->hbctr >= p->lc.hbct)
+ 	{
+ 		p->hbctr = 0;
+
+ 		/* Setup CAN msg */
+ 		p->canmsg[CID_STEPPER_HB].can.cd.uc[0] = p->stepperstatus;
+ 		p->canmsg[CID_STEPPER_HB].can.cd.uc[1] = p->accumpos >>  0;
+ 		p->canmsg[CID_STEPPER_HB].can.cd.uc[2] = p->accumpos >>  8;
+ 		p->canmsg[CID_STEPPER_HB].can.cd.uc[3] = p->accumpos >> 16;
+ 		p->canmsg[CID_STEPPER_HB].can.cd.uc[4] = p->accumpos >> 24;
+
+ 		/* Queue CAN msg to send. */
+		xQueueSendToBack(CanTxQHandle,&p->canmsg[CID_STEPPER_HB],4);	
+ 	}
+ 	return;
+ }
+/* *************************************************************************
  * void stepper_items_clupdate(struct CANRCVBUF* pcan);
  * @param 	: pcan = pointer to CAN msg struct
  * @brief	: Initialization of channel increment
  * *************************************************************************/
 void stepper_items_clupdate(struct CANRCVBUF* pcan)
 {
-	/* Reset loss of CL CAN msgs timeout counter. */
-	stepperstuff.cltimectr = 0; 
+		struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
-	union PAYFLT
-	{
-		float f;
-		uint8_t u8[4];
-	}pf;
+/* This is shamefull, but works until MailboxTask problem fixed. */		
+extern struct CANRCVBUF dbgcan;
+pcan = &dbgcan;
+
+	/* Reset loss of CL CAN msgs timeout counter. */
+	p->cltimectr = 0; 
+
 	/* Extract float from payload */
-	pf.u8[0] = pcan->cd.ui[1];
-	pf.u8[1] = pcan->cd.ui[2];
-	pf.u8[2] = pcan->cd.ui[3];
-	pf.u8[3] = pcan->cd.ui[4];
-	stepperstuff.clpos = pf.f;
+	p->pf.u8[0] = pcan->cd.uc[1];
+	p->pf.u8[1] = pcan->cd.uc[2];
+	p->pf.u8[2] = pcan->cd.uc[3];
+	p->pf.u8[3] = pcan->cd.uc[4];
+
+	p->clpos = p->pf.f; // Redundant
+	p->pay0 = pcan->cd.uc[0];
 
 	/* Save bits for direction and enable. */
 	// Direction bit
-	if ((pcan->cd.ui[0] & DRBIT) == 0)
-		stepperstuff.drflag = (1 << 16); // Reset
+	if ((pcan->cd.uc[0] & DRBIT) == 0)
+		p->drflag = (1 << 16); // Reset
 	else
-		stepperstuff.drflag = (1 << 0); // Set
+		p->drflag = 1; // Set
 
 	// Enable bit
-	if ((pcan->cd.ui[0] & ENBIT) == 0)
-		stepperstuff.enflag = (2 << 16); // Reset
+	if ((pcan->cd.uc[0] & ENBIT) == 0)
+		p->enflag = (2 << 16); // Reset
 	else
-		stepperstuff.enflag = (2 << 0); // Set
+		p->enflag = 2; // Set
 
 	/* Bits positioned for updating PB BSRR register. */
-	stepperstuff.iobits = stepperstuff.drflag | stepperstuff.enflag;
+	p->iobits = p->drflag | p->enflag;
 
+	
+/* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
 	int32_t  ntmp;
 	uint32_t itmp;
-	float    ftmp;
-	/* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
-	stepperstuff.speedcmdf = stepperstuff.clpos * stepperstuff.clfactor;
-	if (stepperstuff.clpos > 0)
+	p->speedcmdf = p->clpos * p->lc.clfactor;
+	if (p->clpos > 0)
 	{
-		stepperstuff.zerohold = 0; // Flag not in special zero mode
-		stepperstuff.focdur = 1.0/stepperstuff.speedcmdf;
-		if ( ftmp > 65534.9)
+		p->zerohold = 0; // Flag not in special zero mode
+		p->focdur = 1.0/p->speedcmdf;
+		if ( p->focdur > 65534.9)
 		{ // Here duration too large for compare register
-			stepperstuff.focdur = 65534.9; // Hold at max
+			p->focdur = 65534.9; // Hold at max
 		}
 		// Convert to integer
-		stepperstuff.ocnxt = stepperstuff.focdur;
+		p->ocnxt = p->focdur;
 
 		/* Are we increasing speed: reducing timer duration. */
 		// Timer at 100 KHz (10 us oc duration min)
-		ntmp = (stepperstuff.ocnxt - stepperstuff.ocinc);
+		ntmp = (p->ocnxt - p->ocinc);
 		if (ntmp < -100) 
 		{ // Here, more than 1 ms reduction
 			// How much time before the next oc interrupt?
@@ -224,7 +273,7 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
 				pT4base->CCR2 += itmp;
 			}
 		}
-		stepperstuff.ocinc = stepperstuff.ocnxt;
+		p->ocinc = p->ocnxt;
 	}
 }
 /*#######################################################################################
@@ -258,32 +307,27 @@ void stepper_items_TIM4_IRQHandler(void)
 		// Duration increment computed from CL CAN msg
 		pT4base->CCR2 += stepperstuff.ocinc; // Schedule next interrupt
 	
-		stepperstuff.accumpos += stepperstuff.speedinc;
-		if ((stepperstuff.accumpos >> 16) != (stepperstuff.accumpos_prev))
+		// Update direction and enable i/o pins
+		Stepper__DR__direction_GPIO_Port->BSRR = stepperstuff.iobits;
+
+		// Start TIM9 to generate a delayed pulse.
+		pT9base->CR1 = 0x9; 
+
+		// Start TIM14 to start scope sync pulse (PE5)
+		pT14base->CR1 = 0x9; 
+
+		// Visual check for debugging
+		stepperstuff.ledctr1 += 1; // Slow LED toggling rate
+		if (stepperstuff.ledctr1 > 1000)
 		{
-			// Update old position with new
-			stepperstuff.accumpos_prev = (stepperstuff.accumpos >> 16);	
+	 			stepperstuff.ledctr1 = 0;
 
-			// Update direction and enable i/o pins
-			Stepper__DR__direction_GPIO_Port->BSRR = stepperstuff.iobits;
-
-			// Start TIM9 to generate a delayed pulse.
-			pT9base->CR1 = 0x9; 
-
-			// Start TIM14 to start scope sync pulse (PE5)
-			pT14base->CR1 = 0x9; 
-
-			// Visual check for debugging
-			stepperstuff.ledctr1 += 1; // Slow LED toggling rate
-			if (stepperstuff.ledctr1 > 1000)
-			{
-	  			stepperstuff.ledctr1 = 0;
-  				// Toggle LED on/off
-				stepperstuff.ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
-			}
+  			// Toggle LED on/off
+//HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port,LED_GREEN_Pin); 			
+			stepperstuff.ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
+			LED_GREEN_GPIO_Port->BSRR = stepperstuff.ledbit1;
 		}
 	}
-	/* Reversal interrupts. */
 // NOTE: should not come here as only CH2 interrupt enabled	
 	if ((pT4base->SR & 0x2) != 0)
 	{

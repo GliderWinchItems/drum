@@ -13,6 +13,7 @@
 #include "stm32f4xx_hal.h"
 #include "stepper_items.h"
 #include "common_can.h"
+#include "CanTask.h"
 
 /* Port and pin numbers for stepper controller. */
 #define PU_port  GPIOA      // Pulse
@@ -29,11 +30,35 @@
 #define DRBIT 0x1  // Bit mask for Direction output pin: 0 = low; 1 = high
 #define ENBIT 0x2  // Bit mask for Enable output pin: 0 = low; 1 = high
 
+#define NUMCANMSGSSTEPPER 1  // Number of CAN msgs stepper sends
+
+
+/* Parameters stepper instance (LC = Local Copy) */
+struct STEPPERLC
+{
+	float	 clfactor;	 // Constant to compute oc duration at CL = 100.0
+	uint32_t cltimemax;  // Max timer count for shutdown
+	int32_t  Lplus;      //
+	int32_t  Lminus;     //
+	uint32_t hbct;       // Number of ticks between hb msgs
+	int32_t  Ka;
+	int32_t  Ks;
+
+	// drum sends: others receive
+	uint32_t cid_hb_stepper;        // CANID_HB_STEPPER: U8_U32','STEPPER: U8: Status, U32: stepper position accum
+};
+
+	union PAYFLT
+	{
+		float f;
+		uint8_t u8[4];
+		uint32_t ui;
+	}pf;
 
 struct STEPPERSTUFF
 {
+	struct STEPPERLC lc; // Parameters for stepper
 	int64_t  position;	 // Step count of position
-	float	 clfactor;	 // Constant to compute oc duration at CL = 100.0
 	float    speedcmdf;  // Speed command (float)
 	float    focdur;     // Temp for computer inverse of CL position
 	float    clpos;      // CL position extracted from CAN msg
@@ -42,18 +67,24 @@ struct STEPPERSTUFF
 	uint32_t ledbit1;    // Bit for toggling green led
 	uint32_t ledbit2;    // Bit for toggling orange led
 	uint32_t cltimectr;  // Counter for loss of CL msgs
-	uint32_t cltimemax;  // Max timer count for shutdown
 	uint32_t speedcmdi;	 // Commanded speed (integer)
 	int32_t  accumpos;   // Position accumulator in upper 16b
 	uint16_t ocinc;      // Faux encoder: oc register increment
 	uint16_t ocnxt;      // Faux encoder: next oc increment
 	uint16_t ocrev;      // Increment for stepper reversal
 	uint16_t speedinc;   // Low 16b of position accumulator
+	uint16_t hbctr;      // Count ticks for sending heartbeat CAN msg
 	int16_t  accumpos_prev; // Previous accumpos (hi-ord 16b)
 	uint32_t drflag;     // BSRR pin set/reset bit position
 	uint32_t enflag;     // BSRR pin set/reset bit position
-	uint8_t  iobits;     // Bits from CL CAN msg positioned for PB0
+	uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
 	uint8_t  zerohold;   // Special case of CL = 0.0;
+	uint8_t  stepperstatus;
+	uint8_t  pay0;
+
+	// Can msgs sent. */
+	struct CANTXQMSG canmsg[NUMCANMSGSSTEPPER];
+	union PAYFLT pf;	// Extracted float from payload
 
 };
 
@@ -68,6 +99,9 @@ struct STEPPERSTUFF
  * *************************************************************************/
   void stepper_items_timeout(void);
 /* @brief	: Check for loss of CL CAN msgs
+ * *************************************************************************/
+  void stepper_items_CANsend(void);
+/* @brief   : Send CAN msgs for stepper
  * *************************************************************************/
 
  extern struct STEPPERSTUFF stepperstuff;

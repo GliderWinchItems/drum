@@ -308,7 +308,7 @@ int main(void)
 	yprintf_init();
 
   /* definition and creation of CanTxTask - CAN driver TX interface. */
-  Qidret = xCanTxTaskCreate(2, 64); // CanTask priority, Number of msgs in queue
+  Qidret = xCanTxTaskCreate(1, 64); // CanTask priority, Number of msgs in queue
 	if (Qidret < 0) morse_trap(220); // Panic LED flashing
 
   /* definition and creation of CanRxTask - CAN driver RX interface. */
@@ -322,7 +322,7 @@ int main(void)
 	if (Cret == HAL_ERROR) morse_trap(219);
 
 #ifdef CONFIGCAN2
-	Cret = canfilter_setup_first(1, &hcan2, 15); // CAN2
+	Cret = canfilter_setup_first(0, &hcan2, 15); // CAN2
 	if (Cret == HAL_ERROR) morse_trap(217);
 #endif
 
@@ -1120,7 +1120,7 @@ void StartDefaultTask(void const * argument)
 osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
-#define DISPLAYSTACKUSAGEFORTASKS
+//#define DISPLAYSTACKUSAGEFORTASKS
 //#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
 //#define SHOWSUMSOFADCRAWREADINGS
 //#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
@@ -1231,8 +1231,7 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
-uint16_t pbpin = GPIOB->ODR;
-    yprintf(&pbuf4,"\n\rINC%6u| PB %04x",stepperstuff.speedcmdi,pbpin);//stepperstuff.drflag);
+    yprintf(&pbuf4,"\n\r%X %6.1f %7i %08X",stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocnxt,stepperstuff.iobits);
 
 #endif      
     }

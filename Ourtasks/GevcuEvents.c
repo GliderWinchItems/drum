@@ -83,6 +83,10 @@ void GevcuEvents_04(void)
 
 	/* Stepper CL keep-alive timeout. */
 	stepper_items_timeout();
+
+	/* Stepper heartbeat. */
+	stepper_items_CANsend();
+
 	return;
 }
 /* *************************************************************************

@@ -335,7 +335,12 @@ void StartMailboxTask(void const * argument)
 	struct CANRCVBUFN* pncan;
 	struct CANTAKEPTR* ptake[STM32MAXCANNUM];
 	int i;
+
+#ifdef GATEWAYTASKINCLUDED	
 	int8_t flag;
+	struct MAILBOXCAN* pmbxret;
+#endif
+
 
 //while(1==1) osDelay(10); // Debug: make task do nothing
 
@@ -366,7 +371,9 @@ void StartMailboxTask(void const * argument)
 		/* Step through possible notification bits */
 		for (i = 0; i < STM32MAXCANNUM; i++)
 		{
+		#ifdef GATEWAYTASKINCLUDED
 			flag = 0;
+		#endif
 			if ((noteval & (1 << i)) != 0)
 			{	
 				noteused |= (1 << i);
@@ -379,22 +386,26 @@ if (pmbxnum == NULL) morse_trap(77); // Debug trap
 
 					if (pncan != NULL)
 					{ // Here, CAN msg is available
+					#ifdef GATEWAYTASKINCLUDED
 						flag = 1; // Flag notifies gateway task later
-						loadmbx(pmbxnum, pncan); // Load mailbox. if CANID is in list
-
-				#ifdef GATEWAYTASKINCLUDED
-						/* JIC: do not exceed setup indices. */
-						if ((i == 0) 
-						#ifdef CONFIGCAN2 
-							|| (i == 1)
-						#endif 
-							)							
+						pmbxret = loadmbx(pmbxnum, pncan); // Load mailbox. if CANID is in list
+						if (pmbxret != NULL) 
 						{
-							*mbxgatebuf[i].padd++ = *pncan; // Save CAN msg for gateway task.
-							if (mbxgatebuf[i].padd == mbxgatebuf[i].pend) 
-								mbxgatebuf[i].padd  = mbxgatebuf[i].pbegin;
+							/* JIC: do not exceed setup indices. */
+							if ((i == 0) 
+							#ifdef CONFIGCAN2 
+								|| (i == 1)
+							#endif 
+								)							
+							{
+								*mbxgatebuf[i].padd++ = *pncan; // Save CAN msg for gateway task.
+								if (mbxgatebuf[i].padd == mbxgatebuf[i].pend) 
+									mbxgatebuf[i].padd  = mbxgatebuf[i].pbegin;
+							}
 						}
-				#endif
+					#else
+						loadmbx(pmbxnum, pncan); // Load mailbox. if CANID is in list
+					#endif
 					}
 				} while (pncan != NULL);
 

@@ -146,6 +146,7 @@ void Error_Handler(void);
 #define HUARTMON  huart3 // uart  for PC monitoring
 
 extern UART_HandleTypeDef huart3;
+extern struct CAN_CTLBLOCK* pctl0;  // Pointer to CAN1 control block
 
 // Gateway task (for Mailbox use)
 //#define GATEWAYTASKINCLUDED // Include gateway

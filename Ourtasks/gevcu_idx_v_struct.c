@@ -35,14 +35,15 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
 
  // CAN ids we send
    //                      CANID_HEX      CANID_NAME             CAN_MSG_FMT     DESCRIPTION
-	p->cid_cntctr_keepalive_i  = 0xE3800000; // CANID_CMD_CNTCTRKAI:U8': Contactor1: I KeepAlive and connect command
+//	p->cid_cntctr_keepalive_i  = 0xE3800000; // CANID_CMD_CNTCTRKAI:U8': Contactor1: I KeepAlive and connect command
     // GEVCUr sends to PC response to keepalive msg PC sends to GEVCUr
-   p->cid_gevcur_keepalive_r = 0xE4200000; // CANID_CMD_GEVCURKAR: U8_U8 : GEVCUr: R KeepAlive response
-   p->cid_gevcur_ctllawv1    = 0xE4000000; // CANID_LOG_DMOCCMDSPD: FF    : GEVCUr: Desired speed');
+//   p->cid_gevcur_keepalive_r = 0xE4200000; // CANID_CMD_GEVCURKAR: U8_U8 : GEVCUr: R KeepAlive response
+//   p->cid_gevcur_ctllawv1    = 0xE4000000; // CANID_LOG_DMOCCMDSPD: FF    : GEVCUr: Desired speed');
     // DMOC receives these commands
-	p->cid_dmoc_cmd_speed  = 0x46400000;   // CANID_DMOC_CMD_SPEED: I16_X6,         DMOC: cmd: speed, key state
-	p->cid_dmoc_cmd_torq   = 0x46600000;   // CANID_DMOC_CMD_TORQ:  I16_I16_I16_X6, DMOC: cmd: torq,copy,standby,status
-	p->cid_dmoc_cmd_regen  = 0x46800000;   // CANID_DMOC_CMD_REGEN: I16_I16_X_U8_U8,DMOC: cmd: watt,accel,degC,alive
+//	p->cid_dmoc_cmd_speed  = 0x46400000;   // CANID_DMOC_CMD_SPEED: I16_X6,         DMOC: cmd: speed, key state
+//	p->cid_dmoc_cmd_torq   = 0x46600000;   // CANID_DMOC_CMD_TORQ:  I16_I16_I16_X6, DMOC: cmd: torq,copy,standby,status
+//	p->cid_dmoc_cmd_regen  = 0x46800000;   // CANID_DMOC_CMD_REGEN: I16_I16_X_U8_U8,DMOC: cmd: watt,accel,degC,alive
+
 	// 
 
  // List of CAN ID's for setting up hw filter for incoming msgs
@@ -60,7 +61,7 @@ void gevcu_idx_v_struct_hardcode_params(struct GEVCULC* p)
 //	p->cid_dmoc_hv_temps   = 0xCA200000; // 0x651 CANID_DMOC_HV_TEMPS:  U8_U8_U8,  'DMOC: Temperature:rotor,invert,stator
    // Others send
 	p->cid_gps_sync     = 0x00400000; // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
-	// stepper repo: update100K sends
+		 // stepper repo: update100K sends
 	p->cid_drum_tst_stepcmd	=  0xE4600000; // CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position:
 
 	return;

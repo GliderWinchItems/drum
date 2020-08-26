@@ -44,7 +44,8 @@ static void payloadfloat(uint8_t *po, float f)
  * *************************************************************************/
 void GevcuUpdates(void)
 {
-
+	
+	
 	/* Reset new & various flags. */
 	gevcufunction.evstat &= ~(
 		EVSWTIM1TICK | /* Timer tick */

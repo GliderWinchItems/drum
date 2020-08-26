@@ -93,7 +93,6 @@ void StartGevcuTask(void const * argument)
 	gevcu_func_init_canfilter(&gevcufunction);
 #endif
 
-
 	/* Create timer Auto-reload/periodic (128 per sec) */
 	gevcufunction.swtimer1 = xTimerCreate("swtim1",gevcufunction.ka_k,pdTRUE,\
 		(void *) 0, swtim1_callback);
@@ -102,14 +101,15 @@ void StartGevcuTask(void const * argument)
 	/* Initial startup state */
 	gevcufunction.state = GEVCU_INIT;
 
+	/* Stepper initialization starts timers. */
+	stepper_items_init();
 
 	/* Start command/keep-alive timer */
 	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);
 	if (bret != pdPASS) {morse_trap(405);}
 
-
-	/* Stepper initialization starts timers. */
-	stepper_items_init();
+extern CAN_HandleTypeDef hcan1;
+	HAL_CAN_Start(&hcan1); // CAN1
 
   /* Infinite loop */
   for(;;)
@@ -199,7 +199,7 @@ void StartGevcuTask(void const * argument)
 			noteuse |= GEVCUBIT14;
 		}
 		if ((noteval & GEVCUBIT15) != 0) 
-		{ // CAN:  cid_gevcur_drum_CL,U8_FF);
+		{ // CAN:  CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
 			GevcuEvents_15();
 			noteuse |= GEVCUBIT15;
 		}
