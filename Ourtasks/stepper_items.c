@@ -114,6 +114,7 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 	p->canmsg[CID_STEPPER_HB].can.id  = p->lc.cid_hb_stepper;
 	p->canmsg[CID_STEPPER_HB].can.dlc = 5; // U8_U32 payload
 	p->canmsg[CID_STEPPER_HB].pctl = pctl0;	
+	p->canmsg[CID_STEPPER_HB].maxretryct = 8;
         return;
 }
 
