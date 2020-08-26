@@ -70,7 +70,7 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 #define TIM3DUR  (TIM3CNTRATE/UPDATERATE) // 1680 counts per interrupt
 
 #define TIM9CNTRATE 168000000 // TIM9 counter rate (Hz)
-#define TIM9PWMCYCLE (168*10)   // 10us pwm cycle
+#define TIM9PWMCYCLE (168*10-30)   // 10us pwm cycle
 #define TIM9PULSEDELAY (TIM9PWMCYCLE - (168*3))
 
 TIM_TypeDef  *pT2base; // Register base address 
@@ -307,6 +307,7 @@ void stepper_items_TIM4_IRQHandler(void)
 
 		// Duration increment computed from CL CAN msg
 		pT4base->CCR2 += stepperstuff.ocinc; // Schedule next interrupt
+
 		// Update direction and enable i/o pins
 		Stepper__DR__direction_GPIO_Port->BSRR = stepperstuff.iobits;
 
@@ -318,7 +319,7 @@ void stepper_items_TIM4_IRQHandler(void)
 
 		// Visual check for debugging
 		stepperstuff.ledctr1 += 1; // Slow LED toggling rate
-		if (stepperstuff.ledctr1 > 1000)
+		if (stepperstuff.ledctr1 > 500)
 		{
 	 			stepperstuff.ledctr1 = 0;
 
