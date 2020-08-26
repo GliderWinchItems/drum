@@ -101,7 +101,7 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
     p->accumpos  = 0; // Position accumulator
     p->cltimectr = 0;
     p->hbctr     = 0;
-    p->lc.clfactor  = (1.0f/65535.0f ); // 100% gives max speed
+    p->lc.clfactor  = (.002f ); // 100% gives max speed
     p->lc.cltimemax = 64; // Number of software time ticks max
     p->lc.hbct      = 64; // Number of swctr ticks between heartbeats
 
@@ -238,7 +238,7 @@ pcan = &dbgcan;
 		p->drflag = 1; // Set
 
 	// Enable bit
-	if ((pcan->cd.uc[0] & ENBIT) == 0)
+	if ((pcan->cd.uc[0] & ENBIT) != 0)
 		p->enflag = (2 << 16); // Reset
 	else
 		p->enflag = 2; // Set
@@ -307,7 +307,6 @@ void stepper_items_TIM4_IRQHandler(void)
 
 		// Duration increment computed from CL CAN msg
 		pT4base->CCR2 += stepperstuff.ocinc; // Schedule next interrupt
-	
 		// Update direction and enable i/o pins
 		Stepper__DR__direction_GPIO_Port->BSRR = stepperstuff.iobits;
 
