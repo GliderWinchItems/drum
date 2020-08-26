@@ -323,7 +323,6 @@ void stepper_items_TIM4_IRQHandler(void)
 	 			stepperstuff.ledctr1 = 0;
 
   			// Toggle LED on/off
-//HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port,LED_GREEN_Pin); 			
 			stepperstuff.ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
 			LED_GREEN_GPIO_Port->BSRR = stepperstuff.ledbit1;
 		}
