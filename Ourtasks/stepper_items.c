@@ -362,7 +362,7 @@ void stepper_items_TIM2_IRQHandler(void)
 
 			// Visual check for debugging
 			stepperstuff.ledctr1 += 1; // Slow LED toggling rate
-			if (stepperstuff.ledctr1 > 500)
+			if (stepperstuff.ledctr1 > 1000)
 			{
 	 				stepperstuff.ledctr1 = 0;
 
