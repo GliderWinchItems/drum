@@ -101,8 +101,8 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
     p->accumpos  = 0; // Position accumulator
     p->cltimectr = 0;
     p->hbctr     = 0;
-    p->lc.clfactor  = (.002f ); // 100% gives max speed
-    p->lc.cltimemax = 64; // Number of software time ticks max
+    p->lc.clfactor  = (1.0/(42E4)); // 100% gives max speed
+    p->lc.cltimemax = 512; // Number of software time ticks max
     p->lc.hbct      = 64; // Number of swctr ticks between heartbeats
 
 
@@ -127,6 +127,9 @@ void stepper_items_init(void)
 {
 	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 	stepper_idx_v_struct_hardcode_params(p);
+
+	p->ocnxt = 8400000;
+	p->ocinc = 8400000;
 
 	/* Bit positions for low overhead toggling. */
 	p->ledbit1= (LED_GREEN_Pin);
@@ -156,15 +159,18 @@ extern TIM_HandleTypeDef htim14;
 	pT14base->ARR  = (TIM9PWMCYCLE - 1); // (10 us)
 	pT14base->CCER = 0x3; // OC active high; signal on pin
 
-	/* TIM2 encoder time input capture. */
-
-	/* TIM4 Stepper reversal timer and faux encoder transitions. */
+	/* TIM4 (will become the stepper indexing interrupt source (~2KHz)). */
 	pT4base->DIER = 0x4; // CH2 interrupt enable, only.
 	pT4base->CCR2 = pT4base->CNT + 100; // 1 ms delay
 	pT4base->ARR  = 0xffff;
 
-	/* Start TIM4 counter. */
-	pT4base->CR1 |= 1;
+	/* TIM2 Stepper reversal timer and faux encoder transitions. */
+	pT2base->DIER = 0x4; // CH2 interrupt enable, only.
+	pT2base->CCR2 = pT2base->CNT + 100; // 1 ms delay
+	pT2base->ARR  = 0xffffffff;
+
+	/* Start TIM2 counter. */
+	pT2base->CR1 |= 1;
 	return;
 }
 /* *************************************************************************
@@ -173,11 +179,26 @@ extern TIM_HandleTypeDef htim14;
  * *************************************************************************/
 void stepper_items_timeout(void)
 {
-	stepperstuff.cltimectr += 1;
-	if (stepperstuff.cltimectr > stepperstuff.lc.cltimemax)
+	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+
+/* This is shamefull, but works until MailboxTask problem fixed. */		
+extern struct CANRCVBUF dbgcan;
+struct CANRCVBUF* pcan = &dbgcan;
+
+	p->cltimectr += 1;
+	if (p->cltimectr >= p->lc.cltimemax)
 	{ // We timed out! Stop the stepper
-		stepperstuff.iobits = 0;
-		stepperstuff.zerohold = 1;
+		p->cltimectr = p->lc.cltimemax;
+
+		/* Set enable bit which turns FET on, which disables stepper. */
+		p->enflag = (2 << 16); // Set bit with BSRR storing
+
+		/* Set last CAN msg to have enable bit off so that
+		   stepperCLupdate execution will continue to disable. */
+		pcan->cd.uc[0] &= ~ENBIT; // Clear enable bit in last CAN msg
+
+		/* Bits positioned for updating PB BSRR register. */
+		p->iobits = p->drflag | p->enflag;
 	}
 	return;
 }
@@ -212,11 +233,11 @@ void stepper_items_timeout(void)
  * *************************************************************************/
 void stepper_items_clupdate(struct CANRCVBUF* pcan)
 {
-		struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
-
 /* This is shamefull, but works until MailboxTask problem fixed. */		
 extern struct CANRCVBUF dbgcan;
 pcan = &dbgcan;
+
+		struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
 	/* Reset loss of CL CAN msgs timeout counter. */
 	p->cltimectr = 0; 
@@ -246,36 +267,54 @@ pcan = &dbgcan;
 	/* Bits positioned for updating PB BSRR register. */
 	p->iobits = p->drflag | p->enflag;
 
-	
 /* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
 	int32_t  ntmp;
-	uint32_t itmp;
-	p->speedcmdf = p->clpos * p->lc.clfactor;
-	if (p->clpos > 0)
-	{
-		p->zerohold = 0; // Flag not in special zero mode
-		p->focdur = 1.0/p->speedcmdf;
-		if ( p->focdur > 65534.9)
-		{ // Here duration too large for compare register
-			p->focdur = 65534.9; // Hold at max
-		}
-		// Convert to integer
-		p->ocnxt = p->focdur;
+	int32_t  ntmp2;
 
-		/* Are we increasing speed: reducing timer duration. */
-		// Timer at 100 KHz (10 us oc duration min)
-		ntmp = (p->ocnxt - p->ocinc);
-		if (ntmp < -100) 
-		{ // Here, more than 1 ms reduction
-			// How much time before the next oc interrupt?
-			itmp = pT4base->CCR2 - pT4base->CNT;
-			if (itmp > 100) 
-			{ // More than 1 ms.
-				pT4base->CCR2 += itmp;
+	p->speedcmdf = p->clpos * p->lc.clfactor;
+	p->focdur = 1.0/p->speedcmdf;
+	if ( p->focdur > (2147483657.0f))
+	{ // Here duration too large for compare register
+		p->focdur = 2147483657.0f; // Hold at max
+	}
+	p->ocnxt = p->focdur;	// Convert to integer
+
+	/* Are we decreasing speed: increasing timer duration. */
+	ntmp = ((int)p->ocnxt - (int)p->ocinc);
+	if (ntmp > 0) 
+	{ // Here new oc increment is greater than current oc increment
+		p->ocinc = p->ocnxt; // Update increment
+		return;
+	}
+// 10 per sec changeover
+	if (p->ocnxt < (84000000/10) )
+	{
+		pT2base->CCR2  = pT2base->CNT + p->ocnxt;
+		p->ocinc = p->ocnxt;
+		return;
+	}
+// NOTE: 08/27/2020 16:31 the following doesn't work
+	/* Here, speed (rate) is increasing; duration decreasing. */
+	if (ntmp > (84*10) )
+	{ // Here, more than 10 us reduction
+		// Remaining time before the next oc interrupt.
+		ntmp2 = ((int)pT2base->CCR2 - (int)pT2base->CNT);
+		if (ntmp2 > (9*84)) 
+		{ // More than 9 us before next interrupt
+			// Time between smaller new and larger old increment
+			ntmp2 = (int)pT2base->CCR2 - (int)p->ocnxt - (int)pT2base->CNT;
+			if (ntmp2 > 0) 
+			{ // Make oc interrupt occur sooner
+				pT2base->CCR2 = (int)pT2base->CCR2 - (int)p->ocinc + (int)p->ocnxt;
+			}
+			else
+			{ // Force interrupt now
+				pT2base->EGR |= 0x4;
 			}
 		}
-		p->ocinc = p->ocnxt;
 	}
+	p->ocinc = p->ocnxt;
+return;
 }
 /*#######################################################################################
  * ISR routine for TIM9 [Normally no interrupt; interrupt for test purposes]
@@ -294,48 +333,6 @@ void stepper_items_TIM9_IRQHandler(void)
 	return;
 }
 /*#######################################################################################
- * ISR routine for TIM4
- * CH1 = OC stepper reversal
- * CH2 = OC faux encoder interrupts
- *####################################################################################### */
-void stepper_items_TIM4_IRQHandler(void)
-{
-	/* Faux encoder transition interrupt. */
-	if ((pT4base->SR & 0x4) != 0)
-	{
-		pT4base->SR = ~(0x4);	// Reset CH2 flag
-
-		// Duration increment computed from CL CAN msg
-		pT4base->CCR2 += stepperstuff.ocinc; // Schedule next interrupt
-
-		// Update direction and enable i/o pins
-		Stepper__DR__direction_GPIO_Port->BSRR = stepperstuff.iobits;
-
-		// Start TIM9 to generate a delayed pulse.
-		pT9base->CR1 = 0x9; 
-
-		// Start TIM14 to start scope sync pulse (PE5)
-		pT14base->CR1 = 0x9; 
-
-		// Visual check for debugging
-		stepperstuff.ledctr1 += 1; // Slow LED toggling rate
-		if (stepperstuff.ledctr1 > 500)
-		{
-	 			stepperstuff.ledctr1 = 0;
-
-  			// Toggle LED on/off
-			stepperstuff.ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
-			LED_GREEN_GPIO_Port->BSRR = stepperstuff.ledbit1;
-		}
-	}
-// NOTE: should not come here as only CH2 interrupt enabled	
-	if ((pT4base->SR & 0x2) != 0)
-	{
-		pT4base->SR = ~(0x2);	// Reset CH1 flag
-	}
-	return;
-}
-/*#######################################################################################
  * ISR routine for TIM2
  * CH3 - IC encoder channel A
  * CH4 - IC encoder channel B
@@ -343,6 +340,53 @@ void stepper_items_TIM4_IRQHandler(void)
  *####################################################################################### */
 void stepper_items_TIM2_IRQHandler(void)
 {
-	pT2base->SR = ~(0x1F);	// Reset all flags
+	/* Faux encoder transition interrupt. */
+	if ((pT2base->SR & 0x4) != 0)
+	{
+		pT2base->SR = ~(0x4);	// Reset CH2 flag
+
+		// Duration increment computed from CL CAN msg
+		pT2base->CCR2 += stepperstuff.ocinc; // Schedule next interrupt
+
+		// Update direction and enable i/o pins
+		Stepper__DR__direction_GPIO_Port->BSRR = stepperstuff.iobits;
+
+		/* If enable flag resets i/o pin, then send step pulses. */
+		if ((stepperstuff.enflag & (2 << 0)) == 0) 
+		{
+			// Start TIM9 to generate a delayed pulse.
+			pT9base->CR1 = 0x9; 
+
+			// Start TIM14 to start scope sync pulse (PE5)
+			pT14base->CR1 = 0x9; 
+
+			// Visual check for debugging
+			stepperstuff.ledctr1 += 1; // Slow LED toggling rate
+			if (stepperstuff.ledctr1 > 500)
+			{
+	 				stepperstuff.ledctr1 = 0;
+
+  				// Toggle LED on/off
+				stepperstuff.ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
+				LED_GREEN_GPIO_Port->BSRR = stepperstuff.ledbit1;
+			}
+		}
+	}
+// NOTE: should not come here as only CH2 interrupt enabled	
+	if ((pT2base->SR & 0x2) != 0)
+	{
+		pT2base->SR = ~(0x2);	// Reset CH1 flag
+	}
+	return;
+}
+/*#######################################################################################
+ * ISR routine for TIM4
+ * CH1 = OC stepper reversal
+ * CH2 = OC faux encoder interrupts
+ *####################################################################################### */
+
+void stepper_items_TIM4_IRQHandler(void)
+{
+	pT4base->SR = ~(0x1F);	// Reset all flags
 	return;
 }

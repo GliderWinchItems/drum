@@ -29,6 +29,7 @@
 
 #define DRBIT 0x1  // Bit mask for Direction output pin: 0 = low; 1 = high
 #define ENBIT 0x2  // Bit mask for Enable output pin: 0 = low; 1 = high
+#define LMBIT 0x4  // Bit mask for Limit switch simulation
 
 #define NUMCANMSGSSTEPPER 1  // Number of CAN msgs stepper sends
 
@@ -58,7 +59,8 @@ struct STEPPERLC
 struct STEPPERSTUFF
 {
 	struct STEPPERLC lc; // Parameters for stepper
-	int64_t  position;	 // Step count of position
+	struct CANTXQMSG canmsg[NUMCANMSGSSTEPPER]; // CAN msgs sent
+	union   PAYFLT   pf; // For extracting float from payload
 	float    speedcmdf;  // Speed command (float)
 	float    focdur;     // Temp for computer inverse of CL position
 	float    clpos;      // CL position extracted from CAN msg
@@ -68,24 +70,19 @@ struct STEPPERSTUFF
 	uint32_t ledbit2;    // Bit for toggling orange led
 	uint32_t cltimectr;  // Counter for loss of CL msgs
 	uint32_t speedcmdi;	 // Commanded speed (integer)
-	int32_t  accumpos;   // Position accumulator in upper 16b
-	uint16_t ocinc;      // Faux encoder: oc register increment
-	uint16_t ocnxt;      // Faux encoder: next oc increment
-	uint16_t ocrev;      // Increment for stepper reversal
-	uint16_t speedinc;   // Low 16b of position accumulator
-	uint16_t hbctr;      // Count ticks for sending heartbeat CAN msg
-	int16_t  accumpos_prev; // Previous accumpos (hi-ord 16b)
+	uint32_t ocinc;      // Faux encoder: oc register increment
+	uint32_t ocnxt;      // Faux encoder: next oc increment
+	uint32_t ocrev;      // Increment for stepper reversal
+	uint32_t speedinc;   // Low 16b of position accumulator
+	uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
 	uint32_t drflag;     // BSRR pin set/reset bit position
 	uint32_t enflag;     // BSRR pin set/reset bit position
 	uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
+	int32_t  accumpos;   // Position accumulator in upper 16b
+	int32_t  accumpos_prev; // Previous accumpos (hi-ord 16b)
 	uint8_t  zerohold;   // Special case of CL = 0.0;
 	uint8_t  stepperstatus;
-	uint8_t  pay0;
-
-	// Can msgs sent. */
-	struct CANTXQMSG canmsg[NUMCANMSGSSTEPPER];
-	union PAYFLT pf;	// Extracted float from payload
-
+	uint8_t  pay0;       // canmsg.cd.uc[0] saved
 };
 
 /* *************************************************************************/
