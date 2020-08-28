@@ -5,7 +5,11 @@
 *******************************************************************************/
 /*
 
+<<<<<<< HEAD
 08/23/2020 druminversion branch started
+=======
+08/23/2020 drumupdate100K
+>>>>>>> 36cbe0c798364e1d025f7341a88f88b570609b2a
 
 08/10/2020 - pins added to Control Panel for stepper testing
 
