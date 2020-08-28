@@ -268,55 +268,18 @@ pcan = &dbgcan;
 	p->iobits = p->drflag | p->enflag;
 
 /* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
-	int32_t  ntmp;
-	int32_t  ntmp2;
-
+#define MAXDURF (84E5f)
 	p->speedcmdf = p->clpos * p->lc.clfactor;
 	p->focdur = 1.0/p->speedcmdf;
-	if ( p->focdur > (2147483657.0f))
+	if ( p->focdur > (MAXDURF))
 	{ // Here duration too large for compare register
-		p->focdur = 2147483657.0f; // Hold at max
+		p->focdur = MAXDURF; // Hold at max
 	}
 	p->ocnxt = p->focdur;	// Convert to integer
 
-	/* Are we decreasing speed: increasing timer duration. */
-	ntmp = ((int)p->ocnxt - (int)p->ocinc);
-//	if (ntmp > 0) 
-	{ // Here new oc increment is greater than current oc increment
-		p->ocinc = p->ocnxt; // Update increment
-		return;
-	}
+	p->ocinc = p->ocnxt; // Update increment
 return;	
-// 10 per sec changeover
-	if (p->ocnxt < (84000000/10) )
-	{
-		pT2base->CCR2  = pT2base->CNT + p->ocnxt;
-		p->ocinc = p->ocnxt;
-		return;
-	}
 
-// NOTE: 08/27/2020 16:31 the following doesn't work
-	/* Here, speed (rate) is increasing; duration decreasing. */
-	if (ntmp > (84*10) )
-	{ // Here, more than 10 us reduction
-		// Remaining time before the next oc interrupt.
-		ntmp2 = ((int)pT2base->CCR2 - (int)pT2base->CNT);
-		if (ntmp2 > (9*84)) 
-		{ // More than 9 us before next interrupt
-			// Time between smaller new and larger old increment
-			ntmp2 = (int)pT2base->CCR2 - (int)p->ocnxt - (int)pT2base->CNT;
-			if (ntmp2 > 0) 
-			{ // Make oc interrupt occur sooner
-				pT2base->CCR2 = (int)pT2base->CCR2 - (int)p->ocinc + (int)p->ocnxt;
-			}
-			else
-			{ // Force interrupt now
-				pT2base->EGR |= 0x4;
-			}
-		}
-	}
-	p->ocinc = p->ocnxt;
-return;
 }
 /*#######################################################################################
  * ISR routine for TIM9 [Normally no interrupt; interrupt for test purposes]

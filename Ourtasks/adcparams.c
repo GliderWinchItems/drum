@@ -160,7 +160,7 @@ static void absolute(struct ADCFUNCTION* p, uint8_t idx)
 uint32_t dbgadcfil;
 uint32_t dbgadcratio;
 
-static void ratiometric5v(struct ADCFUNCTION* p, int8_t idx)
+void ratiometric5v(struct ADCFUNCTION* p, int8_t idx)
 {
 /* NOTE: Ratiometric is based on the ratio of the reading of the 5v supply 
    powering the sensor and the sensor reading.  The ratio is adjusted to 
