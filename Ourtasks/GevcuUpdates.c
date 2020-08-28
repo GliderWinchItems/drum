@@ -22,21 +22,7 @@
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 
-static void payloadfloat(uint8_t *po, float f)
-{
-	union FFUI
-	{
-		float f;
-		uint8_t u8[4];
-	}ffui;
-	ffui.f = f;
 
-	*(po + 0) = ffui.u8[0];
-	*(po + 1) = ffui.u8[1];
-	*(po + 2) = ffui.u8[2];
-	*(po + 3) = ffui.u8[3];
-	return;
-}
 
 /* *************************************************************************
  * void GevcuUpdates(void);

@@ -88,7 +88,6 @@ enum cididx
 	CID_STEPPER_HB	
 };
 
-
 /* *************************************************************************
  * void stepper_idx_v_struct_hardcode_params(void);
  * 
@@ -96,26 +95,21 @@ enum cididx
  * *************************************************************************/
 void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 {
-    p->ledctr1   = 0;
-    p->ledctr2   = 0;
-    p->accumpos  = 0; // Position accumulator
-    p->cltimectr = 0;
-    p->hbctr     = 0;
-    p->lc.clfactor  = (1.0/(42E4)); // 100% gives max speed
-    p->lc.cltimemax = 512; // Number of software time ticks max
-    p->lc.hbct      = 64; // Number of swctr ticks between heartbeats
 
+    p->lc.clfactor  = 655.36f; // 100% gives max speed
+    p->lc.cltimemax = 512;        // Timeout swtime ticks max
+    p->lc.hbct      = 64;         // Number of swctr ticks between heartbeats
+    p->ocinc        = 1680;       // 20 us OC interrupt duration
 
     /* Stepper sends these CAN msgs. */
     p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
 
     /* Pre-load CAN msg id and dlc. */
-	  // Stepper heartbeat
 	p->canmsg[CID_STEPPER_HB].can.id  = p->lc.cid_hb_stepper;
 	p->canmsg[CID_STEPPER_HB].can.dlc = 5; // U8_U32 payload
 	p->canmsg[CID_STEPPER_HB].pctl = pctl0;	
 	p->canmsg[CID_STEPPER_HB].maxretryct = 8;
-        return;
+    return;
 }
 
 /* *************************************************************************
@@ -128,8 +122,11 @@ void stepper_items_init(void)
 	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 	stepper_idx_v_struct_hardcode_params(p);
 
-	p->ocnxt = 8400000;
-	p->ocinc = 8400000;
+    p->ledctr1   = 0;
+    p->ledctr2   = 0;
+    p->accumpos  = 0; // Position accumulator
+    p->cltimectr = 0;
+    p->hbctr     = 0;
 
 	/* Bit positions for low overhead toggling. */
 	p->ledbit1= (LED_GREEN_Pin);
@@ -161,13 +158,13 @@ extern TIM_HandleTypeDef htim14;
 
 	/* TIM4 (will become the stepper indexing interrupt source (~2KHz)). */
 	pT4base->DIER = 0x4; // CH2 interrupt enable, only.
-	pT4base->CCR2 = pT4base->CNT + 100; // 1 ms delay
+	pT4base->CCR1 = pT4base->CNT + 100; // 1 ms delay
 	pT4base->ARR  = 0xffff;
 
-	/* TIM2 Stepper reversal timer and faux encoder transitions. */
-	pT2base->DIER = 0x4; // CH2 interrupt enable, only.
-	pT2base->CCR2 = pT2base->CNT + 100; // 1 ms delay
-	pT2base->ARR  = 0xffffffff;
+	/* TIM2 CH1 runs at fixed interrupt rate. */
+	pT2base->DIER = 0x2; // CH1 interrupt enable, only.
+	pT2base->CCR1 = pT2base->CNT + 100; // OC2 register: set short delay
+//	pT2base->ARR  = 0xffffffff; // Auto-reload-register
 
 	/* Start TIM2 counter. */
 	pT2base->CR1 |= 1;
@@ -254,9 +251,15 @@ pcan = &dbgcan;
 	/* Save bits for direction and enable. */
 	// Direction bit
 	if ((pcan->cd.uc[0] & DRBIT) == 0)
+	{
 		p->drflag = (1 << 16); // Reset
+		p->drsign = 1;
+	}
 	else
+	{
 		p->drflag = 1; // Set
+		p->drsign = -1;
+	}
 
 	// Enable bit
 	if ((pcan->cd.uc[0] & ENBIT) != 0)
@@ -268,52 +271,11 @@ pcan = &dbgcan;
 	p->iobits = p->drflag | p->enflag;
 
 /* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
-	int32_t  ntmp;
-	int32_t  ntmp2;
 
 	p->speedcmdf = p->clpos * p->lc.clfactor;
-	p->focdur = 1.0/p->speedcmdf;
-	if ( p->focdur > (2147483657.0f))
-	{ // Here duration too large for compare register
-		p->focdur = 2147483657.0f; // Hold at max
-	}
-	p->ocnxt = p->focdur;	// Convert to integer
 
-	/* Are we decreasing speed: increasing timer duration. */
-	ntmp = ((int)p->ocnxt - (int)p->ocinc);
-	if (ntmp > 0) 
-	{ // Here new oc increment is greater than current oc increment
-		p->ocinc = p->ocnxt; // Update increment
-		return;
-	}
-// 10 per sec changeover
-	if (p->ocnxt < (84000000/10) )
-	{
-		pT2base->CCR2  = pT2base->CNT + p->ocnxt;
-		p->ocinc = p->ocnxt;
-		return;
-	}
-// NOTE: 08/27/2020 16:31 the following doesn't work
-	/* Here, speed (rate) is increasing; duration decreasing. */
-	if (ntmp > (84*10) )
-	{ // Here, more than 10 us reduction
-		// Remaining time before the next oc interrupt.
-		ntmp2 = ((int)pT2base->CCR2 - (int)pT2base->CNT);
-		if (ntmp2 > (9*84)) 
-		{ // More than 9 us before next interrupt
-			// Time between smaller new and larger old increment
-			ntmp2 = (int)pT2base->CCR2 - (int)p->ocnxt - (int)pT2base->CNT;
-			if (ntmp2 > 0) 
-			{ // Make oc interrupt occur sooner
-				pT2base->CCR2 = (int)pT2base->CCR2 - (int)p->ocinc + (int)p->ocnxt;
-			}
-			else
-			{ // Force interrupt now
-				pT2base->EGR |= 0x4;
-			}
-		}
-	}
-	p->ocinc = p->ocnxt;
+	p->ocnxt = p->speedcmdf; // Convert to integer
+
 return;
 }
 /*#######################################################################################
@@ -340,49 +302,61 @@ void stepper_items_TIM9_IRQHandler(void)
  *####################################################################################### */
 void stepper_items_TIM2_IRQHandler(void)
 {
-	/* Faux encoder transition interrupt. */
-	if ((pT2base->SR & 0x4) != 0)
-	{
-		pT2base->SR = ~(0x4);	// Reset CH2 flag
 
-		// Duration increment computed from CL CAN msg
-		pT2base->CCR2 += stepperstuff.ocinc; // Schedule next interrupt
+	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
-		// Update direction and enable i/o pins
-		Stepper__DR__direction_GPIO_Port->BSRR = stepperstuff.iobits;
-
-		/* If enable flag resets i/o pin, then send step pulses. */
-		if ((stepperstuff.enflag & (2 << 0)) == 0) 
-		{
-			// Start TIM9 to generate a delayed pulse.
-			pT9base->CR1 = 0x9; 
-
-			// Start TIM14 to start scope sync pulse (PE5)
-			pT14base->CR1 = 0x9; 
-
-			// Visual check for debugging
-			stepperstuff.ledctr1 += 1; // Slow LED toggling rate
-			if (stepperstuff.ledctr1 > 1000)
-			{
-	 				stepperstuff.ledctr1 = 0;
-
-  				// Toggle LED on/off
-				stepperstuff.ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
-				LED_GREEN_GPIO_Port->BSRR = stepperstuff.ledbit1;
-			}
-		}
-	}
-// NOTE: should not come here as only CH2 interrupt enabled	
+	/* Fix rate for this OC interrupt. */
 	if ((pT2base->SR & 0x2) != 0)
 	{
 		pT2base->SR = ~(0x2);	// Reset CH1 flag
+
+		// Duration increment computed from CL CAN msg
+		pT2base->CCR1 += p->ocinc; // Schedule next interrupt
+
+		// Update direction and enable i/o pins
+		Stepper__DR__direction_GPIO_Port->BSRR = p->iobits;
+
+		/* If enable flag resets i/o pin, then send step pulses. */
+		if ((p->enflag & (2 << 0)) == 0) 
+		{ // Here, motor is enabled
+
+			// Drum encoder accumulator: add increment to accumulator
+			p->drumaccum += p->ocnxt * p->drsign;
+
+			/* When accumulator upper 16 changes generate a pulse. */
+			if ((p->drumaccum & 0xffff0000) != (p->drumaccum_prev))
+			{ // Here carry from low 16b to high 16b
+				p->drumaccum_prev = (p->drumaccum & 0xffff0000);
+
+				// Start TIM9 to generate a delayed pulse.
+				pT9base->CR1 = 0x9; 
+
+				// Start TIM14 to start scope sync pulse (PE5)
+				pT14base->CR1 = 0x9; 
+
+				// Visual check for debugging
+				p->ledctr1 += 1; // Slow LED toggling rate
+				if (p->ledctr1 > 1000)
+				{
+	 					p->ledctr1 = 0;
+
+  					// Toggle LED on/off
+					p->ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
+					LED_GREEN_GPIO_Port->BSRR = p->ledbit1;
+				}
+			}
+		}
+	}
+// NOTE: should not come here as only CH1 interrupt enabled	
+	if ((pT2base->SR & 0x1D) != 0)
+	{
+		pT2base->SR = ~(0x1D);	// Reset all but CH1 flag
 	}
 	return;
 }
 /*#######################################################################################
  * ISR routine for TIM4
  * CH1 = OC stepper reversal
- * CH2 = OC faux encoder interrupts
  *####################################################################################### */
 
 void stepper_items_TIM4_IRQHandler(void)

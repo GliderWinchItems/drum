@@ -62,7 +62,6 @@ struct STEPPERSTUFF
 	struct CANTXQMSG canmsg[NUMCANMSGSSTEPPER]; // CAN msgs sent
 	union   PAYFLT   pf; // For extracting float from payload
 	float    speedcmdf;  // Speed command (float)
-	float    focdur;     // Temp for computer inverse of CL position
 	float    clpos;      // CL position extracted from CAN msg
 	uint32_t ledctr1;    // Counter for throttling green LED
 	uint32_t ledctr2;    // Counter for throttling orangeLED
@@ -70,19 +69,20 @@ struct STEPPERSTUFF
 	uint32_t ledbit2;    // Bit for toggling orange led
 	uint32_t cltimectr;  // Counter for loss of CL msgs
 	uint32_t speedcmdi;	 // Commanded speed (integer)
-	uint32_t ocinc;      // Faux encoder: oc register increment
-	uint32_t ocnxt;      // Faux encoder: next oc increment
-	uint32_t ocrev;      // Increment for stepper reversal
+	uint32_t ocinc;      // Fixed interrupt rate oc register increment
+	uint32_t ocnxt;      // CL controlled increment to drum accumulator
 	uint32_t speedinc;   // Low 16b of position accumulator
 	uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
 	uint32_t drflag;     // BSRR pin set/reset bit position
 	uint32_t enflag;     // BSRR pin set/reset bit position
 	uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
+	int32_t  drumaccum;  // Drum accumulator
+	int32_t  drumaccum_prev; // Drum accumulator previous
 	int32_t  accumpos;   // Position accumulator in upper 16b
 	int32_t  accumpos_prev; // Previous accumpos (hi-ord 16b)
-	uint8_t  zerohold;   // Special case of CL = 0.0;
 	uint8_t  stepperstatus;
 	uint8_t  pay0;       // canmsg.cd.uc[0] saved
+	int8_t   drsign;     // Drum forward = 1;, backwards = -1;
 };
 
 /* *************************************************************************/
