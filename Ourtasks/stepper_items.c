@@ -281,11 +281,12 @@ pcan = &dbgcan;
 
 	/* Are we decreasing speed: increasing timer duration. */
 	ntmp = ((int)p->ocnxt - (int)p->ocinc);
-	if (ntmp > 0) 
+//	if (ntmp > 0) 
 	{ // Here new oc increment is greater than current oc increment
 		p->ocinc = p->ocnxt; // Update increment
 		return;
 	}
+return;	
 // 10 per sec changeover
 	if (p->ocnxt < (84000000/10) )
 	{
@@ -293,6 +294,7 @@ pcan = &dbgcan;
 		p->ocinc = p->ocnxt;
 		return;
 	}
+
 // NOTE: 08/27/2020 16:31 the following doesn't work
 	/* Here, speed (rate) is increasing; duration decreasing. */
 	if (ntmp > (84*10) )
