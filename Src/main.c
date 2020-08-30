@@ -1231,7 +1231,12 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
-    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X",stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocnxt,stepperstuff.iobits);
+extern uint32_t dbgid;
+extern struct CANRCVBUF* dbgpcan;
+extern struct MAILBOXCAN* dbgevent15;
+extern struct CANRCVBUF* dbg15pcan;
+    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X %08X %08X %08X",stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocnxt,stepperstuff.iobits,
+       gevcufunction.pmbx_cid_drum_tst_stepcmd->ncan.can.id, dbgpcan,dbg15pcan );
 
 #endif      
     }

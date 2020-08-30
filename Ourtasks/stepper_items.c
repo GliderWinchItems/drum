@@ -232,11 +232,19 @@ struct CANRCVBUF* pcan = &dbgcan;
  * @param 	: pcan = pointer to CAN msg struct
  * @brief	: Initialization of channel increment
  * *************************************************************************/
+uint32_t dbgid;
+struct CANRCVBUF* dbgpcan;
+
 void stepper_items_clupdate(struct CANRCVBUF* pcan)
 {
+	if (pcan == NULL) return;
+//if (pcan->id != 0xE4600000) morse_trap(7373);
+dbgpcan = pcan;
+dbgid = pcan->id;
+
 /* This is shamefull, but works until MailboxTask problem fixed. */		
-extern struct CANRCVBUF dbgcan;
-pcan = &dbgcan;
+//extern struct CANRCVBUF dbgcan;
+//pcan = &dbgcan;
 
 		struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 

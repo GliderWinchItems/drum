@@ -184,8 +184,14 @@ void GevcuEvents_14(void)
  * void GevcuEvents_15(void);
  * @brief	: CAN: cid_gevcur_drum_CL,U8_FF);
  * *************************************************************************/
+struct MAILBOXCAN* dbgevent15;
+struct CANRCVBUF* dbg15pcan;
 void GevcuEvents_15(void)
 {
+dbgevent15 = gevcufunction.pmbx_cid_drum_tst_stepcmd;
+dbg15pcan = &gevcufunction.pmbx_cid_drum_tst_stepcmd->ncan.can;
+//if (dbg15pcan->id != 0xE4600000) morse_trap(654);
+if (&gevcufunction.pmbx_cid_drum_tst_stepcmd->ncan.can == NULL) morse_trap(655);
 	/* Received CAN msg with Control Lever position, direction and enable bits */
 	stepper_items_clupdate(&gevcufunction.pmbx_cid_drum_tst_stepcmd->ncan.can);
 	
