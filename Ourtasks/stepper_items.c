@@ -64,6 +64,7 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 #include "yprintf.h"
 #include "main.h"
 #include "stepper_items.h"
+#include "DTW_counter.h"
 
 #define TIM3CNTRATE 84000000   // TIM3 counter rate (Hz)
 #define UPDATERATE 100000      // 100KHz interrupt/update rate
@@ -91,30 +92,25 @@ enum cididx
 
 /* *************************************************************************
  * void stepper_idx_v_struct_hardcode_params(void);
- * 
- * @brief       : Initialization
+ * @brief       : Initialization of parameters
  * *************************************************************************/
 void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 {
-    p->ledctr1   = 0;
-    p->ledctr2   = 0;
-    p->accumpos  = 0; // Position accumulator
-    p->cltimectr = 0;
-    p->hbctr     = 0;
-    p->lc.clfactor  = (1.0/(42E4)); // 100% gives max speed
-    p->lc.cltimemax = 512; // Number of software time ticks max
-    p->lc.hbct      = 64; // Number of swctr ticks between heartbeats
-
+    p->lc.clfactor  = (1.0/(42E4)); // 100% CL gives max drum speed/encoder rate
+    p->lc.cltimemax = 512;          // Number of software timeout ticks max
+    p->lc.hbct      = 64;           // Number of swctr ticks between heartbeats
+    p->lc.Ka        = 32768; // Reversal ratio
+    p->lc.Ks        = 27307; // Sweep ratio (Ks/65536) = stepper pulses per encoder edge
 
     /* Stepper sends these CAN msgs. */
     p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
 
     /* Pre-load CAN msg id and dlc. */
 	  // Stepper heartbeat
-	p->canmsg[CID_STEPPER_HB].can.id  = p->lc.cid_hb_stepper;
-	p->canmsg[CID_STEPPER_HB].can.dlc = 5; // U8_U32 payload
-	p->canmsg[CID_STEPPER_HB].pctl = pctl0;	
-	p->canmsg[CID_STEPPER_HB].maxretryct = 8;
+	p->canmsg[CID_STEPPER_HB].can.id  = p->lc.cid_hb_stepper; // CAN id.
+	p->canmsg[CID_STEPPER_HB].can.dlc = 5;    // U8_U32 payload
+	p->canmsg[CID_STEPPER_HB].pctl = pctl0;	  // CAN1 control block pointer
+	p->canmsg[CID_STEPPER_HB].maxretryct = 8; // Max retry count
         return;
 }
 
@@ -128,8 +124,14 @@ void stepper_items_init(void)
 	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 	stepper_idx_v_struct_hardcode_params(p);
 
-	p->ocnxt = 8400000;
+    p->ledctr1   = 0;
+    p->ledctr2   = 0;
+    p->posaccum.s32 = 0; // Position accumulator
+    p->posaccum_prev = 0; // Position accumulator
+    p->cltimectr = 0;
+    p->hbctr     = 0;
 	p->ocinc = 8400000;
+	p->dtwmin = 0xffffffff;
 
 	/* Bit positions for low overhead toggling. */
 	p->ledbit1= (LED_GREEN_Pin);
@@ -216,10 +218,10 @@ struct CANRCVBUF* pcan = &dbgcan;
 
  		/* Setup CAN msg */
  		p->canmsg[CID_STEPPER_HB].can.cd.uc[0] = p->stepperstatus;
- 		p->canmsg[CID_STEPPER_HB].can.cd.uc[1] = p->accumpos >>  0;
- 		p->canmsg[CID_STEPPER_HB].can.cd.uc[2] = p->accumpos >>  8;
- 		p->canmsg[CID_STEPPER_HB].can.cd.uc[3] = p->accumpos >> 16;
- 		p->canmsg[CID_STEPPER_HB].can.cd.uc[4] = p->accumpos >> 24;
+ 		p->canmsg[CID_STEPPER_HB].can.cd.uc[1] = p->posaccum.s32 >>  0;
+ 		p->canmsg[CID_STEPPER_HB].can.cd.uc[2] = p->posaccum.s32 >>  8;
+ 		p->canmsg[CID_STEPPER_HB].can.cd.uc[3] = p->posaccum.s32 >> 16;
+ 		p->canmsg[CID_STEPPER_HB].can.cd.uc[4] = p->posaccum.s32 >> 24;
 
  		/* Queue CAN msg to send. */
 		xQueueSendToBack(CanTxQHandle,&p->canmsg[CID_STEPPER_HB],4);	
@@ -231,38 +233,11 @@ struct CANRCVBUF* pcan = &dbgcan;
  * @param 	: pcan = pointer to CAN msg struct
  * @brief	: Initialization of channel increment
  * *************************************************************************/
- uint32_t dbgst;
-uint32_t dbgstmax;
-uint32_t dbgid;
-struct CANRCVBUF* dbgpcan;
-
 void stepper_items_clupdate(struct CANRCVBUF* pcan)
 {
 /* This is shamefull, but works until MailboxTask problem fixed. */		
 extern struct CANRCVBUF dbgcan;
-//pcan = &dbgcan;
-if (pcan->id != 0xE4600000)
-{
-	if (pcan != NULL)
-	{
-		dbgid = pcan->id;
-		dbgpcan = pcan;
-		dbgst += 1; 
-	}
-//	if (dbgid == 0x20020000)
-//	{
-//		dbgpcan = pcan;
-//	}
-	if (dbgst > 100)
-	{
-		morse_trap(345);
-	}
-	return;
-}
-else
-	if (dbgst > dbgstmax) dbgstmax = dbgst;
-//dbgst = 0;
-
+pcan = &dbgcan;
 
 		struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
@@ -281,9 +256,17 @@ else
 	/* Save bits for direction and enable. */
 	// Direction bit
 	if ((pcan->cd.uc[0] & DRBIT) == 0)
+	{
 		p->drflag = (1 << 16); // Reset
+		p->drsign = -1;
+		p->drbit  = 0;
+	}
 	else
+	{
 		p->drflag = 1; // Set
+		p->drsign = 1;
+		p->drbit  = 1;
+	}
 
 	// Enable bit
 	if ((pcan->cd.uc[0] & ENBIT) != 0)
@@ -295,17 +278,15 @@ else
 	p->iobits = p->drflag | p->enflag;
 
 /* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
-#define MAXDURF (84E5f)
+#define MAXDURF (84E5f) // 1/10sec per faux encoder interrupt
 	p->speedcmdf = p->clpos * p->lc.clfactor;
 	p->focdur = 1.0/p->speedcmdf;
 	if ( p->focdur > (MAXDURF))
-	{ // Here duration too large for compare register
+	{ 
 		p->focdur = MAXDURF; // Hold at max
 	}
-	p->ocnxt = p->focdur;	// Convert to integer
-
-	p->ocinc = p->ocnxt; // Update increment
-return;	
+	p->ocinc = p->focdur;	// Convert to integer
+	return;	
 
 }
 /*#######################################################################################
@@ -332,43 +313,73 @@ void stepper_items_TIM9_IRQHandler(void)
  *####################################################################################### */
 void stepper_items_TIM2_IRQHandler(void)
 {
+	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+	p->dtwentry = DTWTIME;
+
 	/* Faux encoder transition interrupt. */
 	if ((pT2base->SR & 0x4) != 0)
 	{
 		pT2base->SR = ~(0x4);	// Reset CH2 flag
 
 		// Duration increment computed from CL CAN msg
-		pT2base->CCR2 += stepperstuff.ocinc; // Schedule next interrupt
+		pT2base->CCR2 += p->ocinc; // Schedule next interrupt
 
-		// Update direction and enable i/o pins
-		Stepper__DR__direction_GPIO_Port->BSRR = stepperstuff.iobits;
+		// Update enable i/o pin
+		Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
 
-		/* If enable flag resets i/o pin, then send step pulses. */
-		if ((stepperstuff.enflag & (2 << 0)) == 0) 
-		{
-			// Start TIM9 to generate a delayed pulse.
-			pT9base->CR1 = 0x9; 
+/* With real encoder interrupts the direction will be determined
+   by comparing the previous input capture interrupt count with
+   the new count. For now, drsign is set from the CAN msg from
+   the Control Panel containing the direction pushbutton state. */
+		// Each encoder edge generates a ratio less than 1 step pulses
 
-			// Start TIM14 to start scope sync pulse (PE5)
-			pT14base->CR1 = 0x9; 
+/* Using 'if' drbit (0|1) rather than multiply with drsign (+/- 1)
+   saves two machine cycles, but requires more flash */
+		if (p->drbit == 0)
+			p->posaccum.s32 += p->lc.Ks;
+		else
+			p->posaccum.s32 -= p->lc.Ks;
 
-			// Visual check for debugging
-			stepperstuff.ledctr1 += 1; // Slow LED toggling rate
-			if (stepperstuff.ledctr1 > 1000)
+/* Using a UNION to test & store the upper 16b saves comipiled
+   machine cycles (at least 8) over using '&' or '>>' techniques. */
+		/* When accumulator upper 16b changes generate a pulse. */
+		if ((p->posaccum.s16[1]) != (p->posaccum_prev))
+		{ // Here carry from low 16b to high 16b
+			p->posaccum_prev = (p->posaccum.s16[1]);
+
+
+			/* Skip stepper pulses if motor not enabled. */
+			if ((p->enflag & (2 << 0)) == 0) 
 			{
-	 				stepperstuff.ledctr1 = 0;
+				// Change direction when accumulator passes through zero
+				if (p->posaccum.s16[1] < 0)
+					Stepper__DR__direction_GPIO_Port->BSRR = DRBIT;
+				else
+					Stepper__DR__direction_GPIO_Port->BSRR = DRBIT << 16;
 
-  				// Toggle LED on/off
-				stepperstuff.ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
-				LED_GREEN_GPIO_Port->BSRR = stepperstuff.ledbit1;
+				// Start TIM9 to generate a delayed pulse.
+				pT9base->CR1 = 0x9; 
+
+				// Start TIM14 to start scope sync pulse (PE5)
+				pT14base->CR1 = 0x9; 
+
+				// Visual check for debugging
+				p->ledctr1 += 1; // Slow LED toggling rate
+				if (p->ledctr1 > 1000)
+				{
+	 					p->ledctr1 = 0;
+
+  					// Toggle LED on/off
+					p->ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
+					LED_GREEN_GPIO_Port->BSRR = p->ledbit1;
+				}
 			}
 		}
 	}
-// NOTE: should not come here as only CH2 interrupt enabled	
-	if ((pT2base->SR & 0x2) != 0)
-	{
-		pT2base->SR = ~(0x2);	// Reset CH1 flag
-	}
+	p->dtwdiff = DTWTIME - p->dtwentry;
+	if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
+	else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
+
 	return;
 }
 /*#######################################################################################

@@ -49,44 +49,52 @@ struct STEPPERLC
 	int32_t  Ka;
 	int32_t  Ks;
 
-	// drum sends: others receive
+	// stepper function sends: others receive the following CAN msgs
 	uint32_t cid_hb_stepper;        // CANID_HB_STEPPER: U8_U32','STEPPER: U8: Status, U32: stepper position accum
 };
 
-	union PAYFLT
-	{
-		float f;
-		uint8_t u8[4];
-		uint32_t ui;
-	}pf;
+union PAYFLT
+{
+	float f;
+	uint8_t u8[4];
+	uint16_t u16[4];
+	uint32_t u32;
+	int32_t  s32;
+	int16_t  s16[2];
+}pf;
 
 struct STEPPERSTUFF
 {
 	struct STEPPERLC lc; // Parameters for stepper
 	struct CANTXQMSG canmsg[NUMCANMSGSSTEPPER]; // CAN msgs sent
-	union   PAYFLT   pf; // For extracting float from payload
+	union  PAYFLT    pf; // For extracting float from payload
+	union  PAYFLT    posaccum;
 	float    speedcmdf;  // Speed command (float)
 	float    focdur;     // Temp for computer inverse of CL position
 	float    clpos;      // CL position extracted from CAN msg
+	uint32_t dtwentry;   // DTW timer upon ISR entry
+	uint32_t dtwdiff;    // DTW timer minus entry upon ISR exit
+	uint32_t dtwmax;     // DTW difference max
+	uint32_t dtwmin;     // DTW difference min
 	uint32_t ledctr1;    // Counter for throttling green LED
 	uint32_t ledctr2;    // Counter for throttling orangeLED
 	uint32_t ledbit1;    // Bit for toggling green led
 	uint32_t ledbit2;    // Bit for toggling orange led
 	uint32_t cltimectr;  // Counter for loss of CL msgs
 	uint32_t speedcmdi;	 // Commanded speed (integer)
-	uint32_t ocinc;      // Faux encoder: oc register increment
-	uint32_t ocnxt;      // Faux encoder: next oc increment
-	uint32_t ocrev;      // Increment for stepper reversal
-	uint32_t speedinc;   // Low 16b of position accumulator
+	uint32_t ocinc;      // oc register increment
 	uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
-	uint32_t drflag;     // BSRR pin set/reset bit position
-	uint32_t enflag;     // BSRR pin set/reset bit position
+	uint32_t drflag;     // BSRR pin set/reset bit position: direction
+	uint32_t enflag;     // BSRR pin set/reset bit position: enable
 	uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
-	int32_t  accumpos;   // Position accumulator in upper 16b
-	int32_t  accumpos_prev; // Previous accumpos (hi-ord 16b)
-	uint8_t  zerohold;   // Special case of CL = 0.0;
-	uint8_t  stepperstatus;
+	int32_t  velaccum;   // Stepper velocity accumulator
+	int32_t  velaccum_prev;  // Previous velaccum
+	int16_t  posaccum_prev;  // Previous posaccum
+	uint8_t  stepperstatus;  // Reserved for CAN msg
 	uint8_t  pay0;       // canmsg.cd.uc[0] saved
+	uint8_t  drbit;      // Direction bit (0|1)
+	int8_t   drsign;     // Drum direction sign +/- 1
+
 };
 
 /* *************************************************************************/

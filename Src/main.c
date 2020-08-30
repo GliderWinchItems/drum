@@ -1218,7 +1218,8 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
-    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X",stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocnxt,stepperstuff.iobits);
+    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X %i %i",stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocinc,stepperstuff.iobits,
+        stepperstuff.dtwmax,stepperstuff.dtwmin);
 
 #endif      
     }
