@@ -404,7 +404,9 @@ if (pmbxnum == NULL) morse_trap(77); // Debug trap
 							}
 						}
 					#else
+					{
 						loadmbx(pmbxnum, pncan); // Load mailbox. if CANID is in list
+					}
 					#endif
 					}
 				} while (pncan != NULL);
@@ -470,6 +472,11 @@ static struct MAILBOXCAN* loadmbx(struct MAILBOXCANNUM* pmbxnum, struct CANRCVBU
 	// 'lookup' is a straight loop; use 'lookupq' for binary search (when implemented)
 	struct MAILBOXCAN* pmbx = lookup(pmbxnum, pncan);
 	if (pmbx == NULL) return NULL; // Return: CAN id not in mailbox list
+
+//if (pncan->can.id == 0xE4600000)
+//{
+//	dbgmbxctr += 1; // Place for dgb
+//}
 
 	/* Here, this CAN msg has a mailbox. */
 	// Extract payload (above 'lookup' copied ncan into mailbox)
