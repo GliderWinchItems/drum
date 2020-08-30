@@ -3,6 +3,10 @@
 * Date First Issued  : 07/31/2020
 * Description        : Stepper motor associated items
 *******************************************************************************/
+/*
+08/29/2020 fauxencoder
+*/
+
 
 #ifndef __STEPPER_ITEMS
 #define __STEPPER_ITEMS
