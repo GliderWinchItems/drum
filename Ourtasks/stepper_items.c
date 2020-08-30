@@ -96,10 +96,10 @@ enum cididx
  * *************************************************************************/
 void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 {
-    p->lc.clfactor  = (1.0/(42E4)); // 100% CL gives max drum speed/encoder rate
+    p->lc.clfactor  = 42E4; // CL scaling: 100% = 50 us
     p->lc.cltimemax = 512;          // Number of software timeout ticks max
     p->lc.hbct      = 64;           // Number of swctr ticks between heartbeats
-    p->lc.Ka        = 32768; // Reversal ratio
+    p->lc.Ka        = 8000; // Reversal ratio
     p->lc.Ks        = 27307; // Sweep ratio (Ks/65536) = stepper pulses per encoder edge
 
     /* Stepper sends these CAN msgs. */
@@ -279,8 +279,7 @@ pcan = &dbgcan;
 
 /* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
 #define MAXDURF (84E5f) // 1/10sec per faux encoder interrupt
-	p->speedcmdf = p->clpos * p->lc.clfactor;
-	p->focdur = 1.0/p->speedcmdf;
+	p->focdur = (p->lc.clfactor / p->clpos);
 	if ( p->focdur > (MAXDURF))
 	{ 
 		p->focdur = MAXDURF; // Hold at max
