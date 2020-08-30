@@ -378,7 +378,7 @@ void StartMailboxTask(void const * argument)
 			{	
 				noteused |= (1 << i);
 				pmbxnum = &mbxcannum[i]; // Pt to CAN module mailbox control block
-if (pmbxnum == NULL) morse_trap(77); // Debug trap
+if (pmbxnum == NULL) morse_trap(771); // Debug trap
 				do
 				{
 					/* Get a pointer to the circular buffer w CAN msgs. */
@@ -442,6 +442,7 @@ dbgi = pmbxnum->arraysizecur;
 	for (i = 0; i < pmbxnum->arraysizecur; i++)
 	{
 		pmbx = *(ppmbx + i); // Point to mailbox[i]
+if (pmbx == NULL) morse_trap (5351);
 dbgpmbx = pmbx;
 		if (pmbx->ncan.can.id == pncan->can.id)
 		{ // Here, found!
@@ -488,6 +489,7 @@ static struct MAILBOXCAN* loadmbx(struct MAILBOXCANNUM* pmbxnum, struct CANRCVBU
 		if ((pnotetmp->skip == 0) && (pnotetmp->tskhandle != NULL) && (pnotetmp->notebit != 0))
 		{
 dbgmbxctr += 1;
+if (!((pmbx->ncan.can.id == 0x00400000) || (pmbx->ncan.can.id == 0xE4600000))) morse_trap(345);
 			xTaskNotify(pnotetmp->tskhandle, pnotetmp->notebit, eSetBits);	
 		}
 

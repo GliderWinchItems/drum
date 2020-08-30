@@ -555,10 +555,16 @@ if (pctl == NULL) morse_trap (557);
 			/* Setup msg with pctl for our format */
 			ncan.pctl = pctl;
 			canmsg_compress(&ncan.can, &header, &data[0]);
+
+// Mailbox bug bedugging			
 if (ncan.can.id == 0xE4600000)
 {
-	dbgcan = ncan.can;
+	dbgcan = ncan.can; // Save for stepper_items.c
 }
+if (pctl->cirptrs.pwork  == NULL) morse_trap(455);
+if (pctl->cirptrs.pend   == NULL) morse_trap(456);
+if (pctl->cirptrs.pbegin == NULL) morse_trap(457);
+if (!((ncan.can.id == 0x00400000) || (ncan.can.id == 0xE4600000))) morse_trap(458);
 
 			/* Place on queue for Mailbox task to filter, distribute, notify, etc. */
 			*pctl->cirptrs.pwork = ncan; // Copy struct
