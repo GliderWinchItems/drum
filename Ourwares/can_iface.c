@@ -524,14 +524,13 @@ debugTX1c += 1;
  * @param	: phcan = pointer to 'MX CAN handle (control block)
  * @return	: Pointer to our CAN control bock
  * *********************************************************************/
-uint32_t debug1;
-struct CANRCVBUF dbgcan;
+uint32_t dbgcan1;
 
 static void unloadfifo(CAN_HandleTypeDef *phcan, uint32_t RxFifo)
 {
 	struct CANRCVBUFN ncan; // CAN msg plus pctl
 	ncan.toa = DTWTIME;
-debug1 += 1;
+dbgcan1 += 1;
 	HAL_StatusTypeDef ret;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	CAN_RxHeaderTypeDef header;
@@ -555,10 +554,6 @@ if (pctl == NULL) morse_trap (557);
 			/* Setup msg with pctl for our format */
 			ncan.pctl = pctl;
 			canmsg_compress(&ncan.can, &header, &data[0]);
-if (ncan.can.id == 0xE4600000)
-{
-	dbgcan = ncan.can;
-}
 
 			/* Place on queue for Mailbox task to filter, distribute, notify, etc. */
 			*pctl->cirptrs.pwork = ncan; // Copy struct

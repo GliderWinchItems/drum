@@ -181,10 +181,6 @@ void stepper_items_timeout(void)
 {
 	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
-/* This is shamefull, but works until MailboxTask problem fixed. */		
-extern struct CANRCVBUF dbgcan;
-struct CANRCVBUF* pcan = &dbgcan;
-
 	p->cltimectr += 1;
 	if (p->cltimectr >= p->lc.cltimemax)
 	{ // We timed out! Stop the stepper
@@ -192,10 +188,6 @@ struct CANRCVBUF* pcan = &dbgcan;
 
 		/* Set enable bit which turns FET on, which disables stepper. */
 		p->enflag = (2 << 16); // Set bit with BSRR storing
-
-		/* Set last CAN msg to have enable bit off so that
-		   stepperCLupdate execution will continue to disable. */
-		pcan->cd.uc[0] &= ~ENBIT; // Clear enable bit in last CAN msg
 
 		/* Bits positioned for updating PB BSRR register. */
 		p->iobits = p->drflag | p->enflag;
@@ -231,40 +223,10 @@ struct CANRCVBUF* pcan = &dbgcan;
  * @param 	: pcan = pointer to CAN msg struct
  * @brief	: Initialization of channel increment
  * *************************************************************************/
- uint32_t dbgst;
-uint32_t dbgstmax;
-uint32_t dbgid;
-struct CANRCVBUF* dbgpcan;
-
+ 
 void stepper_items_clupdate(struct CANRCVBUF* pcan)
 {
-/* This is shamefull, but works until MailboxTask problem fixed. */		
-extern struct CANRCVBUF dbgcan;
-//pcan = &dbgcan;
-if (pcan->id != 0xE4600000)
-{
-	if (pcan != NULL)
-	{
-		dbgid = pcan->id;
-		dbgpcan = pcan;
-		dbgst += 1; 
-	}
-//	if (dbgid == 0x20020000)
-//	{
-//		dbgpcan = pcan;
-//	}
-	if (dbgst > 100)
-	{
-		morse_trap(345);
-	}
-	return;
-}
-else
-	if (dbgst > dbgstmax) dbgstmax = dbgst;
-//dbgst = 0;
-
-
-		struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
 	/* Reset loss of CL CAN msgs timeout counter. */
 	p->cltimectr = 0; 
