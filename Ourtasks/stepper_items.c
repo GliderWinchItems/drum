@@ -96,11 +96,11 @@ enum cididx
  * *************************************************************************/
 void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 {
-    p->lc.clfactor  = 42E4; // CL scaling: 100% = 50 us
+    p->lc.clfactor  = 168E3; // CL scaling: 100% = 50 us
     p->lc.cltimemax = 512;          // Number of software timeout ticks max
     p->lc.hbct      = 64;           // Number of swctr ticks between heartbeats
     p->lc.Ka        = 8000; // Reversal ratio
-    p->lc.Ks        = 27307; // Sweep ratio (Ks/65536) = stepper pulses per encoder edge
+    p->lc.Ks        = 65536; // Sweep ratio (Ks/65536) = stepper pulses per encoder edge
 
     /* Stepper sends these CAN msgs. */
     p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
@@ -351,10 +351,10 @@ void stepper_items_TIM2_IRQHandler(void)
 			if ((p->enflag & (2 << 0)) == 0) 
 			{
 				// Change direction when accumulator passes through zero
-				if (p->posaccum.s16[1] < 0)
-					Stepper__DR__direction_GPIO_Port->BSRR = DRBIT;
-				else
-					Stepper__DR__direction_GPIO_Port->BSRR = DRBIT << 16;
+//				if (p->posaccum.s16[1] < 0)
+					Stepper__DR__direction_GPIO_Port->BSRR = p->drflag;
+//				else
+//					Stepper__DR__direction_GPIO_Port->BSRR = DRBIT << 16;
 
 				// Start TIM9 to generate a delayed pulse.
 				pT9base->CR1 = 0x9; 
