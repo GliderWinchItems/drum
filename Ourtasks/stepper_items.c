@@ -233,11 +233,19 @@ struct CANRCVBUF* pcan = &dbgcan;
  * @brief	: Initialization of channel increment
  * *************************************************************************/
 uint32_t dbgid;
+uint32_t dbgstep1;
+uint32_t dbgstep2;
 struct CANRCVBUF* dbgpcan;
 
 void stepper_items_clupdate(struct CANRCVBUF* pcan)
 {
-	if (pcan == NULL) return;
+if (pcan == NULL) 
+{
+	dbgstep1 += 1;
+		return;
+}
+dbgstep2 += 1;
+
 //if (pcan->id != 0xE4600000) morse_trap(7373);
 dbgpcan = pcan;
 dbgid = pcan->id;

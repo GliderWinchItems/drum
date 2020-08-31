@@ -281,7 +281,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 384+64);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -1215,6 +1215,20 @@ uint8_t ratepace = 0;
 	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
 // ===== BEGIN FOR LOOP ==============================
 
+extern uint32_t dbgstep1;
+extern uint32_t dbgstep2;
+extern uint32_t dbgmbxctr;
+extern uint32_t dbgev6;
+extern uint32_t dbg15ct;
+extern uint32_t dbgtskctr;
+uint32_t dbgstep1_prev = dbgstep1;
+uint32_t dbgstep2_prev = dbgstep2;
+uint32_t dbgmbxctr_prev = dbgmbxctr;
+uint32_t dbgev6_prev = dbgev6;
+uint32_t dbg15ct_prev = dbg15ct;
+uint32_t dbgtskctr_prev = dbgtskctr;
+
+
 	for ( ;; )
 	{
 		xTaskNotifyWait(noteused, 0, &noteval, portMAX_DELAY);
@@ -1231,13 +1245,25 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
+
 extern uint32_t dbgid;
 extern struct CANRCVBUF* dbgpcan;
 extern struct MAILBOXCAN* dbgevent15;
 extern struct CANRCVBUF* dbg15pcan;
-    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X %08X %08X %08X",stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocnxt,stepperstuff.iobits,
-       gevcufunction.pmbx_cid_drum_tst_stepcmd->ncan.can.id, dbgpcan,dbg15pcan );
+extern uint32_t dbgnoteval;
 
+
+
+uint32_t itmp = dbgstep1-dbgstep1_prev;
+
+    yprintf(&pbuf4,"\n\r%i %X %5.1f %5u %05X %08X %u %u %04X %u %u %u %u",stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocnxt,stepperstuff.iobits,
+       dbgpcan,itmp,dbgstep2-dbgstep2_prev,dbgnoteval,dbgmbxctr-dbgmbxctr_prev,dbgev6-dbgev6_prev,dbg15ct-dbg15ct_prev,dbgtskctr-dbgtskctr_prev);
+    dbgstep1_prev = dbgstep1;
+    dbgstep2_prev = dbgstep2;
+  dbgmbxctr_prev = dbgmbxctr;
+  dbgev6_prev    = dbgev6;
+  dbg15ct_prev   = dbg15ct;
+  dbgtskctr_prev = dbgtskctr;
 #endif      
     }
 

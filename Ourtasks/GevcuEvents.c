@@ -101,9 +101,10 @@ void GevcuEvents_05(void)
  * void GevcuEvents_06(void);
  * @brief	: CAN: cid_gps_sync
  * *************************************************************************/
+uint32_t dbgev6;
 void GevcuEvents_06(void)
 {
-//	gevcu_cmd_msg_i(pcf); // Build and send CAN msg with data requested
+	dbgev6 += 1;
 	return;
 }
 /* *************************************************************************
@@ -186,8 +187,11 @@ void GevcuEvents_14(void)
  * *************************************************************************/
 struct MAILBOXCAN* dbgevent15;
 struct CANRCVBUF* dbg15pcan;
+uint32_t dbg15ct;
+
 void GevcuEvents_15(void)
 {
+dbg15ct += 1;
 dbgevent15 = gevcufunction.pmbx_cid_drum_tst_stepcmd;
 dbg15pcan = &gevcufunction.pmbx_cid_drum_tst_stepcmd->ncan.can;
 //if (dbg15pcan->id != 0xE4600000) morse_trap(654);

@@ -39,7 +39,7 @@ float fclpos;
  * *************************************************************************/
 osThreadId xADCTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(ADCTask, StartADCTask, osPriorityNormal, 0, 256+64);
+ 	osThreadDef(ADCTask, StartADCTask, osPriorityNormal, 0, 256+96);
 	ADCTaskHandle = osThreadCreate(osThread(ADCTask), NULL);
 	vTaskPrioritySet( ADCTaskHandle, taskpriority );
 	return ADCTaskHandle;

@@ -310,7 +310,7 @@ struct CANRCVBUFN* Mailboxgetbuf(int i)
 osThreadId xMailboxTaskCreate(uint32_t taskpriority)
 {
  /* definition and creation of CanTask */
-  osThreadDef(MailboxTask, StartMailboxTask, osPriorityNormal, 0,(192-32));
+  osThreadDef(MailboxTask, StartMailboxTask, osPriorityNormal, 0,(192+64));
 
   MailboxTaskHandle = osThreadCreate(osThread(MailboxTask), NULL);
 

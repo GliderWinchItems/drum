@@ -145,7 +145,7 @@ void GevcuStates_GEVCU_ARM(void)
 {
 	{ 
 		
-		stepper_items_clupdate(0);
+//		stepper_items_clupdate(0);
 //		HAL_GPIO_WritePin(Stepper__DR__direction_GPIO_Port,Stepper__DR__direction_Pin,GPIO_PIN_SET);
 	}
 	

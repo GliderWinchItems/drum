@@ -57,7 +57,7 @@ static void swtim1_callback(TimerHandle_t tm)
  * *************************************************************************/
 osThreadId xGevcuTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(GevcuTask, StartGevcuTask, osPriorityNormal, 0, (312-14));
+ 	osThreadDef(GevcuTask, StartGevcuTask, osPriorityNormal, 0, (312+96));
 	GevcuTaskHandle = osThreadCreate(osThread(GevcuTask), NULL);
 	vTaskPrioritySet( GevcuTaskHandle, taskpriority );
 	return GevcuTaskHandle;
@@ -66,6 +66,9 @@ osThreadId xGevcuTaskCreate(uint32_t taskpriority)
  * void StartGevcuTask(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
+uint32_t dbgnoteval;
+uint32_t dbgtskctr;
+
 struct SWITCHPTR* psw_safeactivex; // Debugging
 
 void StartGevcuTask(void const * argument)
@@ -115,7 +118,8 @@ extern CAN_HandleTypeDef hcan1;
   for(;;)
   {
 		/* Wait for notifications */
-		xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
+//		xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
+		xTaskNotifyWait(noteuse, 0, &noteval, portMAX_DELAY);
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
   /* ========= Events =============================== */
 // NOTE: this could be made into a loop that shifts 'noteval' bits
@@ -126,6 +130,7 @@ extern CAN_HandleTypeDef hcan1;
 		if ((noteval & GEVCUBIT00) != 0)
 		{ // ADC readings ready
 //			GevcuEvents_00(); // Skip and let ADCTask to the CL work
+dbgtskctr += 1;		
 			noteuse |= GEVCUBIT00;
 		}
 		if ((noteval & GEVCUBIT01) != 0)
@@ -203,6 +208,8 @@ extern CAN_HandleTypeDef hcan1;
 			GevcuEvents_15();
 			noteuse |= GEVCUBIT15;
 		}
+dbgnoteval = noteuse;			
+
 // * = gevcu_func_init.c: this CAN msg not initialized for a Mailbox */
 
   /* ========= States =============================== */
