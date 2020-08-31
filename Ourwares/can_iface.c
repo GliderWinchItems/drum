@@ -525,7 +525,7 @@ debugTX1c += 1;
  * @return	: Pointer to our CAN control bock
  * *********************************************************************/
 uint32_t debug1;
-struct CANRCVBUF dbgcan;
+//struct CANRCVBUF dbgcan;
 
 static void unloadfifo(CAN_HandleTypeDef *phcan, uint32_t RxFifo)
 {
@@ -541,7 +541,7 @@ debug1 += 1;
 
 /* This is placed here as part of the debugging of the USB startup
    producing a Hard_Fault. The stack dump showed that R0 was loaded
-   with an addresses above the sram limit. */
+   with an addresse above the sram limit. */
 if (pctl == NULL) morse_trap (557);
 //if (pctl == NULL) while(1==1);
 

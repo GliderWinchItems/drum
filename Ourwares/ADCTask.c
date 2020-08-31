@@ -85,12 +85,6 @@ void StartADCTask(void const * argument)
 			pdma = adc1dmatskblk[0].pdma2;
 		}
 
-		/* Notify GevcuTask that new readings are ready. */
-		if( GevcuTaskHandle == NULL) morse_trap(51); // JIC task has not been created
-		
-		xTaskNotify(GevcuTaskHandle, GEVCUBIT00, eSetBits);
-
-
 		/* Sum the readings 1/2 of DMA buffer to an array. */
 		adcfastsum16(&adc1.chan[0], pdma); // Fast in-line addition
 		adc1.ctr += 1; // Update count

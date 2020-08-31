@@ -489,7 +489,6 @@ static struct MAILBOXCAN* loadmbx(struct MAILBOXCANNUM* pmbxnum, struct CANRCVBU
 		if ((pnotetmp->skip == 0) && (pnotetmp->tskhandle != NULL) && (pnotetmp->notebit != 0))
 		{
 dbgmbxctr += 1;
-if (!((pmbx->ncan.can.id == 0x00400000) || (pmbx->ncan.can.id == 0xE4600000))) morse_trap(345);
 			xTaskNotify(pnotetmp->tskhandle, pnotetmp->notebit, eSetBits);	
 		}
 
