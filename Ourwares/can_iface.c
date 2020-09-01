@@ -525,7 +525,6 @@ debugTX1c += 1;
  * @return	: Pointer to our CAN control bock
  * *********************************************************************/
 uint32_t debug1;
-struct CANRCVBUF dbgcan;
 
 static void unloadfifo(CAN_HandleTypeDef *phcan, uint32_t RxFifo)
 {
@@ -555,10 +554,6 @@ if (pctl == NULL) morse_trap (557);
 			/* Setup msg with pctl for our format */
 			ncan.pctl = pctl;
 			canmsg_compress(&ncan.can, &header, &data[0]);
-if (ncan.can.id == 0xE4600000)
-{
-	dbgcan = ncan.can;
-}
 
 			/* Place on queue for Mailbox task to filter, distribute, notify, etc. */
 			*pctl->cirptrs.pwork = ncan; // Copy struct

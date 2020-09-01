@@ -85,9 +85,6 @@ void StartADCTask(void const * argument)
 			pdma = adc1dmatskblk[0].pdma2;
 		}
 
-		/* Notify GevcuTask that new readings are ready. */
-		if( GevcuTaskHandle == NULL) morse_trap(51); // JIC task has not been created
-		
 		xTaskNotify(GevcuTaskHandle, GEVCUBIT00, eSetBits);
 
 

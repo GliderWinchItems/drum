@@ -31,9 +31,16 @@
 #define LMOUT_port GPIOE       // Limit switch outside
 #define LMOUT_pin  GPIO_PIN_10 // Limit switch outside
 
-#define DRBIT 0x1  // Bit mask for Direction output pin: 0 = low; 1 = high
-#define ENBIT 0x2  // Bit mask for Enable output pin: 0 = low; 1 = high
-#define LMBIT 0x4  // Bit mask for Limit switch simulation
+/* CAN msg: cid_drum_tst_stepcmd: payload[0] bit definitions. */
+#define DRBIT 0x1  // (1) Bit mask Direction output pin: 0 = low; 1 = high
+#define ENBIT 0x2  // (2) Bit mask Enable output pin: 0 = low; 1 = high
+#define LMBIT 0x4  // Bit mask Limit switch simulation
+#define IXBIT 0x8  // Bit mask Indexing command
+/*
+(1) CP pushbutton: Retrieve
+(2) 
+*/
+
 
 #define NUMCANMSGSSTEPPER 1  // Number of CAN msgs stepper sends
 
