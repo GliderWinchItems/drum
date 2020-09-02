@@ -49,7 +49,6 @@ TIM2 32b (84 MHz) capture mode (interrupt)
       CH2 output compare no output: faux encoder transition
 
 */
-#define DEBUG 0
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -98,12 +97,14 @@ enum cididx
  * *************************************************************************/
 void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 {
-    p->lc.clfactor  = 168E3; // CL scaling: 100% = 50 us
-    p->lc.cltimemax = 512;          // Number of software timeout ticks max
-    p->lc.hbct      = 64;           // Number of swctr ticks between heartbeats
-    p->lc.Ka        = 8000; // Reversal ratio
-    p->lc.Ks        = 26214; // Sweep ratio (Ks/65536) = stepper pulses per encoder edge
-
+    p->lc.clfactor  = 168E3; 	// CL scaling: 100% = 50 us
+    p->lc.cltimemax = 512; 	// Number of software timeout ticks max
+    p->lc.hbct      = 64;    	// Number of swctr ticks between heartbeats
+    p->lc.Ka        	= 25;		// Reversal rate
+    p->lc.Nr 			= 1000;	//	Ratio of reversal rate to sweep rate
+	 p->lc.Ks        	= p->lc.Nr *  p->lc.Ka; // Sweep rate (Ks/65536) = stepper pulses per encoder edge
+    p->lc.Lplus		= 3000;
+    p->lc.Lminus		= 0;
     /* Stepper sends these CAN msgs. */
     p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
 
@@ -128,8 +129,12 @@ void stepper_items_init(void)
 
     p->ledctr1   = 0;
     p->ledctr2   = 0;
-    p->posaccum.s32 = 0; // Position accumulator
-    p->posaccum_prev = 0; 
+    // Position accumulator initial value. Reference paper for the value employed.
+    p->posaccum.s32 = 500;	// (p->lc.Lminus << 16) -p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka / 2; 	
+    p->posaccum_prev = p->posaccum.s32;
+    p->velaccum.s32 = p->lc.Ks;	//	Velocity accumulator
+    p->drbit = 0;						//	Drum direction bit
+    p->drbit_prev = p->drbit;		
     p->cltimectr = 0;
     p->hbctr     = 0;
 	p->ocinc = 8400000;
@@ -291,6 +296,7 @@ void stepper_items_TIM9_IRQHandler(void)
 	  			stepperstuff.ledctr2 = 0;
   				// Toggle LED on/off
 				stepperstuff.ledbit2 ^= (LED_ORANGE_Pin | (LED_ORANGE_Pin << 16));
+				LED_ORANGE_GPIO_Port->BSRR = stepperstuff.ledbit2;
 			}
 	return;
 }
@@ -319,73 +325,55 @@ void stepper_items_TIM2_IRQHandler(void)
 		//	Capture DTW timer for cycle counting
 		p->dtwentry = DTWTIME;
 
+#if 1		//	1 for GSM, 0 for DEH
+ // new code for sweep and reversal
+      // forward direction means position accumulator is increasing
+      // negative direction means position accumulator is decreasing
+      
+      // update velocity integrator
+      if (0) //(p->posaccum.s16[1] >= p->lc.Lplus || p->posaccum.s16[1] <= p->lc.Lminus)
+      {  // in a level-wind reversal region
+         if (p->posaccum.s16[1] >= p->lc.Lplus)
+         {  // in positive level-wind reversal region
+            p->velaccum.s32 = (p->drbit) ? p->velaccum.s32 - p->lc.Ka 
+            	: p->velaccum.s32 + p->lc.Ka;
+         }
+         else
+         {  // in negative level-wind reversal region
+            p->velaccum.s32 = (p->drbit) ? p->velaccum.s32 + p->lc.Ka 
+            	: p->velaccum.s32 - p->lc.Ka;
+         }
+      }
+      else 
+      {  	// in a linear sweep region
+         if (p->drbit != p->drbit_prev)
+         {  // drum direction has changed
+            p->drbit_prev = p->drbit;   // store new direction
+            p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
+            #if 1	//	temporary for development
+            if (p->velaccum.s32 >  p->lc.Ks) p->velaccum.s32 =  p->lc.Ks;
+            if (p->velaccum.s32 < -p->lc.Ks) p->velaccum.s32 = -p->lc.Ks;
+            #endif 
+         }        
+      }
+      
+      // update position integrator
+      p->posaccum.s32 += p->velaccum.s32;
+      //= (p->drbit) ? p->posaccum.s32 + p->velaccum.s32 : p->posaccum.s32 - p->velaccum.s32;
+      
+      /* When accumulator upper 16b changes generate a stepper pulse. */
+      if ((p->posaccum.s16[1]) != (p->posaccum_prev))
+      { // Here carry/borrow from low 16b to high 16b
+         p->posaccum_prev = (p->posaccum.s16[1]);
 
-#if 0	// new code for sweep and reversal
-		// forward direction means position accumulator is increasing
-		// negative direction means position accumulator is decreasing
-		
-		//	update velocity integrator
-		if (p->posaccum.s16[1] >= p->lc.Lplus || p->posaccum.s16[1] <= p->lc.Lpminus)
-		{	// in a level-wind reversal region
-			if (p->posaccum.s16[1] >= p->lc.Lplus)
-			{	//	in positive level-wind reversal region
-				p->velaccum = (p->drmdirbit) ? p->velaccum - p->lc.Ka : p->velaccum + p->lc.Ka;
-			}
-			else
-			{	//	in negative level-wind reversal region
-				p->velaccum = (p->drmdirbit) ? p->velaccum + p->lc.Ka : p->velaccum - p->lc.Ka;
-			}
-		}
-		else
-		{	//	in a linear sweep region
-			if (p->drmdirbit != p->drmdirbit_prev)
-			{	//	drum direction has changed
-				p->drmdirbit_prev = p->drmdirbit;	// store new direction
-				p->velaccum = -p->velaccum;			// invert velocity value
-			}			
-		}
-		
-		//	update positon integrator
-		p->posaccum.s32 = p->drbit ? p->posaccum.s32 + p->velaccum : p->posaccum.s32 - p->velaccum;
-		
-		/* When accumulator upper 16b changes generate a stepper pulse. */
-		if ((p->posaccum.s16[1]) != (p->posaccum_prev))
-		{ // Here carry/borrow from low 16b to high 16b
-			p->posaccum_prev = (p->posaccum.s16[1]);
 
-
-			/* Skip stepper pulses if motor not enabled. */
-			if ((p->enflag & (2 << 0)) == 0) 
-			{				
-					Stepper__DR__direction_GPIO_Port->BSRR = p->drflag;
-
-
-				// Start TIM9 to generate a delayed pulse.
-				pT9base->CR1 = 0x9; 
-
-#ifdef DEBUG
-				// Start TIM14 to start scope sync pulse (PE5)
-				pT14base->CR1 = 0x9; 
-
-				// Visual check for debugging
-				p->ledctr1 += 1; // Slow LED toggling rate
-				if (p->ledctr1 > 1000)
-				{
-	 					p->ledctr1 = 0;
-
-  					// Toggle LED on/off
-					p->ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
-					LED_GREEN_GPIO_Port->BSRR = p->ledbit1;
-				}
-#endif
-			}
-		}
-	}
-	p->dtwdiff = DTWTIME - p->dtwentry;
-	if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
-	else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
-
-	return;
+         /* Skip stepper pulses if motor not enabled. */
+         if ((p->enflag & (2 << 0)) == 0) 
+         {  // set direction based on sign of Velocity intergrator
+            // depends on velocity magnitude being <= 2^16
+            // depends on drflag being set for proper direction
+            Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
+               ? p->drflag : (p->drflag << 16);
 
 #else	//	DEH orignal code
 
@@ -409,11 +397,10 @@ void stepper_items_TIM2_IRQHandler(void)
 			if ((p->enflag & (2 << 0)) == 0) 
 			{				
 					Stepper__DR__direction_GPIO_Port->BSRR = p->drflag;
-
-
+#endif
 				// Start TIM9 to generate a delayed pulse.
-				pT9base->CR1 = 0x9; 
-#ifdef DEBUG
+				pT9base->CR1 = 0x9;
+#if 1	//	1 for debug, 0 for operational
 				// Start TIM14 to start scope sync pulse (PE5)
 				pT14base->CR1 = 0x9; 
 
@@ -431,14 +418,15 @@ void stepper_items_TIM2_IRQHandler(void)
 			}
 		}
 	}
+
 	p->dtwdiff = DTWTIME - p->dtwentry;
 	if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
 	else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
 
 	return;
-
-#endif
 }
+
+
 
 
 

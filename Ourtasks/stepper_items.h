@@ -59,73 +59,109 @@
 /* Parameters stepper instance (LC = Local Copy) */
 struct STEPPERLC
 {
-	float	 clfactor;	 // Constant to compute oc duration at CL = 100.0
-	uint32_t cltimemax;  // Max timer count for shutdown
-	int32_t  Lplus;      //
-	int32_t  Lminus;     //
-	uint32_t hbct;       // Number of ticks between hb msgs
-	int32_t  Ka;
-	int32_t  Ks;
+   float  clfactor;   // Constant to compute oc duration at CL = 100.0
+   uint32_t cltimemax;  // Max timer count for shutdown
+   int32_t  Lplus;      //
+   int32_t  Lminus;     //
+   uint32_t hbct;       // Number of ticks between hb msgs
+   int32_t  Ka;      // reversal rate
+   int32_t  Nr;      // ratio of reversal rate to sweep rate      
+   int32_t  Ks;      // sweep rate
 
-	// stepper function sends: others receive the following CAN msgs
-	uint32_t cid_hb_stepper;        // CANID_HB_STEPPER: U8_U32','STEPPER: U8: Status, U32: stepper position accum
+   // stepper function sends: others receive the following CAN msgs
+   uint32_t cid_hb_stepper;        // CANID_HB_STEPPER: U8_U32','STEPPER: U8: Status, U32: stepper position accum
 };
 
 union PAYFLT
 {
-	float f;
-	uint8_t u8[4];
-	uint16_t u16[4];
-	uint32_t u32;
-	int32_t  s32;
-	int16_t  s16[2];
+   float f;
+   uint8_t u8[4];
+   uint16_t u16[4];
+   uint32_t u32;
+   int32_t  s32;
+   int16_t  s16[2];
 }pf;
 
+#if 1 // 1 for GSM, 0 for DEH
 struct STEPPERSTUFF
 {
-	struct STEPPERLC lc; // Parameters for stepper
-	struct CANTXQMSG canmsg[NUMCANMSGSSTEPPER]; // CAN msgs sent
-	union  PAYFLT    pf; // For extracting float from payload
-	union  PAYFLT    posaccum;
-	float    speedcmdf;  // Speed command (float)
-	float    focdur;     // Temp for computer inverse of CL position
-	float    clpos;      // CL position extracted from CAN msg
-	uint32_t dtwentry;   // DTW timer upon ISR entry
-	uint32_t dtwdiff;    // DTW timer minus entry upon ISR exit
-	uint32_t dtwmax;     // DTW difference max
-	uint32_t dtwmin;     // DTW difference min
-	uint32_t ledctr1;    // Counter for throttling green LED
-	uint32_t ledctr2;    // Counter for throttling orangeLED
-	uint32_t ledbit1;    // Bit for toggling green led
-	uint32_t ledbit2;    // Bit for toggling orange led
-	uint32_t cltimectr;  // Counter for loss of CL msgs
-	uint32_t speedcmdi;	 // Commanded speed (integer)
-	uint32_t ocinc;      // oc register increment
-	uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
-	uint32_t drflag;     // BSRR pin set/reset bit position: direction
-	uint32_t enflag;     // BSRR pin set/reset bit position: enable
-	uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
-	int32_t  velaccum;   // Stepper velocity accumulator
-	int32_t  velaccum_prev;  // Previous velaccum
-	int16_t  posaccum_prev;  // Previous posaccum
-	uint8_t  stepperstatus;  // Reserved for CAN msg
-	uint8_t  pay0;       // canmsg.cd.uc[0] saved
-	uint8_t  drbit;      // Direction bit (0|1)
-	int8_t   drsign;     // Drum direction sign +/- 1
-
+   struct   STEPPERLC lc; // Parameters for stepper
+   struct   CANTXQMSG canmsg[NUMCANMSGSSTEPPER]; // CAN msgs sent
+   union    PAYFLT   pf; // For extracting float from payload
+   union    PAYFLT   posaccum;
+   union    PAYFLT   velaccum;  // Stepper velocity accumulator
+   float    speedcmdf;  // Speed command (float)
+   float    focdur;     // Temp for computer inverse of CL position
+   float    clpos;      // CL position extracted from CAN msg
+   uint32_t dtwentry;   // DTW timer upon ISR entry
+   uint32_t dtwdiff;    // DTW timer minus entry upon ISR exit
+   uint32_t dtwmax;     // DTW difference max
+   uint32_t dtwmin;     // DTW difference min
+   uint32_t ledctr1;    // Counter for throttling green LED
+   uint32_t ledctr2;    // Counter for throttling orangeLED
+   uint32_t ledbit1;    // Bit for toggling green led
+   uint32_t ledbit2;    // Bit for toggling orange led
+   uint32_t cltimectr;  // Counter for loss of CL msgs
+   uint32_t speedcmdi;   // Commanded speed (integer)
+   uint32_t ocinc;      // oc register increment
+   uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
+   uint32_t drflag;     // BSRR pin set/reset bit position: direction
+   uint32_t enflag;     // BSRR pin set/reset bit position: enable
+   uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
+   int16_t  posaccum_prev;  // Previous posaccum
+   uint8_t  stepperstatus;  // Reserved for CAN msg
+   uint8_t  pay0;       // canmsg.cd.uc[0] saved
+   uint8_t  drbit;      // Direction bit (0|1)
+   uint8_t  drbit_prev; // Previous Direction bit
+   int8_t   drsign;     // Drum direction sign +/- 1
 };
+#else
+struct STEPPERSTUFF
+{
+   struct STEPPERLC lc; // Parameters for stepper
+   struct CANTXQMSG canmsg[NUMCANMSGSSTEPPER]; // CAN msgs sent
+   union  PAYFLT    pf; // For extracting float from payload
+   union  PAYFLT    posaccum;  
+   float    speedcmdf;  // Speed command (float)
+   float    focdur;     // Temp for computer inverse of CL position
+   float    clpos;      // CL position extracted from CAN msg
+   uint32_t dtwentry;   // DTW timer upon ISR entry
+   uint32_t dtwdiff;    // DTW timer minus entry upon ISR exit
+   uint32_t dtwmax;     // DTW difference max
+   uint32_t dtwmin;     // DTW difference min
+   uint32_t ledctr1;    // Counter for throttling green LED
+   uint32_t ledctr2;    // Counter for throttling orangeLED
+   uint32_t ledbit1;    // Bit for toggling green led
+   uint32_t ledbit2;    // Bit for toggling orange led
+   uint32_t cltimectr;  // Counter for loss of CL msgs
+   uint32_t speedcmdi;   // Commanded speed (integer)
+   uint32_t ocinc;      // oc register increment
+   uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
+   uint32_t drflag;     // BSRR pin set/reset bit position: direction
+   uint32_t enflag;     // BSRR pin set/reset bit position: enable
+   uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
+   int16_t  posaccum_prev;  // Previous posaccum
+   int32_t  velaccum;   // Stepper velocity accumulator
+   int32_t  velaccum_prev;  // Previous velaccum
+   uint8_t  stepperstatus;  // Reserved for CAN msg
+   uint8_t  pay0;       // canmsg.cd.uc[0] saved
+   uint8_t  drbit;      // Direction bit (0|1)
+   int8_t   drsign;     // Drum direction sign +/- 1
+};
+#endif
+
 
 /* *************************************************************************/
  void stepper_items_init(void);
 /* phtim = pointer to timer handle
- * @brief	: Initialization of channel increment
+ * @brief   : Initialization of channel increment
  * *************************************************************************/
   void stepper_items_clupdate(struct CANRCVBUF* pcan);
-/* @param 	: pcan = pointer to CAN msg struct
- * @brief	: Initialization of channel increment
+/* @param   : pcan = pointer to CAN msg struct
+ * @brief   : Initialization of channel increment
  * *************************************************************************/
   void stepper_items_timeout(void);
-/* @brief	: Check for loss of CL CAN msgs
+/* @brief   : Check for loss of CL CAN msgs
  * *************************************************************************/
   void stepper_items_CANsend(void);
 /* @brief   : Send CAN msgs for stepper
