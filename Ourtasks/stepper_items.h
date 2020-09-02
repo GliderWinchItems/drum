@@ -32,13 +32,24 @@
 #define LMOUT_pin  GPIO_PIN_10 // Limit switch outside
 
 /* CAN msg: cid_drum_tst_stepcmd: payload[0] bit definitions. */
-#define DRBIT 0x1  // (1) Bit mask Direction output pin: 0 = low; 1 = high
-#define ENBIT 0x2  // (2) Bit mask Enable output pin: 0 = low; 1 = high
-#define LMBIT 0x4  // Bit mask Limit switch simulation
-#define IXBIT 0x8  // Bit mask Indexing command
-/*
-(1) CP pushbutton: Retrieve
-(2) 
+/* CAN msg: cid_drum_tst_stepcmd: payload[0] bit definitions. */
+#define DRBIT 0x01 // (1) Bit mask Direction output pin: 0 = low; 1 = high
+#define ENBIT 0x02 // (2) Bit mask Enable output pin: 0 = low; 1 = high
+#define LMBIT 0x04 // (3) Bit mask Limit switch simulation
+#define IXBIT 0x08 // (4) Bit mask Indexing command
+#define ZTBIT 0x10 // (5) Bit mask PB State: Zero Tension
+#define ZOBIT 0x20 // (6) Bit mask PB State: Zero Odometer
+#define ARBIT 0x40 // (7) Bit mask PB State: ARM
+#define PRBIT 0x80 // (8) Bit Mask PB State: PREP
+/* Notes of above bit usage--
+(1) CP PB processed: Zero Odometer TOGGLES direction minus sign on LCD
+(2) CP SAFE/ACTIVE: Bit sets when in CP goes into ARM state
+(3) CP PB: Zero Tension PB state simulates limit switch
+(4) CP PB: ARM PB state simulates CP begin indexing command
+(5) CP PB state: Zero Tension (CP toggles direction)
+(6) CP PB state: Zero Odometer
+(7) CP PB state: ARM
+(8) CP PB state: Prep (CP toggles freeze of CL setting)
 */
 
 
