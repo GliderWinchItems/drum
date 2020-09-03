@@ -1218,9 +1218,9 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
-    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X %i %i",stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocinc,stepperstuff.iobits,
-        stepperstuff.dtwmax,stepperstuff.dtwmin);
-
+    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X %8i %8i %4i %4i",
+      stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocinc,
+      stepperstuff.iobits,stepperstuff.dbg1,stepperstuff.dbg2,stepperstuff.dtwmax,stepperstuff.drbit);//dtwmin);
 #endif      
     }
 
@@ -1396,7 +1396,7 @@ yprintf(&pbuf4,"\n\rctr: %5d incave: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
 				}
 #endif
 			}	
-	  	}
+	  }
 	}
   /* USER CODE END 5 */
 }

@@ -93,10 +93,6 @@ struct STEPPERSTUFF
    float    speedcmdf;  // Speed command (float)
    float    focdur;     // Temp for computer inverse of CL position
    float    clpos;      // CL position extracted from CAN msg
-   uint32_t dtwentry;   // DTW timer upon ISR entry
-   uint32_t dtwdiff;    // DTW timer minus entry upon ISR exit
-   uint32_t dtwmax;     // DTW difference max
-   uint32_t dtwmin;     // DTW difference min
    uint32_t ledctr1;    // Counter for throttling green LED
    uint32_t ledctr2;    // Counter for throttling orangeLED
    uint32_t ledbit1;    // Bit for toggling green led
@@ -113,7 +109,13 @@ struct STEPPERSTUFF
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
    uint8_t  drbit;      // Direction bit (0|1)
    uint8_t  drbit_prev; // Previous Direction bit
-   int8_t   drsign;     // Drum direction sign +/- 1
+   // debug and characterization, likely removable for operational code
+   uint32_t dtwentry;   // DTW timer upon ISR entry
+   uint32_t dtwdiff;    // DTW timer minus entry upon ISR exit
+   uint32_t dtwmax;     // DTW difference max
+   uint32_t dtwmin;     // DTW difference min
+   uint32_t dbg1;       // Debug 1
+   uint32_t dbg2;       // Debug 2
 };
 #else
 struct STEPPERSTUFF

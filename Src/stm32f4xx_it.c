@@ -400,8 +400,8 @@ void CAN1_RX1_IRQHandler(void)
 void TIM1_BRK_TIM9_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 0 */
-extern void stepper_items_TIM9_IRQHandler(void);
-  stepper_items_TIM9_IRQHandler();
+
+
   /* USER CODE END TIM1_BRK_TIM9_IRQn 0 */
   HAL_TIM_IRQHandler(&htim9);
   /* USER CODE BEGIN TIM1_BRK_TIM9_IRQn 1 */

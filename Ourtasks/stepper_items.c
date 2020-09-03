@@ -75,6 +75,9 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 #define TIM9PWMCYCLE (168*10-30)   // 10us pwm cycle
 #define TIM9PULSEDELAY (TIM9PWMCYCLE - (168*3))
 
+#define GSM
+#define DEBUG
+
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT4base; // Register base address 
 TIM_TypeDef  *pT9base; // Register base address 
@@ -97,24 +100,24 @@ enum cididx
  * *************************************************************************/
 void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 {
-    p->lc.clfactor  = 168E3; 	// CL scaling: 100% = 50 us
-    p->lc.cltimemax = 512; 	// Number of software timeout ticks max
-    p->lc.hbct      = 64;    	// Number of swctr ticks between heartbeats
-    p->lc.Ka        	= 25;		// Reversal rate
-    p->lc.Nr 			= 1000;	//	Ratio of reversal rate to sweep rate
-	 p->lc.Ks        	= p->lc.Nr *  p->lc.Ka; // Sweep rate (Ks/65536) = stepper pulses per encoder edge
-    p->lc.Lplus		= 3000;
-    p->lc.Lminus		= 0;
-    /* Stepper sends these CAN msgs. */
-    p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
+   p->lc.clfactor  	= 168E3; 	// CL scaling: 100% = 50 us
+   p->lc.cltimemax 	= 512; 	// Number of software timeout ticks max
+   p->lc.hbct      	= 64;    // Number of swctr ticks between heartbeats
+   p->lc.Ka 			= 25;		// Reversal rate
+   p->lc.Nr 			= 1000;	//	Sweep rate to reversal rate ratio
+   p->lc.Ks        	= p->lc.Nr *  p->lc.Ka; // Sweep rate (Ks/65536) = stepper pulses per encoder edge
+   p->lc.Lplus			=  2000;
+   p->lc.Lminus		= -2000;
+   /* Stepper sends these CAN msgs. */
+   p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
 
-    /* Pre-load CAN msg id and dlc. */
-	  // Stepper heartbeat
+   /* Pre-load CAN msg id and dlc. */
+  	// Stepper heartbeat
 	p->canmsg[CID_STEPPER_HB].can.id  = p->lc.cid_hb_stepper; // CAN id.
 	p->canmsg[CID_STEPPER_HB].can.dlc = 5;    // U8_U32 payload
 	p->canmsg[CID_STEPPER_HB].pctl = pctl0;	  // CAN1 control block pointer
 	p->canmsg[CID_STEPPER_HB].maxretryct = 8; // Max retry count
-        return;
+   return;
 }
 
 /* *************************************************************************
@@ -125,18 +128,20 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 void stepper_items_init(void)
 {
 	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+	
+	//	Initialize hardcoded parameters (used in some computations below)
 	stepper_idx_v_struct_hardcode_params(p);
 
-    p->ledctr1   = 0;
-    p->ledctr2   = 0;
-    // Position accumulator initial value. Reference paper for the value employed.
-    p->posaccum.s32 = 500;	// (p->lc.Lminus << 16) -p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka / 2; 	
-    p->posaccum_prev = p->posaccum.s32;
-    p->velaccum.s32 = p->lc.Ks;	//	Velocity accumulator
-    p->drbit = 0;						//	Drum direction bit
-    p->drbit_prev = p->drbit;		
-    p->cltimectr = 0;
-    p->hbctr     = 0;
+   p->ledctr1   = 0;
+   p->ledctr2   = 0;
+   // Position accumulator initial value. Reference paper for the value employed.
+   p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2; 	
+   p->posaccum_prev = p->posaccum.s32;
+   p->velaccum.s32 = 0;	//p->lc.Ks;	//	Velocity accumulator initial value
+   p->drbit = 0;				//	Drum direction bit
+   p->drbit_prev = p->drbit;		
+   p->cltimectr = 0;
+   p->hbctr     = 0;
 	p->ocinc = 8400000;
 	p->dtwmin = 0xffffffff;
 
@@ -253,13 +258,11 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
 	if ((pcan->cd.uc[0] & DRBIT) == 0)
 	{
 		p->drflag = (1 << 16); // Reset
-		p->drsign = -1;
 		p->drbit  = 0;
 	}
 	else
 	{
 		p->drflag = 1; // Set
-		p->drsign = 1;
 		p->drbit  = 1;
 	}
 
@@ -283,23 +286,8 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
 	return;	
 
 }
-/*#######################################################################################
- * ISR routine for TIM9 [Normally no interrupt; interrupt for test purposes]
- *####################################################################################### */
-void stepper_items_TIM9_IRQHandler(void)
-{
-	pT9base->SR = ~(0x1F);	// Reset CH1 flag (and all flags)
-		// Visual check for debugging
-			stepperstuff.ledctr2 += 1; // Slow LED toggling rate
-			if (stepperstuff.ledctr2 > 1000)
-			{
-	  			stepperstuff.ledctr2 = 0;
-  				// Toggle LED on/off
-				stepperstuff.ledbit2 ^= (LED_ORANGE_Pin | (LED_ORANGE_Pin << 16));
-				LED_ORANGE_GPIO_Port->BSRR = stepperstuff.ledbit2;
-			}
-	return;
-}
+
+
 /*#######################################################################################
  * ISR routine for TIM2
  * CH3 - IC encoder channel A
@@ -325,24 +313,37 @@ void stepper_items_TIM2_IRQHandler(void)
 		//	Capture DTW timer for cycle counting
 		p->dtwentry = DTWTIME;
 
-#if 1		//	1 for GSM, 0 for DEH
+#if 1 // GSM 1 DEH 0		
  // new code for sweep and reversal
       // forward direction means position accumulator is increasing
       // negative direction means position accumulator is decreasing
-      
+      //	drbit = 0 means positive direction
+
       // update velocity integrator
-      if (0) //(p->posaccum.s16[1] >= p->lc.Lplus || p->posaccum.s16[1] <= p->lc.Lminus)
+   #if 0	//	only invert velocity in linear region
+      if (p->posaccum.s16[1] >= p->lc.Lplus || p->posaccum.s16[1] <= p->lc.Lminus)
       {  // in a level-wind reversal region
+         #if 0	//	original treatement of drum direction reversal in reversal region
          if (p->posaccum.s16[1] >= p->lc.Lplus)
          {  // in positive level-wind reversal region
-            p->velaccum.s32 = (p->drbit) ? p->velaccum.s32 - p->lc.Ka 
-            	: p->velaccum.s32 + p->lc.Ka;
+         	p->velaccum.s32 = (p->drbit) 
+            	? p->velaccum.s32 + p->lc.Ka : p->velaccum.s32 - p->lc.Ka;
          }
          else
          {  // in negative level-wind reversal region
-            p->velaccum.s32 = (p->drbit) ? p->velaccum.s32 + p->lc.Ka 
-            	: p->velaccum.s32 - p->lc.Ka;
+         	p->velaccum.s32 = (p->drbit) 
+            	? p->velaccum.s32 - p->lc.Ka : p->velaccum.s32 + p->lc.Ka;            
          }
+         #else	// revised treatment
+         if (p->posaccum.s16[1] >= p->lc.Lplus)
+         {  // in positive level-wind reversal region
+         	p->velaccum.s32 -= p->lc.Ka; 
+         }
+         else
+         {  // in negative level-wind reversal region
+         	p->velaccum.s32 += p->lc.Ka;            
+         }
+         #endif
       }
       else 
       {  	// in a linear sweep region
@@ -350,12 +351,47 @@ void stepper_items_TIM2_IRQHandler(void)
          {  // drum direction has changed
             p->drbit_prev = p->drbit;   // store new direction
             p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
-            #if 1	//	temporary for development
-            if (p->velaccum.s32 >  p->lc.Ks) p->velaccum.s32 =  p->lc.Ks;
-            if (p->velaccum.s32 < -p->lc.Ks) p->velaccum.s32 = -p->lc.Ks;
-            #endif 
          }        
       }
+   #else	//	always invert velocity when drum direction changes
+
+      if (p->drbit != p->drbit_prev)
+      	{  // Drum direction has changed
+            p->drbit_prev = p->drbit;   // store new direction
+            p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
+         } 
+
+      if (p->posaccum.s16[1] >= p->lc.Lplus || p->posaccum.s16[1] <= p->lc.Lminus)
+      #if 0	//	original treatement of drum direction reversal in reversal region
+         if (p->posaccum.s16[1] >= p->lc.Lplus)
+         {  // in positive level-wind reversal region
+         	p->velaccum.s32 = (p->drbit) 
+            	? p->velaccum.s32 + p->lc.Ka : p->velaccum.s32 - p->lc.Ka;
+         }
+         else
+         {  // in negative level-wind reversal region
+         	p->velaccum.s32 = (p->drbit) 
+            	? p->velaccum.s32 - p->lc.Ka : p->velaccum.s32 + p->lc.Ka;            
+         }
+         #else	// revised treatment
+         if (p->posaccum.s16[1] >= p->lc.Lplus)
+         {  // in positive level-wind reversal region
+         	p->velaccum.s32 -= p->lc.Ka; 
+         }
+         else
+         {  // in negative level-wind reversal region
+         	p->velaccum.s32 += p->lc.Ka;            
+         }
+         #endif
+   #endif
+
+      #if 1	//	some are all may be temporary for development
+      if (p->velaccum.s32 >  p->lc.Ks) p->velaccum.s32 =  p->lc.Ks;
+      if (p->velaccum.s32 < -p->lc.Ks) p->velaccum.s32 = -p->lc.Ks;
+      p->dbg1 = p->velaccum.s32;
+      p->dbg2 = p->posaccum.s16[1];
+      #endif
+   
       
       // update position integrator
       p->posaccum.s32 += p->velaccum.s32;
@@ -365,15 +401,15 @@ void stepper_items_TIM2_IRQHandler(void)
       if ((p->posaccum.s16[1]) != (p->posaccum_prev))
       { // Here carry/borrow from low 16b to high 16b
          p->posaccum_prev = (p->posaccum.s16[1]);
+         	
 
 
          /* Skip stepper pulses if motor not enabled. */
          if ((p->enflag & (2 << 0)) == 0) 
          {  // set direction based on sign of Velocity intergrator
             // depends on velocity magnitude being <= 2^16
-            // depends on drflag being set for proper direction
             Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
-               ? p->drflag : (p->drflag << 16);
+               ? 1 : (1 << 16);
 
 #else	//	DEH orignal code
 
@@ -397,10 +433,13 @@ void stepper_items_TIM2_IRQHandler(void)
 			if ((p->enflag & (2 << 0)) == 0) 
 			{				
 					Stepper__DR__direction_GPIO_Port->BSRR = p->drflag;
+
 #endif
 				// Start TIM9 to generate a delayed pulse.
 				pT9base->CR1 = 0x9;
-#if 1	//	1 for debug, 0 for operational
+
+
+#if 0	//	1 for debug, 0 for operational
 				// Start TIM14 to start scope sync pulse (PE5)
 				pT14base->CR1 = 0x9; 
 
@@ -425,9 +464,6 @@ void stepper_items_TIM2_IRQHandler(void)
 
 	return;
 }
-
-
-
 
 
 
