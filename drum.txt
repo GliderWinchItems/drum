@@ -1,6 +1,6 @@
 Configuration	drum
 STM32CubeMX 	6.0.1
-Date	08/27/2020
+Date	09/03/2020
 MCU	STM32F407VGTx
 
 
@@ -24,9 +24,10 @@ SPI2	Full-Duplex Master	SPI2_SCK	PB13
 SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
 SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
 SYS	TIM12	SYS_VS_tim12	VP_SYS_VS_tim12
-TIM2	Output Compare No Output	TIM2_VS_no_output2	VP_TIM2_VS_no_output2
-TIM2	Output Compare No Output	TIM2_VS_no_output3	VP_TIM2_VS_no_output3
-TIM2	Output Compare No Output	TIM2_VS_no_output4	VP_TIM2_VS_no_output4
+TIM2	Output Compare No Output	TIM2_VS_no_output1	VP_TIM2_VS_no_output1
+TIM2	Input Capture direct mode	TIM2_CH2	PB3
+TIM2	Input Capture direct mode	TIM2_CH3	PA2
+TIM2	Input Capture direct mode	TIM2_CH4	PA3
 TIM4	Internal Clock	TIM4_VS_ClockSourceINT	VP_TIM4_VS_ClockSourceINT
 TIM4	Output Compare No Output	TIM4_VS_no_output1	VP_TIM4_VS_no_output1
 TIM4	Output Compare No Output	TIM4_VS_no_output2	VP_TIM4_VS_no_output2
@@ -53,7 +54,8 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 17	PC2	ADC1_IN12	Supply 12v
 23	PA0-WKUP	TIM5_CH1	encodectrA
 24	PA1	TIM5_CH2	encodectrB
-25	PA2*	TIM2_CH3	encodetimeA
+25	PA2	TIM2_CH3	encodetimeA
+26	PA3	TIM2_CH4	encodetimeB
 30	PA5	GPIO_Output	
 31	PA6	TIM13_CH1	solenoiddrive
 32	PA7	TIM14_CH1	Oscope_sync
@@ -79,6 +81,7 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 79	PC11	USART3_RX	
 81	PD0	CAN1_RX	
 82	PD1	CAN1_TX	
+89	PB3	TIM2_CH2	encodetimeZ
 92	PB6	I2C1_SCL	
 93	PB7	I2C1_SDA	
 PERIPHERALS	MODES	FUNCTIONS	PINS
@@ -100,9 +103,10 @@ SPI2	Full-Duplex Master	SPI2_SCK	PB13
 SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
 SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
 SYS	TIM12	SYS_VS_tim12	VP_SYS_VS_tim12
-TIM2	Output Compare No Output	TIM2_VS_no_output2	VP_TIM2_VS_no_output2
-TIM2	Output Compare No Output	TIM2_VS_no_output3	VP_TIM2_VS_no_output3
-TIM2	Output Compare No Output	TIM2_VS_no_output4	VP_TIM2_VS_no_output4
+TIM2	Output Compare No Output	TIM2_VS_no_output1	VP_TIM2_VS_no_output1
+TIM2	Input Capture direct mode	TIM2_CH2	PB3
+TIM2	Input Capture direct mode	TIM2_CH3	PA2
+TIM2	Input Capture direct mode	TIM2_CH4	PA3
 TIM4	Internal Clock	TIM4_VS_ClockSourceINT	VP_TIM4_VS_ClockSourceINT
 TIM4	Output Compare No Output	TIM4_VS_no_output1	VP_TIM4_VS_no_output1
 TIM4	Output Compare No Output	TIM4_VS_no_output2	VP_TIM4_VS_no_output2
@@ -129,7 +133,8 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 17	PC2	ADC1_IN12	Supply 12v
 23	PA0-WKUP	TIM5_CH1	encodectrA
 24	PA1	TIM5_CH2	encodectrB
-25	PA2*	TIM2_CH3	encodetimeA
+25	PA2	TIM2_CH3	encodetimeA
+26	PA3	TIM2_CH4	encodetimeB
 30	PA5	GPIO_Output	
 31	PA6	TIM13_CH1	solenoiddrive
 32	PA7	TIM14_CH1	Oscope_sync
@@ -155,6 +160,7 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 79	PC11	USART3_RX	
 81	PD0	CAN1_RX	
 82	PD1	CAN1_TX	
+89	PB3	TIM2_CH2	encodetimeZ
 92	PB6	I2C1_SCL	
 93	PB7	I2C1_SDA	
 

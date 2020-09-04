@@ -5,7 +5,7 @@
 *******************************************************************************/
 /*
 
-08/23/2020 druminversion branch started
+09/03/2020 testencoder branch started
 
 08/10/2020 - pins added to Control Panel for stepper testing
 
