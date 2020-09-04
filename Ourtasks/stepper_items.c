@@ -80,6 +80,7 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT4base; // Register base address 
+TIM_TypeDef  *pT5base; // Register base address 
 TIM_TypeDef  *pT9base; // Register base address 
 TIM_TypeDef  *pT14base; // Register base address 
 
@@ -156,6 +157,7 @@ extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim14;
 	pT2base  = htim2.Instance;
 	pT4base  = htim4.Instance;
+	pT5base  = htim4.Instance;
 	pT9base  = htim9.Instance;
 	pT14base = htim14.Instance;
 
@@ -179,8 +181,8 @@ extern TIM_HandleTypeDef htim14;
 	pT4base->ARR  = 0xffff;
 
 	/* TIM2 Stepper reversal timer and faux encoder transitions. */
-	pT2base->DIER = 0x4; // CH2 interrupt enable, only.
-	pT2base->CCR2 = pT2base->CNT + 100; // 1 ms delay
+	pT2base->DIER = 0x1E; // CH1,2,3,4 interrupt enables
+	pT2base->CCR1 = pT2base->CNT + 100; // 1 ms delay
 	pT2base->ARR  = 0xffffffff;
 
 	/* Start TIM2 counter. */
@@ -297,15 +299,38 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
 void stepper_items_TIM2_IRQHandler(void)
 {
 	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
-	
+
+	/* TIM2CH3 = encodertimeA PA2	*/
+	if ((pT2base->SR & (1<<3)) != 0) // Output compare?
+	{
+				pT2base->SR = ~(1<<3);	// Reset CH3 flag
+
+	}
+
+	/* TIM2CH4 = encodertimeB PA3	*/
+	if ((pT2base->SR & (1<<4)) != 0) // Output compare?
+	{
+				pT2base->SR = ~(1<<4);	// Reset CH4 flag
+
+	}
+
+	/* TIM2CH2 = encodertimeZ PB3	*/
+	if ((pT2base->SR & (1<<2)) != 0) // Output compare?
+	{
+				pT2base->SR = ~(1<<2);	// Reset CH1 flag
+
+	}
+
+
 
 	/* Faux encoder transition interrupt. */
-	if ((pT2base->SR & 0x4) != 0)
-	{
-		pT2base->SR = ~(0x4);	// Reset CH2 flag
+	/* TIM2CH1 = output compare, no pin. */
+	if ((pT2base->SR & 0x2) != 0) // Output compare?
+	{ // Yes. Faux encoder, for now
+		pT2base->SR = ~(0x2);	// Reset CH1 flag
 
 		// Duration increment computed from CL CAN msg
-		pT2base->CCR2 += p->ocinc; // Schedule next interrupt
+		pT2base->CCR1 += p->ocinc; // Schedule next interrupt
 
 		// Update enable i/o pin
 		Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
