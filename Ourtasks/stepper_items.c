@@ -106,8 +106,8 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
    p->lc.Ka 			= 25;		// Reversal rate
    p->lc.Nr 			= 1000;	//	Sweep rate to reversal rate ratio
    p->lc.Ks        	= p->lc.Nr *  p->lc.Ka; // Sweep rate (Ks/65536) = stepper pulses per encoder edge
-   p->lc.Lplus			=  2000;
-   p->lc.Lminus		= -2000;
+   p->lc.Lplus			=   2000;
+   p->lc.Lminus		=  -2000;
    /* Stepper sends these CAN msgs. */
    p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
 
@@ -137,7 +137,11 @@ void stepper_items_init(void)
    // Position accumulator initial value. Reference paper for the value employed.
    p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2; 	
    p->posaccum_prev = p->posaccum.s32;
-   p->velaccum.s32 = 0;	//p->lc.Ks;	//	Velocity accumulator initial value
+   //	initialize 32-bit values for Lplus32 and Lminus32. Reference paper.
+   p->Lminus32 = p->lc.Lminus << 16;
+   p->Lplus32  = p->Lminus32 
+   	+ (((p->lc.Lplus - p->lc.Lminus) << 16) / p->lc.Ks) * p->lc.Ks;
+   p->velaccum.s32 = 0;	//	Velocity accumulator initial value	
    p->drbit = 0;				//	Drum direction bit
    p->drbit_prev = p->drbit;		
    p->cltimectr = 0;
@@ -297,7 +301,9 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
 void stepper_items_TIM2_IRQHandler(void)
 {
 	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
-	
+
+	//	Capture DTW timer for cycle counting
+		p->dtwentry = DTWTIME;
 
 	/* Faux encoder transition interrupt. */
 	if ((pT2base->SR & 0x4) != 0)
@@ -310,150 +316,72 @@ void stepper_items_TIM2_IRQHandler(void)
 		// Update enable i/o pin
 		Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
 
-		//	Capture DTW timer for cycle counting
-		p->dtwentry = DTWTIME;
-
-#if 1 // GSM 1 DEH 0		
- // new code for sweep and reversal
       // forward direction means position accumulator is increasing
       // negative direction means position accumulator is decreasing
       //	drbit = 0 means positive direction
 
       // update velocity integrator
-   #if 0	//	only invert velocity in linear region
-      if (p->posaccum.s16[1] >= p->lc.Lplus || p->posaccum.s16[1] <= p->lc.Lminus)
-      {  // in a level-wind reversal region
-         #if 0	//	original treatement of drum direction reversal in reversal region
-         if (p->posaccum.s16[1] >= p->lc.Lplus)
-         {  // in positive level-wind reversal region
-         	p->velaccum.s32 = (p->drbit) 
-            	? p->velaccum.s32 + p->lc.Ka : p->velaccum.s32 - p->lc.Ka;
-         }
-         else
-         {  // in negative level-wind reversal region
-         	p->velaccum.s32 = (p->drbit) 
-            	? p->velaccum.s32 - p->lc.Ka : p->velaccum.s32 + p->lc.Ka;            
-         }
-         #else	// revised treatment
-         if (p->posaccum.s16[1] >= p->lc.Lplus)
-         {  // in positive level-wind reversal region
-         	p->velaccum.s32 -= p->lc.Ka; 
-         }
-         else
-         {  // in negative level-wind reversal region
-         	p->velaccum.s32 += p->lc.Ka;            
-         }
-         #endif
-      }
-      else 
-      {  	// in a linear sweep region
-         if (p->drbit != p->drbit_prev)
-         {  // drum direction has changed
-            p->drbit_prev = p->drbit;   // store new direction
-            p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
-         }        
-      }
-   #else	//	always invert velocity when drum direction changes
+      
 
+      //	invert velocity integrator if Drum Direction has changed
       if (p->drbit != p->drbit_prev)
       	{  // Drum direction has changed
-            p->drbit_prev = p->drbit;   // store new direction
+            p->drbit_prev = p->drbit;   // save new direction
             p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
          } 
-
-      if (p->posaccum.s16[1] >= p->lc.Lplus || p->posaccum.s16[1] <= p->lc.Lminus)
-      #if 0	//	original treatement of drum direction reversal in reversal region
-         if (p->posaccum.s16[1] >= p->lc.Lplus)
+      #if 0
+      else if (p->posaccum.s16[1] >= p->lc.Lplus || p->posaccum.s16[1] <= p->lc.Lminus)		
+	   {
+	      if (p->posaccum.s16[1] >= p->lc.Lplus)
          {  // in positive level-wind reversal region
-         	p->velaccum.s32 = (p->drbit) 
-            	? p->velaccum.s32 + p->lc.Ka : p->velaccum.s32 - p->lc.Ka;
+         	p->velaccum.s32 -= p->lc.Ka;	//	apply negative acceleration 
          }
          else
          {  // in negative level-wind reversal region
-         	p->velaccum.s32 = (p->drbit) 
-            	? p->velaccum.s32 - p->lc.Ka : p->velaccum.s32 + p->lc.Ka;            
-         }
-         #else	// revised treatment
-         if (p->posaccum.s16[1] >= p->lc.Lplus)
+         	p->velaccum.s32 += p->lc.Ka;	// apply positive acceleration
+      	}
+	   }
+	   #else
+	   else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)		
+	   {
+	      if (p->posaccum.s32 >= p->Lplus32)
          {  // in positive level-wind reversal region
-         	p->velaccum.s32 -= p->lc.Ka; 
+         	p->velaccum.s32 -= p->lc.Ka;	//	apply negative acceleration 
          }
          else
          {  // in negative level-wind reversal region
-         	p->velaccum.s32 += p->lc.Ka;            
-         }
-         #endif
-   #endif
+         	p->velaccum.s32 += p->lc.Ka;	// apply positive acceleration
+      	}
+	   }
 
-      #if 1	//	some are all may be temporary for development
+	   #endif    
+         
+      #if 0	//	some or all may be temporary for development
       if (p->velaccum.s32 >  p->lc.Ks) p->velaccum.s32 =  p->lc.Ks;
       if (p->velaccum.s32 < -p->lc.Ks) p->velaccum.s32 = -p->lc.Ks;
+      #endif   
       p->dbg1 = p->velaccum.s32;
       p->dbg2 = p->posaccum.s16[1];
-      #endif
-   
+      p->dbg3 = p->posaccum.u16[0];
+      
       
       // update position integrator
       p->posaccum.s32 += p->velaccum.s32;
-      //= (p->drbit) ? p->posaccum.s32 + p->velaccum.s32 : p->posaccum.s32 - p->velaccum.s32;
       
       /* When accumulator upper 16b changes generate a stepper pulse. */
       if ((p->posaccum.s16[1]) != (p->posaccum_prev))
       { // Here carry/borrow from low 16b to high 16b
          p->posaccum_prev = (p->posaccum.s16[1]);
-         	
-
 
          /* Skip stepper pulses if motor not enabled. */
          if ((p->enflag & (2 << 0)) == 0) 
-         {  // set direction based on sign of Velocity intergrator
+         {  // set direction based on sign of Velocity integrator
             // depends on velocity magnitude being <= 2^16
             Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
                ? 1 : (1 << 16);
 
-#else	//	DEH orignal code
-
-/* Using 'if' drbit (0|1) rather than multiply with drsign (+/- 1)
-   saves two machine cycles, but requires more flash */
-		if (p->drbit == 0)
-			p->posaccum.s32 += p->lc.Ks;
-		else
-			p->posaccum.s32 -= p->lc.Ks;
-
-
-/* Using a UNION to test & store the upper 16b saves compiled
-   machine cycles (at least 8) over using '&' or '>>' techniques. */
-		/* When accumulator upper 16b changes generate a pulse. */
-		if ((p->posaccum.s16[1]) != (p->posaccum_prev))
-		{ // Here carry from low 16b to high 16b
-			p->posaccum_prev = (p->posaccum.s16[1]);
-
-
-			/* Skip stepper pulses if motor not enabled. */
-			if ((p->enflag & (2 << 0)) == 0) 
-			{				
-					Stepper__DR__direction_GPIO_Port->BSRR = p->drflag;
-
-#endif
 				// Start TIM9 to generate a delayed pulse.
 				pT9base->CR1 = 0x9;
-
-
-#if 0	//	1 for debug, 0 for operational
-				// Start TIM14 to start scope sync pulse (PE5)
-				pT14base->CR1 = 0x9; 
-
-				// Visual check for debugging
-				p->ledctr1 += 1; // Slow LED toggling rate
-				if (p->ledctr1 > 1000)
-				{
-	 					p->ledctr1 = 0;
-
-  					// Toggle LED on/off
-					p->ledbit1 ^= (LED_GREEN_Pin | (LED_GREEN_Pin << 16));
-					LED_GREEN_GPIO_Port->BSRR = p->ledbit1;
-				}
-#endif
 			}
 		}
 	}

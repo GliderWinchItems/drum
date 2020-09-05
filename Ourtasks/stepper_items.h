@@ -90,6 +90,8 @@ struct STEPPERSTUFF
    union    PAYFLT   pf; // For extracting float from payload
    union    PAYFLT   posaccum;
    union    PAYFLT   velaccum;  // Stepper velocity accumulator
+   int32_t  Lplus32;    // 32-bit extended Lplus
+   int32_t  Lminus32;   // 32-bit extended Lminus
    float    speedcmdf;  // Speed command (float)
    float    focdur;     // Temp for computer inverse of CL position
    float    clpos;      // CL position extracted from CAN msg
@@ -109,13 +111,14 @@ struct STEPPERSTUFF
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
    uint8_t  drbit;      // Direction bit (0|1)
    uint8_t  drbit_prev; // Previous Direction bit
-   // debug and characterization, likely removable for operational code
+   // debug and characterization, potentially removable for operational code
    uint32_t dtwentry;   // DTW timer upon ISR entry
    uint32_t dtwdiff;    // DTW timer minus entry upon ISR exit
    uint32_t dtwmax;     // DTW difference max
    uint32_t dtwmin;     // DTW difference min
-   uint32_t dbg1;       // Debug 1
-   uint32_t dbg2;       // Debug 2
+   int32_t  dbg1;       // Debug 1
+   int32_t  dbg2;       // Debug 2
+   int32_t  dbg3;       // Debug 3
 };
 #else
 struct STEPPERSTUFF
