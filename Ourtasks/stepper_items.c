@@ -6,6 +6,9 @@
 /*
 
 09/03/2020 testencoder branch started
+Mods reminder list 
+- CH2 fauxencoder -> CH1 testencoder (output compare)
+
 
 08/10/2020 - pins added to Control Panel for stepper testing
 
