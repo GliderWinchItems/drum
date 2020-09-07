@@ -75,7 +75,7 @@ void StartCanTxTask(void const * argument)
   /* Infinite RTOS Task loop */
   for(;;)
   {
-HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14); // 14-RED, 13-ORANGE
+//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14); // 14-RED, 13-ORANGE
 		Qret = xQueueReceive(CanTxQHandle,&txq,portMAX_DELAY);
 		if (Qret == pdPASS) // Break loop if not empty
 		{

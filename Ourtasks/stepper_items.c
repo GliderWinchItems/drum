@@ -8,6 +8,9 @@
 09/03/2020 testencoder branch started
 Mods reminder list 
 - CH2 fauxencoder -> CH1 testencoder (output compare)
+- PA0-PA2 high is about 3.9v because PA0 pushbutton has 220K pull-down resistor
+  PA1-PA3 high is 4.48v 
+  PB3 - high is 5.05v
 
 
 08/10/2020 - pins added to Control Panel for stepper testing
@@ -307,7 +310,14 @@ void stepper_items_TIM2_IRQHandler(void)
 	if ((pT2base->SR & (1<<3)) != 0) // Output compare?
 	{
 				pT2base->SR = ~(1<<3);	// Reset CH3 flag
-
+				if ((GPIOA->IDR & 0x1) == 0)
+				{ // Pin is low, set led off
+					LED_GREEN_GPIO_Port->BSRR = (LED_GREEN_Pin << 16);
+				}
+				else
+				{ // Pin is high, set led on
+					LED_GREEN_GPIO_Port->BSRR = (LED_GREEN_Pin << 0);
+				}
 	}
 
 	/* TIM2CH4 = encodertimeB PA3	*/
