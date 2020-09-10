@@ -72,6 +72,7 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 #include "main.h"
 #include "stepper_items.h"
 #include "DTW_counter.h"
+#include "drum_items.h"
 
 #define TIM3CNTRATE 84000000   // TIM3 counter rate (Hz)
 #define UPDATERATE 100000      // 100KHz interrupt/update rate
@@ -91,9 +92,6 @@ TIM_TypeDef  *pT9base; // Register base address
 TIM_TypeDef  *pT14base; // Register base address 
 
 
-/* Struct with many things for the drum function. */
-struct DRUMSTUFF drumstuff;
-
 /* Struct with all you want to know for the stepper. */
 struct STEPPERSTUFF stepperstuff;
 
@@ -105,7 +103,7 @@ enum cididx
 
 
 /* *************************************************************************
- * void stepper_idx_v_struct_hardcode_params(void);
+ * void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p);
  * @brief       : Initialization of parameters
  * *************************************************************************/
 void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
@@ -316,18 +314,25 @@ void stepper_items_TIM2_IRQHandler(void)
 	if ((pT2base->SR & (1<<4)) != 0) // CH4 Input capture?
 	{ // Yes,
 		pT2base->SR = ~(1<<4);	// Reset CH4 flag
+
+		drumstuff.decA.cur.tim = pT2base->CCR4;   // Save current time
+		drumstuff.decA.cur.cnt = pT5base->CNT;    // Save current encoder count
 	}
 
 	/* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0	*/
 	if ((pT2base->SR & (1<<3)) != 0) // CH3 Input capture?
 	{ // Yes,
 		pT2base->SR = ~(1<<3);	// Reset CH3 flag
+		drumstuff.decB.cur.tim = pT2base->CCR3;   // Save current time
+		drumstuff.decB.cur.cnt = pT5base->CNT;    // Save current encoder count
 	}
 
 	/* TIM2CH2 = encodertimeZ PB3	*/
 	if ((pT2base->SR & (1<<2)) != 0) // CH2 Input capture?
 	{ // Yes,
 		pT2base->SR = ~(1<<2);	// Reset CH2 flag
+		drumstuff.decZ.cur.tim = pT2base->CCR2;   // Save current time
+		drumstuff.decZ.cur.cnt = pT5base->CNT;    // Save current encoder count
 	}
 
 	/* Timed interrupt. */

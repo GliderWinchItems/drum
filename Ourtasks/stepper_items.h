@@ -118,19 +118,6 @@ struct STEPPERSTUFF
    uint32_t dbg2;       // Debug 2
 };
 
-/* Input Capture time and encoder count. */
-struct DRUMTIMCNT
-{
-   uint32_t tim; // Input capture time
-   uint32_t cnt; // Encoder count at capture time
-};
-
-struct DRUMSTUFF
-{
-   struct DRUMTIMCNT tcA; // Time & Count Encoder Channel A
-   struct DRUMTIMCNT tcB; // Time & Count Encoder Channel B
-   struct DRUMTIMCNT tcZ; // Time & Count Encoder Channel Z
-};
 
 /* *************************************************************************/
  void stepper_items_init(void);

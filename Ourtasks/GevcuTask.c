@@ -101,6 +101,9 @@ void StartGevcuTask(void const * argument)
 	/* Initial startup state */
 	gevcufunction.state = GEVCU_INIT;
 
+	/* Drum function intialization */
+	drum_items_init(&drumstuff);
+
 	/* Stepper initialization starts timers. */
 	stepper_items_init();
 
