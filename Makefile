@@ -136,6 +136,7 @@ C_SOURCES += Ourtasks/paycnvt.c
 #C_SOURCES += Ourtasks/LcdmsgsTask.c
 #C_SOURCES += Ourtasks/LcdmsgsetTask.c
 C_SOURCES += Ourtasks/stepper_items.c
+C_SOURCES += Ourtasks/drum_items.c
 
 
 # /* USER CODE END */ 
