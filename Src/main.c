@@ -787,12 +787,12 @@ static void MX_TIM5_Init(void)
   htim5.Init.Period = 4294967295;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
   sConfig.IC1Filter = 0;
-  sConfig.IC2Polarity = TIM_ICPOLARITY_FALLING;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
   sConfig.IC2Filter = 0;
@@ -1232,10 +1232,15 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
-    drum_items_computespeed(&drumstuff.decA);
-    yprintf(&pbuf4,"\n\r%3i %X %6.1f %8i %10.4f %10.4f",
-      stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos,htim5.Instance->CNT, 
-      drumstuff.Cspeed_rpm_encoder,drumstuff.Cspeed_cable,drumstuff.Ccable_distance );
+    drum_items_computespeed(&drumstuff);
+    yprintf(&pbuf4,"\n\r%3i %X %6.1f %8i %10.4f %10.4f %10.4f",
+      stepperstuff.cltimectr,
+      stepperstuff.pay0,
+      stepperstuff.clpos,
+      htim5.Instance->CNT, 
+      drumstuff.Cspeed_rpm_encoder,
+      drumstuff.Cspeed_cable,
+      drumstuff.Ccable_distance);
 #endif      
     }
 

@@ -32,15 +32,6 @@ struct DRUMENCODERCH /* Drum Encoder Channel */
    struct DRUMTIMCNT diff;
    struct DRUMTIMCNT tmp;
 
-    int32_t cablezeroref;     // Encoder count for zero line out.
-
-	float Fspeed_rpm_encoder; // Factor to convert encoder counts to rpm
-   	float Fspeed_cable;	      // Factor to convert encoder rpm to meters/sec
-	float Fcable_distance;    // Factor to convert encoder count to meters
-
-	float Cspeed_rpm_encoder; // Computed encoder counts to rpm
-   	float Cspeed_cable;	      // Computed encoder rpm to meters/sec
-	float Ccable_distance;    // Computed encoder count to meters
 };
 
 struct DRUMSTUFF
@@ -51,10 +42,21 @@ struct DRUMSTUFF
    struct DRUMENCODERCH decZ; // Time & Count Encoder Channel Z
    uint32_t encoder; // Latest encoder (needed?)
    uint32_t CR1; // Latest direction bit (needed?)
+
+   int32_t cablezeroref;     // Encoder count for zero line out.
+
+	float Fspeed_rpm_encoder; // Factor to convert encoder counts to rpm
+   	float Fspeed_cable;	      // Factor to convert encoder rpm to meters/sec
+	float Fcable_distance;    // Factor to convert encoder count to meters
+
+	float Cspeed_rpm_encoder; // Computed encoder counts to rpm
+   	float Cspeed_cable;	      // Computed encoder rpm to meters/sec
+	float Ccable_distance;    // Computed encoder count to meters
+
 };
 
 /* *************************************************************************/
- void drum_items_computespeed(struct DRUMENCODERCH* p);
+ void drum_items_computespeed(struct DRUMSTUFF* p);
 /* @brief       : Compute speed for the encoder channel
  * @param 		: p = pointer to data for channel
  * *************************************************************************/

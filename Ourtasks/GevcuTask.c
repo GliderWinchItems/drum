@@ -29,6 +29,7 @@
 //#include "shiftregbits.h"
 //#include "spiserialparallelSW.h"
 #include "stepper_items.h"
+#include "drum_items.h"
 
 
 /* From 'main.c' */
