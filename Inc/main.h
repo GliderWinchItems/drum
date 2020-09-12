@@ -100,8 +100,10 @@ void Error_Handler(void);
 #define encodectrA_GPIO_Port GPIOA
 #define encodectrB_Pin GPIO_PIN_1
 #define encodectrB_GPIO_Port GPIOA
-#define encodetimeA_Pin GPIO_PIN_2
-#define encodetimeA_GPIO_Port GPIOA
+#define encodertimeA_Pin GPIO_PIN_2
+#define encodertimeA_GPIO_Port GPIOA
+#define encodertimeB_Pin GPIO_PIN_3
+#define encodertimeB_GPIO_Port GPIOA
 #define solenoiddrive_Pin GPIO_PIN_6
 #define solenoiddrive_GPIO_Port GPIOA
 #define Oscope_sync_Pin GPIO_PIN_7
@@ -126,6 +128,12 @@ void Error_Handler(void);
 #define LimitSw_outside_NC_Pin GPIO_PIN_13
 #define LimitSw_outside_NC_GPIO_Port GPIOE
 #define LimitSw_outside_NC_EXTI_IRQn EXTI15_10_IRQn
+#define OverrunSw_Inside_Pin GPIO_PIN_14
+#define OverrunSw_Inside_GPIO_Port GPIOE
+#define OverrunSw_Inside_EXTI_IRQn EXTI15_10_IRQn
+#define OverrunSw_outside_Pin GPIO_PIN_15
+#define OverrunSw_outside_GPIO_Port GPIOE
+#define OverrunSw_outside_EXTI_IRQn EXTI15_10_IRQn
 #define SPI2_NSS__CK_Pin GPIO_PIN_12
 #define SPI2_NSS__CK_GPIO_Port GPIOB
 #define LED_GREEN_Pin GPIO_PIN_12
@@ -136,6 +144,8 @@ void Error_Handler(void);
 #define LED_RED_GPIO_Port GPIOD
 #define LED_BLUE_Pin GPIO_PIN_15
 #define LED_BLUE_GPIO_Port GPIOD
+#define encodertimeZ_Pin GPIO_PIN_3
+#define encodertimeZ_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 // ===============================================================================
 // USART/UART assignments

@@ -4,7 +4,11 @@
 * Description        : Stepper motor associated items
 *******************************************************************************/
 /*
+09/10/2020 realfaux branch 
+
+
 08/29/2020 fauxencoder
+
 */
 
 
@@ -72,6 +76,22 @@ struct STEPPERLC
    uint32_t cid_hb_stepper;        // CANID_HB_STEPPER: U8_U32','STEPPER: U8: Status, U32: stepper position accum
 };
 
+
+#define LIMITDBINSIDE  0
+#define LIMITDBOUTSIDE 1
+
+struct EXTISWITCHSTATUS
+{
+   uint32_t tim2;   // TIM2 CNT
+    int32_t posaccum;  // Position accumulator
+   uint8_t  cur;    // Current
+   uint8_t  prev;   // Previous
+   uint8_t  dbs;    // Debounced state
+   uint8_t  flag1;   // 0 = handled; 1 = not handled
+   uint8_t  flag2;   // 0 = handled; 1 = not handled
+
+};
+
 union PAYFLT
 {
    float f;
@@ -88,7 +108,7 @@ struct STEPPERSTUFF
    struct   STEPPERLC lc; // Parameters for stepper
    struct   CANTXQMSG canmsg[NUMCANMSGSSTEPPER]; // CAN msgs sent
    union    PAYFLT   pf; // For extracting float from payload
-   union    PAYFLT   posaccum;
+   union    PAYFLT   posaccum;  // Stepper position accumulator
    union    PAYFLT   velaccum;  // Stepper velocity accumulator
    int32_t  Lplus32;    // 32-bit extended Lplus
    int32_t  Lminus32;   // 32-bit extended Lminus
@@ -101,7 +121,8 @@ struct STEPPERSTUFF
    uint32_t ledbit2;    // Bit for toggling orange led
    uint32_t cltimectr;  // Counter for loss of CL msgs
    uint32_t speedcmdi;   // Commanded speed (integer)
-   uint32_t ocinc;      // oc register increment
+   uint32_t ocinc;      // OC register increment for CL faux encoder  
+   uint32_t ocidx;      // OC register increment for indexing
    uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
    uint32_t drflag;     // BSRR pin set/reset bit position: direction
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
@@ -111,6 +132,14 @@ struct STEPPERSTUFF
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
    uint8_t  drbit;      // Direction bit (0|1)
    uint8_t  drbit_prev; // Previous Direction bit
+
+   uint8_t  flagindexing; // 0 = sweep; 1 = indexing
+   uint8_t  prepbit;      //
+   uint8_t  prepbit_prev; //
+
+   struct EXTISWITCHSTATUS sw[6]; // Limit & overrun switches
+   uint16_t swbits;     // Port E switch bits (10:15)
+
    // debug and characterization, potentially removable for operational code
    uint32_t dtwentry;   // DTW timer upon ISR entry
    uint32_t dtwdiff;    // DTW timer minus entry upon ISR exit

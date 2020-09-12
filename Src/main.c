@@ -645,6 +645,7 @@ static void MX_TIM2_Init(void)
 
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
@@ -659,6 +660,10 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
+  if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
@@ -669,15 +674,23 @@ static void MX_TIM2_Init(void)
   sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1059,8 +1072,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Stepper__MF_not_enable_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin LimitSw_outside_NO_Pin LimitSw_outside_NC_Pin */
-  GPIO_InitStruct.Pin = LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin|LimitSw_outside_NO_Pin|LimitSw_outside_NC_Pin;
+  /*Configure GPIO pins : LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin LimitSw_outside_NO_Pin LimitSw_outside_NC_Pin
+                           OverrunSw_Inside_Pin OverrunSw_outside_Pin */
+  GPIO_InitStruct.Pin = LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin|LimitSw_outside_NO_Pin|LimitSw_outside_NC_Pin
+                          |OverrunSw_Inside_Pin|OverrunSw_outside_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
@@ -1080,7 +1095,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 11, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }

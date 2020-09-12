@@ -4,6 +4,14 @@
 * Description        : Stepper motor associated items
 *******************************************************************************/
 /*
+09/10/2020 realfaux branch
+
+09/03/2020 testencoder branch 
+Mods reminder list 
+- CH2 fauxencoder -> CH1 testencoder (output compare)
+- PA0-PA2 high is about 3.9v because PA0 pushbutton has 220K pull-down resistor
+  PA1-PA3 high is 4.48v 
+  PB3 - high is 5.05v
 
 08/23/2020 druminversion branch started
 
@@ -66,6 +74,7 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 #include "main.h"
 #include "stepper_items.h"
 #include "DTW_counter.h"
+#include "drum_items.h"
 
 #define TIM3CNTRATE 84000000   // TIM3 counter rate (Hz)
 #define UPDATERATE 100000      // 100KHz interrupt/update rate
@@ -77,6 +86,8 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 
 #define GSM
 #define DEBUG
+
+static step_sweep_logic(void);
 
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT4base; // Register base address 
@@ -141,13 +152,14 @@ void stepper_items_init(void)
    p->Lminus32 = p->lc.Lminus << 16;
    p->Lplus32  = p->Lminus32 
       + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->lc.Ks) * p->lc.Ks;
-   p->velaccum.s32 = 0; // Velocity accumulator initial value  
-   p->drbit = 0;           // Drum direction bit
+   p->velaccum.s32 = 0;      // Velocity accumulator initial value  
+   p->drbit      = 0;        // Drum direction bit
    p->drbit_prev = p->drbit;     
-   p->cltimectr = 0;
-   p->hbctr     = 0;
-   p->ocinc = 8400000;
-   p->dtwmin = 0xffffffff;
+   p->cltimectr  = 0;
+   p->hbctr      = 0;
+   p->ocinc      = 8400000;	// Default 1/10 sec duration
+   p->ocidx      =   42000; // Default indexing increment 500 ms
+   p->dtwmin     = 0xffffffff;
 
    /* Bit positions for low overhead toggling. */
    p->ledbit1= (LED_GREEN_Pin);
@@ -182,13 +194,15 @@ extern TIM_HandleTypeDef htim14;
    pT4base->CCR2 = pT4base->CNT + 100; // 1 ms delay
    pT4base->ARR  = 0xffff;
 
-   /* TIM2 Stepper reversal timer and faux encoder transitions. */
-   pT2base->DIER = 0x4; // CH2 interrupt enable, only.
-   pT2base->CCR2 = pT2base->CNT + 100; // 1 ms delay
-   pT2base->ARR  = 0xffffffff;
+	/* TIM2 Shaft encoder input capture times & output caputre indexing interrupts. */
+	pT2base->CCER |= 0x1100; // Input capture active: CH3,4
+	pT2base->DIER = 0xA; // CH1,3 interrupt enable
+	pT2base->CCR1 = pT2base->CNT + 1000; // 1 short delay
+	pT2base->ARR  = 0xffffffff;
 
-   /* Start TIM2 counter. */
-   pT2base->CR1 |= 1;
+	/* Start counters. */
+	pT2base->CR1 |= 1;  // TIM2 CH1 oc, CH2 CH3 CH4 ic
+	pT5base->CR1 |= 1;  // TIM5 encoder CH1 CH2
    return;
 }
 /* *************************************************************************
@@ -280,23 +294,48 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    p->iobits = p->drflag | p->enflag;
 
 /* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
-#define MAXDURF (84E5f) // 1/10sec per faux encoder interrupt
+#define MAXDURF (84E5f) // 1/10sec per faux encoder interrupt max duration
    p->focdur = (p->lc.clfactor / p->clpos);
    if ( p->focdur > (MAXDURF))
    { 
       p->focdur = MAXDURF; // Hold at max
    }
    p->ocinc = p->focdur;   // Convert to integer
+
+
+   /* Configure TIM2CH3 to be either input capture from encoder, or output compare (no pin). */
+   // Each PREP pushbutton press toggles beween IC and OC modes
+   p->prepbit = (pcan->cd.uc[0] & PRBIT);
+   if (p->prepbit == p->prepbitprev)
+   { // Here, the PREP bit changed
+   	  	p->prepbit_prev = p->prepbit;
+   	  	if (p->prepbit != 0)
+   	  	{ // Here. PREP bit went from off to on
+   	  		pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
+			if ((pT2base->CCMR2 & 0x1) != 0)
+   	  		{ // Here, currently using encoder input capture
+	   	  		// Setup for output compare
+   		  		pT2base->CCMR2 &= ~(0xff << 0); // CH3 Output capture, no pin
+   	  			pT2base->CCR3 = T2base->CNT + p->ocinc; // Schedule next faux encoder interrupt
+   		  	}
+   	  		else
+	   	  	{ // Here, currently using output compare
+   		  		// Setup for input capture
+				pT2base->CCMR2 |= 0x01; // Input capture mapped to TI3
+				pT2base->SR = ~(1<<3);	// Reset CH3 flag if on
+   		  	}
+   		  	pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
+   		}
+   }
    return;  
-
 }
-
 
 /*#######################################################################################
  * ISR routine for TIM2
- * CH3 - IC encoder channel A
- * CH4 - IC encoder channel B
- * CH1 - IC encoder channel Z
+ * CH1 - OC timed interrupts  indexing interrupts
+ * CH2 - OC timed interrupts  or, FreeRTOS task forces this interrupt?
+ * CH3 - IC encoder channel A or, OC generates faux encoder interrupts
+ * CH4 - IC encoder channel B not used in this version
  *####################################################################################### */
 void stepper_items_TIM2_IRQHandler(void)
 {
@@ -305,15 +344,69 @@ void stepper_items_TIM2_IRQHandler(void)
    // Capture DTW timer for cycle counting
       p->dtwentry = DTWTIME;
 
-   /* Faux encoder transition interrupt. */
-   if ((pT2base->SR & 0x4) != 0)
-   {
-      pT2base->SR = ~(0x4);   // Reset CH2 flag
+     /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0	*/
+	if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
+	{ // Yes, either encoder channel A, or output capture
+		pT2base->SR = ~(1<<3);	// Reset CH3 flag
 
-      // Duration increment computed from CL CAN msg
-      pT2base->CCR2 += p->ocinc; // Schedule next interrupt
+		/* Was this interrupt due to encoder input capture or output capture?. */
+		if ((pT2base->CCMR2 & 0x1) == 0)
+		{ // Here we are using TIM2CH3 as OC compare instead of input capture. */
+	 		// Duration increment computed from CL CAN msg
+    		pT2base->CCR3 += p->ocinc; // Schedule next faux encoder interrupt
+		}
+		else
+		{ // Here, encoder driven input capture. Save count and times
+			if ((pT5base->CNT & 0x1) == 0)
+			{ // Even 
+				drumstuff.decA0.cur.cnt = pT5base->CNT;    // Save current encoder count
+				drumstuff.decA0.cur.tim = pT2base->CCR3;   // Save current time
+			}
+			else
+			{ // Odd
+				drumstuff.decA1.cur.cnt = pT5base->CNT;    // Save current encoder count
+				drumstuff.decA1.cur.tim = pT2base->CCR3;   // Save current time			
+			}
+		}
 
-      // Update enable i/o pin
+		/* Here: either encoder channel A driven input capture interrupt, or 
+		   CL controlled timer output capture interrupt. */
+
+		/* During indexing the encoder or faux encoder interrupts do not drive
+		   the stepper. */
+		if (flagindexing == 0)
+		{ // Here, not indexing
+			step_sweep_logic();
+		}
+	}
+
+	/* Indexing timer interrupt. */
+	if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag?
+	{ // Yes, OC drive 
+		pT2base->SR = ~(1<<1);	// Reset CH1 flag
+
+ 		// Duration increment computed from CL CAN msg
+   		pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
+
+		if (flagindexing != 0)
+		{ // Here, not indexing
+			step_index_logic();
+		}
+
+   	}
+ 
+   p->dtwdiff = DTWTIME - p->dtwentry;
+   if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
+   else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
+
+   return;
+}
+/* ######################################################################################
+ * Common step routine: runs under interrupt
+ * ###################################################################################### */
+static step_sweep_logic(void)
+{
+ // Update enable i/o pin
       Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
 
       // forward (stepper) direction means position accumulator is increasing
@@ -366,13 +459,74 @@ void stepper_items_TIM2_IRQHandler(void)
             pT9base->CR1 = 0x9;
          }
       }
-   }
+      return;
+}
+/*#######################################################################################
+ * ISR routine for EXTI
+ * CH1 = OC stepper reversal
+ * CH2 = OC faux encoder interrupts
+ *####################################################################################### */
+void Stepper_EXTI15_10_IRQHandler(void)
+{
+	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
-   p->dtwdiff = DTWTIME - p->dtwentry;
-   if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
-   else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
+	/* Here, one or more PE10-15 inputs changed. */
+	p->swbits = GPIOE->IDR & 0xfc00; // Save latest switch bits 10:15
 
-   return;
+	/* Do R-S flip-flop type switch debouncing for limit switches. */
+	if ((EXTI->PR & (LimitSw_inside_NO_Pin)) != 0)
+	{ // Here Pending Register shows this switch transitioned
+		EXTI->PR = LimitSw_inside_NO_Pin; // Reset request
+		if (p->sw[0].dbs != 1)
+		{ // Here R-S flip-flop was reset
+			p->sw[LIMITDBINSIDE].dbs = 1; // Set debounced R-S
+			p->sw[LIMITDBINSIDE].posaccum_NO = p->posaccum.s32;
+			p->sw[LIMITDBINSIDE].flag1  = 1; // Flag for stepper ISR
+			p->sw[LIMITDBINSIDE].flag2 += 1; // Flag for task(?)
+		}
+		return;
+	}
+	if ((EXTI->PR & (LimitSw_inside_NC_Pin)) != 0)
+	{ // Here Pending Register shows this switch transitioned
+		EXTI->PR = LimitSw_inside_NC_Pin; // Reset request
+		if (p->sw[LIMITDBINSIDE].dbs != 0)
+		{ // Here R-S flip-flop was set
+			p->sw[LIMITDBINSIDE].dbs = 0; // Reset debounced R-S
+			p->sw[LIMITDBINSIDE].posaccum_NC = p->posaccum.s32;
+			p->sw[LIMITDBINSIDE].flag1  = 1; // Flag for stepper ISR
+			p->sw[LIMITDBINSIDE].flag2 += 1; // Flag for task(?)
+		}
+		return;
+	}
+
+	if ((EXTI->PR & (LimitSw_outside_NO_Pin)) != 0)
+	{ // Here Pending Register shows this switch transitioned
+		EXTI->PR = LimitSw_outside_NO_Pin; // Reset request
+		if (p->sw[LIMITDBOUTSIDE].dbs != 1)
+		{ // Here R-S flip-flop was reset
+			p->sw[LIMITDBOUTSIDE].dbs = 1; // Set debounced R-S
+			p->sw[LIMITDBOUTSIDE].posaccum_NO = p->posaccum.s32;
+			p->sw[LIMITDBOUTSIDE].flag1  = 1; // Flag for stepper ISR
+			p->sw[LIMITDBOUTSIDE].flag2 += 1; // Flag for task(?)
+		}
+		return;
+	}
+	if ((EXTI->PR & (LimitSw_outside_NC_Pin)) != 0)
+	{ // Here Pending Register shows this switch transitioned
+		EXTI->PR = LimitSw_outside_NC_Pin; // Reset request
+		if (p->sw[LIMITDBOUTSIDE].dbs != 0)
+		{ // Here R-S flip-flop was set
+			p->sw[LIMITDBOUTSIDE].dbs = 0; // Reset debounced R-S
+			p->sw[LIMITDBOUTSIDE].posaccum_NC = p->posaccum.s32;
+			p->sw[LIMITDBOUTSIDE].flag1  = 1; // Flag for stepper ISR
+			p->sw[LIMITDBOUTSIDE].flag2 += 1; // Flag for task(?)
+		}
+		return;
+	}
+
+
+
+	return;
 }
 
 
