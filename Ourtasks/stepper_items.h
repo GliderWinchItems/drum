@@ -59,6 +59,14 @@
 
 #define NUMCANMSGSSTEPPER 1  // Number of CAN msgs stepper sends
 
+/* Parameters for switch contact closures versus position accumulator. */
+struct STEPPERSWCONTACT
+{
+   int32_t close;
+   int32_t open;
+   uint32_t delay;
+};
+
 
 /* Parameters stepper instance (LC = Local Copy) */
 struct STEPPERLC
@@ -72,6 +80,7 @@ struct STEPPERLC
    int32_t  Nr;      // ratio of reversal rate to sweep rate      
    int32_t  Ks;      // sweep rate
 
+
    // stepper function sends: others receive the following CAN msgs
    uint32_t cid_hb_stepper;        // CANID_HB_STEPPER: U8_U32','STEPPER: U8: Status, U32: stepper position accum
 };
@@ -83,7 +92,8 @@ struct STEPPERLC
 struct EXTISWITCHSTATUS
 {
    uint32_t tim2;   // TIM2 CNT
-    int32_t posaccum;  // Position accumulator
+    int32_t posaccum_NO;  // Position accumulator
+    int32_t posaccum_NC;  // Position accumulator
    uint8_t  cur;    // Current
    uint8_t  prev;   // Previous
    uint8_t  dbs;    // Debounced state
@@ -137,6 +147,7 @@ struct STEPPERSTUFF
    uint8_t  prepbit;      //
    uint8_t  prepbit_prev; //
 
+   struct STEPPERSWCONTACT ctk[6]; // Measured switch contact open/close posaccum
    struct EXTISWITCHSTATUS sw[6]; // Limit & overrun switches
    uint16_t swbits;     // Port E switch bits (10:15)
 
@@ -187,8 +198,7 @@ struct STEPPERSTUFF
 
 /* *************************************************************************/
  void stepper_items_init(void);
-/* phtim = pointer to timer handle
- * @brief   : Initialization of channel increment
+ /* @brief   : Initialization
  * *************************************************************************/
   void stepper_items_clupdate(struct CANRCVBUF* pcan);
 /* @param   : pcan = pointer to CAN msg struct

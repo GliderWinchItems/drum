@@ -87,10 +87,11 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 #define GSM
 #define DEBUG
 
-static step_sweep_logic(void);
+static void step_sweep_logic(void);
 
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT4base; // Register base address 
+TIM_TypeDef  *pT5base; // Register base address 
 TIM_TypeDef  *pT9base; // Register base address 
 TIM_TypeDef  *pT14base; // Register base address 
 
@@ -119,6 +120,10 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
    p->lc.Ks          = p->lc.Nr *  p->lc.Ka; // Sweep rate (Ks/65536) = stepper pulses per encoder edge
    p->lc.Lplus       =   8000;
    p->lc.Lminus      =  -8000;
+
+
+
+
    /* Stepper sends these CAN msgs. */
    p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
 
@@ -132,9 +137,28 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 }
 
 /* *************************************************************************
- * void stepper_items_init(TIM_HandleTypeDef *phtim);
- * phtim = pointer to timer handle
- * @brief   : Initialization of channel increment
+ * static void  switches_init(struct STEPPERSTUFF* p);
+ * @brief   : Initialization for limit and overrun switches
+ * *************************************************************************/
+static void  switches_init(struct STEPPERSTUFF* p)
+{
+
+
+	p->swbits = GPIOE->IDR & 0xfc00; // Save current switch bits PE10:15
+
+	EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
+	EXTI->FTSR |=  0xfc00;  // Trigger on falling edge
+	EXTI->IMR  &= ~0xf000;  // Interrupt mask reg: disable 10:15
+	EXTI->EMR  |=  0xfc00;  // Event mask reg: enable 10:15
+	EXTI->PR   |=  0xfc00;  // Clear any pending
+
+
+	return;
+}
+
+/* *************************************************************************
+ * void stepper_items_init(void);
+ * @brief   : Initialization
  * *************************************************************************/
 void stepper_items_init(void)
 {
@@ -142,6 +166,9 @@ void stepper_items_init(void)
    
    // Initialize hardcoded parameters (used in some computations below)
    stepper_idx_v_struct_hardcode_params(p);
+
+   // Initialize for limit and overrun switches
+   switches_init(p);
 
    p->ledctr1   = 0;
    p->ledctr2   = 0;
@@ -168,10 +195,12 @@ void stepper_items_init(void)
    /* Save base addresses of timers for faster use later. */
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim9;
 extern TIM_HandleTypeDef htim14;
    pT2base  = htim2.Instance;
    pT4base  = htim4.Instance;
+   pT4base  = htim5.Instance;
    pT9base  = htim9.Instance;
    pT14base = htim14.Instance;
 
@@ -203,6 +232,9 @@ extern TIM_HandleTypeDef htim14;
 	/* Start counters. */
 	pT2base->CR1 |= 1;  // TIM2 CH1 oc, CH2 CH3 CH4 ic
 	pT5base->CR1 |= 1;  // TIM5 encoder CH1 CH2
+
+	/* Enable limite and overrun switch interrupts EXTI15_10. */
+	EXTI->IMR  |= 0xf000;  // Interrupt mask reg: enable 10:15
    return;
 }
 /* *************************************************************************
@@ -306,7 +338,7 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    /* Configure TIM2CH3 to be either input capture from encoder, or output compare (no pin). */
    // Each PREP pushbutton press toggles beween IC and OC modes
    p->prepbit = (pcan->cd.uc[0] & PRBIT);
-   if (p->prepbit == p->prepbitprev)
+   if (p->prepbit == p->prepbit_prev)
    { // Here, the PREP bit changed
    	  	p->prepbit_prev = p->prepbit;
    	  	if (p->prepbit != 0)
@@ -316,7 +348,7 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    	  		{ // Here, currently using encoder input capture
 	   	  		// Setup for output compare
    		  		pT2base->CCMR2 &= ~(0xff << 0); // CH3 Output capture, no pin
-   	  			pT2base->CCR3 = T2base->CNT + p->ocinc; // Schedule next faux encoder interrupt
+   	  			pT2base->CCR3 = pT2base->CNT + p->ocinc; // Schedule next faux encoder interrupt
    		  	}
    	  		else
 	   	  	{ // Here, currently using output compare
@@ -357,16 +389,8 @@ void stepper_items_TIM2_IRQHandler(void)
 		}
 		else
 		{ // Here, encoder driven input capture. Save count and times
-			if ((pT5base->CNT & 0x1) == 0)
-			{ // Even 
-				drumstuff.decA0.cur.cnt = pT5base->CNT;    // Save current encoder count
-				drumstuff.decA0.cur.tim = pT2base->CCR3;   // Save current time
-			}
-			else
-			{ // Odd
-				drumstuff.decA1.cur.cnt = pT5base->CNT;    // Save current encoder count
-				drumstuff.decA1.cur.tim = pT2base->CCR3;   // Save current time			
-			}
+			drumstuff.decA.cur.cnt = pT5base->CNT;    // Save current encoder count
+			drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
 		}
 
 		/* Here: either encoder channel A driven input capture interrupt, or 
@@ -374,9 +398,10 @@ void stepper_items_TIM2_IRQHandler(void)
 
 		/* During indexing the encoder or faux encoder interrupts do not drive
 		   the stepper. */
-		if (flagindexing == 0)
+		if (p->flagindexing == 0)
 		{ // Here, not indexing
 			step_sweep_logic();
+HAL_GPIO_TogglePin(GPIOD,LED_GREEN_Pin); // GREEN LED			
 		}
 	}
 
@@ -388,9 +413,9 @@ void stepper_items_TIM2_IRQHandler(void)
  		// Duration increment computed from CL CAN msg
    		pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
 
-		if (flagindexing != 0)
-		{ // Here, not indexing
-			step_index_logic();
+		if (p->flagindexing != 0)
+		{ // Here, indexing
+			//step_index_logic(); // TODO
 		}
 
    	}
@@ -404,8 +429,10 @@ void stepper_items_TIM2_IRQHandler(void)
 /* ######################################################################################
  * Common step routine: runs under interrupt
  * ###################################################################################### */
-static step_sweep_logic(void)
+static void step_sweep_logic(void)
 {
+	  struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+
  // Update enable i/o pin
       Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
 
@@ -461,6 +488,8 @@ static step_sweep_logic(void)
       }
       return;
 }
+
+
 /*#######################################################################################
  * ISR routine for EXTI
  * CH1 = OC stepper reversal

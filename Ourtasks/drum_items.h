@@ -37,8 +37,7 @@ struct DRUMENCODERCH /* Drum Encoder Channel */
 struct DRUMSTUFF
 {
    struct DRUMLC lc;          // Parameters
-   struct DRUMENCODERCH decA0; // Time & Count Encoder Channel A: even
-   struct DRUMENCODERCH decA1; // Time & Count Encoder Channel A: odd
+   struct DRUMENCODERCH decA; // Time & Count Encoder Channel A: even
 
 //   struct DRUMENCODERCH decB; // Time & Count Encoder Channel B
 //   struct DRUMENCODERCH decZ; // Time & Count Encoder Channel Z
