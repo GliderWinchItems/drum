@@ -74,6 +74,7 @@ void drum_items_computespeed(struct DRUMSTUFF* p)
 	if (p->decA.diff.cnt == 0)
 	{ // Here, no encoder counts between sample times.
 		p->Cspeed_rpm_encoder = 0; // Assume the speed is zero.
+		p->Cspeed_cable = 0;
 		return;
 	}
 	/* Here, one or more encoder counts between sample times. */

@@ -74,6 +74,7 @@
 #include "MailboxTask.h"
 
 #include "stepper_items.h"
+#include "drum_items.h"
 
 
 /* USER CODE END Includes */
@@ -1233,10 +1234,23 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
-    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X %7i %7i %7i %4i %4i",
-      stepperstuff.cltimectr,stepperstuff.pay0,stepperstuff.clpos, stepperstuff.ocinc,
-      stepperstuff.iobits,stepperstuff.dbg1,stepperstuff.dbg2,stepperstuff.dbg3,
-      stepperstuff.dtwmax,stepperstuff.dtwmin);
+  /* Convert encoder IC/output capture mode to letter. */
+  char q = 'E';
+  if ((htim2.Instance->CCMR2 & 0x1) == 0) q = 'X';
+
+  char w = '+';
+  if (stepperstuff.drbit != 0) w = '-';
+
+     drum_items_computespeed(&drumstuff);
+    yprintf(&pbuf4,"\n\r%2i %2X %6.1f %8i %10.4f %10.4f %10.4f %c %c",
+      stepperstuff.cltimectr,
+      stepperstuff.pay0,
+      stepperstuff.clpos,
+      htim5.Instance->CNT, 
+      drumstuff.Cspeed_rpm_encoder,
+      drumstuff.Cspeed_cable,
+      drumstuff.Ccable_distance,
+      q,w);
 #endif      
     }
 

@@ -29,6 +29,7 @@
 //#include "shiftregbits.h"
 //#include "spiserialparallelSW.h"
 #include "stepper_items.h"
+#include "drum_items.h"
 
 
 /* From 'main.c' */
@@ -103,6 +104,9 @@ void StartGevcuTask(void const * argument)
 
 	/* Stepper initialization starts timers. */
 	stepper_items_init();
+
+	/* Drum intialization. */
+	drum_items_init(&drumstuff);
 
 	/* Start command/keep-alive timer */
 	BaseType_t bret = xTimerReset(gevcufunction.swtimer1, 10);

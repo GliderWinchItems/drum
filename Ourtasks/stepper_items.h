@@ -140,12 +140,13 @@ struct STEPPERSTUFF
    int16_t  posaccum_prev;  // Previous posaccum
    uint8_t  stepperstatus;  // Reserved for CAN msg
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
-   uint8_t  drbit;      // Direction bit (0|1)
+   uint8_t  drbit;      // Direction bit (0|not-zero)
    uint8_t  drbit_prev; // Previous Direction bit
 
    uint8_t  flagindexing; // 0 = sweep; 1 = indexing
-   uint8_t  prepbit;      //
-   uint8_t  prepbit_prev; //
+   uint8_t  ocicbit;      //
+   uint8_t  ocicbit_prev; //
+uint8_t xbit;   
 
    struct STEPPERSWCONTACT ctk[6]; // Measured switch contact open/close posaccum
    struct EXTISWITCHSTATUS sw[6]; // Limit & overrun switches
