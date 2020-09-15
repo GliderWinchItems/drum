@@ -88,8 +88,6 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 #define GSM
 #define DEBUG
 
-static void step_logic(void);
-
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT4base; // Register base address 
 TIM_TypeDef  *pT5base; // Register base address 
@@ -411,7 +409,59 @@ void stepper_items_TIM2_IRQHandler(void)
 		   the stepper. */
 		if (p->flagindexing == 0)
 		{ // Here, not indexing
-			step_logic(); 
+/* ------------ Tracking/sweep --------------------------------------------------- */
+			// Update enable i/o pin
+      		Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+
+      // forward (stepper) direction means position accumulator is increasing
+      // negative direction means position accumulator is decreasing
+      // drbit = 0 means positive drum direction
+
+      // update velocity integrator
+      
+      // invert velocity integrator if Drum Direction has changed
+      		if (p->drbit != p->drbit_prev)
+      		{  // Drum direction has changed
+         		p->drbit_prev = p->drbit;   // save new direction
+         		p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
+      		} 
+            
+      		else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
+      		{
+         		if (p->posaccum.s32 >= p->Lplus32)
+         		{  // in positive level-wind reversal region
+            		p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
+		        }
+        		else
+	        	{  // in negative level-wind reversal region
+    	        	p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
+        	 	}
+      		}
+         
+	      	p->dbg1 = p->velaccum.s32;
+    	  	p->dbg2 = p->posaccum.s16[1];
+	      	p->dbg3 = p->posaccum.u16[0];
+         
+    	  	// update position integrator
+	      	p->posaccum.s32 += p->velaccum.s32;
+      
+    	  	/* When accumulator upper 16b changes generate a stepper pulse. */
+      		if ((p->posaccum.s16[1]) != (p->posaccum_prev))
+      		{ // Here carry/borrow from low 16b to high 16b
+         		p->posaccum_prev = (p->posaccum.s16[1]);
+
+         		/* Skip stepper pulses if motor not enabled. */
+         		if ((p->enflag & (2 << 0)) == 0) 
+         		{  // set direction based on sign of Velocity integrator
+            		// depends on velocity magnitude being <= 2^16
+            		Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
+               			? 1 : (1 << 16);
+
+            		// Start TIM9 to generate a delayed pulse.
+            		pT9base->CR1 = 0x9;
+         		}
+      		}
+/* ------------ End tracking section --------------------------------------------- */
 		}
 
 // Debugging
@@ -438,7 +488,7 @@ if (p->ledctr1 > p->ledctr2)
 
 		if (p->flagindexing != 0)
 		{ // Here, indexing
-			step_logic();
+			/* == indexing section goes here. == */
 		}
    	}
 
@@ -448,66 +498,7 @@ if (p->ledctr1 > p->ledctr2)
 
    return;
 }
-/* ######################################################################################
- * Common step routine: runs under interrupt
- * ###################################################################################### */
-static void step_logic(void)
-{
-	  struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
- // Update enable i/o pin
-      Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
-
-      // forward (stepper) direction means position accumulator is increasing
-      // negative direction means position accumulator is decreasing
-      // drbit = 0 means positive drum direction
-
-      // update velocity integrator
-      
-      // invert velocity integrator if Drum Direction has changed
-      if (p->drbit != p->drbit_prev)
-      {  // Drum direction has changed
-         p->drbit_prev = p->drbit;   // save new direction
-         p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
-      } 
-            
-      else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
-      {
-         if (p->posaccum.s32 >= p->Lplus32)
-         {  // in positive level-wind reversal region
-            p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
-         }
-         else
-         {  // in negative level-wind reversal region
-            p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
-         }
-      }
-         
-      p->dbg1 = p->velaccum.s32;
-      p->dbg2 = p->posaccum.s16[1];
-      p->dbg3 = p->posaccum.u16[0];
-         
-      // update position integrator
-      p->posaccum.s32 += p->velaccum.s32;
-      
-      /* When accumulator upper 16b changes generate a stepper pulse. */
-      if ((p->posaccum.s16[1]) != (p->posaccum_prev))
-      { // Here carry/borrow from low 16b to high 16b
-         p->posaccum_prev = (p->posaccum.s16[1]);
-
-         /* Skip stepper pulses if motor not enabled. */
-         if ((p->enflag & (2 << 0)) == 0) 
-         {  // set direction based on sign of Velocity integrator
-            // depends on velocity magnitude being <= 2^16
-            Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
-               ? 1 : (1 << 16);
-
-            // Start TIM9 to generate a delayed pulse.
-            pT9base->CR1 = 0x9;
-         }
-      }
-      return;
-}
 /*#######################################################################################
  * ISR routine for TIM4
  * CH1 = OC stepper reversal
