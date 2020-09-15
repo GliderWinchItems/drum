@@ -1329,6 +1329,10 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
+
+/* Temporary so 'switches can do some yprintf from here w/o changing main.c */
+if (stepper_switches_defaultTaskcall(pbuf1) == 0)
+{
   /* Convert encoder IC/output capture mode to letter. */
   char q = 'E';
   if ((htim2.Instance->CCMR2 & 0x1) == 0) q = 'X';
@@ -1347,6 +1351,7 @@ uint8_t ratepace = 0;
       drumstuff.Ccable_distance,
       q,w,
       (GPIOE->IDR >> 8) );
+}
 #endif      
     }
 

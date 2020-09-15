@@ -20,6 +20,14 @@
 #include "drum_items.h"
 #include "stepper_switches.h"
 
+/* *************************************************************************
+ * int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1);
+ * @brief       : Call from main.c defaultTAsk jic
+ * *************************************************************************/
+int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1)
+{
+	return 0;
+}
 /*#######################################################################################
  * ISR routine for EXTI
  * CH1 = OC stepper reversal

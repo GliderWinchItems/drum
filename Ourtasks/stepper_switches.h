@@ -13,6 +13,8 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 #include "CanTask.h"
+#include "SerialTaskSend.h"
+
 
 #define LIMITDBINSIDE  0
 #define LIMITDBOUTSIDE 1
@@ -37,6 +39,11 @@ struct EXTISWITCHSTATUS
    uint8_t  flag2;   // 0 = handled; 1 = not handled
 
 };
+
+/* *************************************************************************/
+int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1);
+/* @brief       : Call from main.c defaultTAsk jic
+ * *************************************************************************/
 
 #endif
 
