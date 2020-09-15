@@ -75,6 +75,8 @@
 
 #include "stepper_items.h"
 #include "drum_items.h"
+#include "LevelwindTask.h"
+#include "DrumTask.h"
 
 
 /* USER CODE END Includes */
@@ -144,6 +146,7 @@ SPI_HandleTypeDef hspi2;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
+TIM_HandleTypeDef htim8;
 TIM_HandleTypeDef htim9;
 TIM_HandleTypeDef htim13;
 TIM_HandleTypeDef htim14;
@@ -173,6 +176,7 @@ static void MX_TIM9_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM13_Init(void);
 static void MX_TIM14_Init(void);
+static void MX_TIM8_Init(void);
 void StartDefaultTask(void const * argument);
 void CallbackdefaultTaskTimer(void const * argument);
 
@@ -250,6 +254,7 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM13_Init();
   MX_TIM14_Init();
+  MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -348,6 +353,15 @@ int main(void)
 	pmbxret = MailboxTask_add_CANlist(pctl1, 48); // Use default buff size
 	if (pmbxret == NULL) morse_trap(214);
 #endif
+
+  /* Levelwind (stepper) task */
+  Thrdret = xLevelwindTaskCreate(4); // (arg) = priority
+  if (Thrdret == NULL) morse_trap(2161); 
+
+  /* Drum task */
+  Thrdret = xDrumTaskCreate(4); // (arg) = priority
+  if (Thrdret == NULL) morse_trap(2162); 
+
 
 	/* Further initialization of mailboxes takes place when tasks start */
 
@@ -813,6 +827,81 @@ static void MX_TIM5_Init(void)
 }
 
 /**
+  * @brief TIM8 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM8_Init(void)
+{
+
+  /* USER CODE BEGIN TIM8_Init 0 */
+
+  /* USER CODE END TIM8_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM8_Init 1 */
+
+  /* USER CODE END TIM8_Init 1 */
+  htim8.Instance = TIM8;
+  htim8.Init.Prescaler = 0;
+  htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim8.Init.Period = 65535;
+  htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim8.Init.RepetitionCounter = 0;
+  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim8, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim8, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim8, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM8_Init 2 */
+
+  /* USER CODE END TIM8_Init 2 */
+  HAL_TIM_MspPostInit(&htim8);
+
+}
+
+/**
   * @brief TIM9 Initialization Function
   * @param None
   * @retval None
@@ -1073,6 +1162,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Stepper__MF_not_enable_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : StepperBridge_Pin */
+  GPIO_InitStruct.Pin = StepperBridge_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(StepperBridge_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin LimitSw_outside_NO_Pin LimitSw_outside_NC_Pin
                            OverrunSw_Inside_Pin OverrunSw_outside_Pin */
   GPIO_InitStruct.Pin = LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin|LimitSw_outside_NO_Pin|LimitSw_outside_NC_Pin
@@ -1242,7 +1337,7 @@ uint8_t ratepace = 0;
   if (stepperstuff.drbit != 0) w = '-';
 
      drum_items_computespeed(&drumstuff);
-    yprintf(&pbuf4,"\n\r%2i %2X %6.1f %8i %10.4f %10.4f %10.4f %c %c",
+    yprintf(&pbuf4,"\n\r%2i %2X %6.1f %8i %10.4f %10.4f %10.4f %c %c %02X",
       stepperstuff.cltimectr,
       stepperstuff.pay0,
       stepperstuff.clpos,
@@ -1250,7 +1345,8 @@ uint8_t ratepace = 0;
       drumstuff.Cspeed_rpm_encoder,
       drumstuff.Cspeed_cable,
       drumstuff.Ccable_distance,
-      q,w);
+      q,w,
+      (GPIOE->IDR >> 8) );
 #endif      
     }
 
@@ -1267,7 +1363,7 @@ uint8_t ratepace = 0;
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 8; showctr++)
+for (showctr = 0; showctr < 10; showctr++)
 {
 				switch (showctr)
 				{
@@ -1278,9 +1374,11 @@ case  2: stackwatermark_show(CanTxTaskHandle  ,&pbuf3,"CanTxTask----");break;
 case  3: stackwatermark_show(MailboxTaskHandle,&pbuf4,"MailboxTask--");break;
 case  4: stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------");break;
 case  5: stackwatermark_show(SerialTaskReceiveHandle,&pbuf2,"SerialRcvTask");break;
-case  6: stackwatermark_show(GevcuTaskHandle,  &pbuf2,"GevcuTask----");break;
+case  6: stackwatermark_show(GevcuTaskHandle,        &pbuf3,"GevcuTask----");break;
+case  7: stackwatermark_show(LevelwindTaskHandle,&pbuf4,"LevelwindTask----");break;
+case  8: stackwatermark_show(DrumTaskHandle,   &pbuf1,"DrumTask-----");break;
 
-case 7:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+case 9:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;

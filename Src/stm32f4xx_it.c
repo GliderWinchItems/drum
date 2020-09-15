@@ -80,6 +80,7 @@ extern I2C_HandleTypeDef hi2c1;
 extern SPI_HandleTypeDef hspi2;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim8;
 extern TIM_HandleTypeDef htim9;
 extern DMA_HandleTypeDef hdma_usart3_rx;
 extern DMA_HandleTypeDef hdma_usart3_tx;
@@ -514,6 +515,7 @@ void TIM8_BRK_TIM12_IRQHandler(void)
   /* USER CODE BEGIN TIM8_BRK_TIM12_IRQn 0 */
 
   /* USER CODE END TIM8_BRK_TIM12_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim8);
   HAL_TIM_IRQHandler(&htim12);
   /* USER CODE BEGIN TIM8_BRK_TIM12_IRQn 1 */
 

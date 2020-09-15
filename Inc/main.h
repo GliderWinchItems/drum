@@ -116,6 +116,8 @@ void Error_Handler(void);
 #define Stepper__DR__direction_GPIO_Port GPIOB
 #define Stepper__MF_not_enable_Pin GPIO_PIN_1
 #define Stepper__MF_not_enable_GPIO_Port GPIOB
+#define StepperBridge_Pin GPIO_PIN_9
+#define StepperBridge_GPIO_Port GPIOE
 #define LimitSw_inside_NO_Pin GPIO_PIN_10
 #define LimitSw_inside_NO_GPIO_Port GPIOE
 #define LimitSw_inside_NO_EXTI_IRQn EXTI15_10_IRQn
@@ -144,6 +146,8 @@ void Error_Handler(void);
 #define LED_RED_GPIO_Port GPIOD
 #define LED_BLUE_Pin GPIO_PIN_15
 #define LED_BLUE_GPIO_Port GPIOD
+#define BrakeSolenoid_Pin GPIO_PIN_6
+#define BrakeSolenoid_GPIO_Port GPIOC
 #define encodertimeZ_Pin GPIO_PIN_3
 #define encodertimeZ_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */

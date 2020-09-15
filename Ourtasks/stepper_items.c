@@ -512,9 +512,19 @@ static void step_logic(void)
  * CH1 = OC stepper reversal
  * CH2 = OC faux encoder interrupts
  *####################################################################################### */
+/*
+LimitSw_inside_NO_Pin    GPIO_PIN_10
+LimitSw_inside_NC_Pin    GPIO_PIN_11
+LimitSw_outside_NO_Pin   GPIO_PIN_12
+LimitSw_outside_NC_Pin   GPIO_PIN_13
+OverrunSw_Inside_Pin     GPIO_PIN_14
+OverrunSw_outside_Pin    GPIO_PIN_15
+*/
 void Stepper_EXTI15_10_IRQHandler(void)
 {
 	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
+
 
 	/* Here, one or more PE10-15 inputs changed. */
 	p->swbits = GPIOE->IDR & 0xfc00; // Save latest switch bits 10:15
@@ -529,6 +539,8 @@ void Stepper_EXTI15_10_IRQHandler(void)
 			p->sw[LIMITDBINSIDE].posaccum_NO = p->posaccum.s32;
 			p->sw[LIMITDBINSIDE].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBINSIDE].flag2 += 1; // Flag for task(?)
+			/* Notification goes here. */
+
 		}
 		return;
 	}
@@ -541,6 +553,8 @@ void Stepper_EXTI15_10_IRQHandler(void)
 			p->sw[LIMITDBINSIDE].posaccum_NC = p->posaccum.s32;
 			p->sw[LIMITDBINSIDE].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBINSIDE].flag2 += 1; // Flag for task(?)
+			/* Notification goes here. */
+
 		}
 		return;
 	}
@@ -554,6 +568,7 @@ void Stepper_EXTI15_10_IRQHandler(void)
 			p->sw[LIMITDBOUTSIDE].posaccum_NO = p->posaccum.s32;
 			p->sw[LIMITDBOUTSIDE].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBOUTSIDE].flag2 += 1; // Flag for task(?)
+			/* Notification goes here. */			
 		}
 		return;
 	}
@@ -566,9 +581,26 @@ void Stepper_EXTI15_10_IRQHandler(void)
 			p->sw[LIMITDBOUTSIDE].posaccum_NC = p->posaccum.s32;
 			p->sw[LIMITDBOUTSIDE].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBOUTSIDE].flag2 += 1; // Flag for task(?)
+			/* Notification goes here. */			
 		}
 		return;
 	}
+
+	/* These are the NO contacts on overrun switches. */
+	if ((EXTI->PR & (OverrunSw_Inside_Pin)) != 0)
+	{ // Here Pending Register shows this switch transitioned
+		EXTI->PR = OverrunSw_Inside_Pin; // Reset request
+		/* Notification goes here. */
+		return;
+
+	}
+		if ((EXTI->PR & (OverrunSw_outside_Pin)) != 0)
+	{ // Here Pending Register shows this switch transitioned
+		EXTI->PR = OverrunSw_outside_Pin; // Reset request
+		/* Notification goes here. */
+		return;
+	}
+
 	return;
 }
 /*#######################################################################################

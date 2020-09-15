@@ -1,0 +1,47 @@
+limit_overrun_swbox.txt
+
+
+
+Pink switch box
+
+Black - common: ground
+
+
+1. Toggle
+
+brown    PE10  LimitSw_inside_NO_Pin
+red      PE11  LimitSw_inside_NC_Pin
+
+2. Toggle 
+
+orange  PE12  LimitSw_outside_NO_Pin
+yellow  PE13  LimitSw_outside_NC_Pin
+
+3. Toggle
+
+Gray
+not wired
+
+4. Toggle 
+
+Not wired
+Not wired
+
+
+1. Pushbutton
+
+Not wired
+
+2. Pushbutton
+
+Green   PE14  OverrunSw_Inside_Pin
+
+3. Pushbutton
+
+Purple  PE15  OverrunSw_outside_Pin
+
+4. Pushbutton
+
+Not wired
+
+
