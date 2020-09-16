@@ -85,8 +85,8 @@ TIM2 32b (84 MHz) capture mode (interrupt)
 #define TIM9PWMCYCLE (168*10-30)   // 10us pwm cycle
 #define TIM9PULSEDELAY (TIM9PWMCYCLE - (168*3))
 
-#define GSM
-#define DEBUG
+#define GSM    1
+#define DEBUG  1   // True for debugging
 
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT4base; // Register base address 
@@ -135,15 +135,15 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
  * *************************************************************************/
 static void  switches_init(struct STEPPERSTUFF* p)
 {
-	p->swbits = GPIOE->IDR & 0xfc00; // Save current switch bits PE10:15
+   p->swbits = GPIOE->IDR & 0xfc00; // Save current switch bits PE10:15
 
-	EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
-	EXTI->FTSR |=  0xfc00;  // Trigger on falling edge
-	EXTI->IMR  &= ~0xf000;  // Interrupt mask reg: disable 10:15
-	EXTI->EMR  |=  0xfc00;  // Event mask reg: enable 10:15
-	EXTI->PR   |=  0xfc00;  // Clear any pending
+   EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
+   EXTI->FTSR |=  0xfc00;  // Trigger on falling edge
+   EXTI->IMR  &= ~0xf000;  // Interrupt mask reg: disable 10:15
+   EXTI->EMR  |=  0xfc00;  // Event mask reg: enable 10:15
+   EXTI->PR   |=  0xfc00;  // Clear any pending
 
-	return;
+   return;
 }
 /* *************************************************************************
  * void stepper_items_init(void);
@@ -173,7 +173,7 @@ void stepper_items_init(void)
    p->drbit_prev = p->drbit;     
    p->cltimectr  = 0;
    p->hbctr      = 0;
-   p->ocinc      = 8400000;	// Default 1/10 sec duration
+   p->ocinc      = 8400000;   // Default 1/10 sec duration
    p->ocidx      =   42000; // Default indexing increment 500 ms
    p->dtwmin     = 0xffffffff;
 
@@ -212,18 +212,18 @@ extern TIM_HandleTypeDef htim14;
    pT4base->CCR2 = pT4base->CNT + 100; // 1 ms delay
    pT4base->ARR  = 0xffff;
 
-	/* TIM2 Shaft encoder input capture times & output caputre indexing interrupts. */
-	pT2base->CCER |= 0x1100; // Input capture active: CH3,4
-	pT2base->DIER = 0xA; // CH1,3 interrupt enable
-	pT2base->CCR1 = pT2base->CNT + 1000; // 1 short delay
-	pT2base->ARR  = 0xffffffff;
+   /* TIM2 Shaft encoder input capture times & output caputre indexing interrupts. */
+   pT2base->CCER |= 0x1100; // Input capture active: CH3,4
+   pT2base->DIER = 0xA; // CH1,3 interrupt enable
+   pT2base->CCR1 = pT2base->CNT + 1000; // 1 short delay
+   pT2base->ARR  = 0xffffffff;
 
-	/* Start counters. */
-	pT2base->CR1 |= 1;  // TIM2 CH1 oc, CH3 ic/oc
-	pT5base->CR1 |= 1;  // TIM5 encoder CH1 CH2 (not interrupt)
+   /* Start counters. */
+   pT2base->CR1 |= 1;  // TIM2 CH1 oc, CH3 ic/oc
+   pT5base->CR1 |= 1;  // TIM5 encoder CH1 CH2 (not interrupt)
 
-	/* Enable limite and overrun switch interrupts EXTI15_10. */
-	EXTI->IMR  |= 0xf000;  // Interrupt mask reg: enable 10:15
+   /* Enable limite and overrun switch interrupts EXTI15_10. */
+   EXTI->IMR  |= 0xf000;  // Interrupt mask reg: enable 10:15
    return;
 }
 /* *************************************************************************
@@ -306,30 +306,30 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    p->ocicbit = (pcan->cd.uc[0] & ZTBIT);
    if (p->ocicbit != p->ocicbit_prev)
    { // Here, the PREP bit changed
-   	  	p->ocicbit_prev = p->ocicbit;
-   	  	if (p->ocicbit != 0)
-   	  	{ // Here. PREP bit went from off to on
-   	  		pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
-			if ((pT2base->CCMR2 & 0x1) != 0)
-   	  		{ // Here, currently using encoder input capture
-p->xbit =2;   	  			
-	   	  		// Setup for output compare
-	   	  		pT2base->CCER  |=  (1<<11); // CC3NP: Configure as output
-	   	  		pT2base->CCER  &= ~(1<<8);  // CC3E = 0; Turn channel off
-   		  		pT2base->CCMR2 &= ~(0xff << 0); // Change to Output compare, no pin
-   	  			pT2base->CCR3 = pT2base->CNT + p->ocinc; // Schedule next faux encoder interrupt
-   		  	}
-   	  		else
-	   	  	{ // Here, currently using output compare
-   		  		// Setup for input capture
+         p->ocicbit_prev = p->ocicbit;
+         if (p->ocicbit != 0)
+         { // Here. PREP bit went from off to on
+            pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
+         if ((pT2base->CCMR2 & 0x1) != 0)
+            { // Here, currently using encoder input capture
+p->xbit =2;             
+               // Setup for output compare
+               pT2base->CCER  |=  (1<<11); // CC3NP: Configure as output
+               pT2base->CCER  &= ~(1<<8);  // CC3E = 0; Turn channel off
+               pT2base->CCMR2 &= ~(0xff << 0); // Change to Output compare, no pin
+               pT2base->CCR3 = pT2base->CNT + p->ocinc; // Schedule next faux encoder interrupt
+            }
+            else
+            { // Here, currently using output compare
+               // Setup for input capture
 p->xbit = 1;
-	   	  		pT2base->CCER  &= ~((1<<8) || (1<<11)); // CC3E, CC3NP = input
-				pT2base->CCMR2 |= 0x01; // Input capture mapped to TI3
-				pT2base->SR = ~(1<<3);	// Reset CH3 flag if on
-	   	  		pT2base->CCER  |= (1<<8); // Capture enabled on pin.
-   		  	}
-   		  	pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
-   		}
+               pT2base->CCER  &= ~((1<<8) || (1<<11)); // CC3E, CC3NP = input
+            pT2base->CCMR2 |= 0x01; // Input capture mapped to TI3
+            pT2base->SR = ~(1<<3);  // Reset CH3 flag if on
+               pT2base->CCER  |= (1<<8); // Capture enabled on pin.
+            }
+            pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
+         }
    }
 
    /* Payload byte bits for direction and enable. */
@@ -340,18 +340,18 @@ p->xbit = 1;
         TIM5 CR1 bit DIR which is setup in the ISR. */
    if ((pT2base->CCMR2 & 0x1) == 0) // Which mode?
    { // Here TIM2CH3 mode is output compare. Use CAN payload bit
-   	   // Output capture (no pin) is TIM2CH3 mode
-   	   if ((pcan->cd.uc[0] & DRBIT) == 0)
-   	   {
-      		p->drflag = (1 << 16); // Reset
-      		p->drbit  = 0;
-   		}
-   		else
-   		{
-   			p->drflag = 1; // Set
-      		p->drbit  = 1;
-   		}
-   	}
+         // Output capture (no pin) is TIM2CH3 mode
+         if ((pcan->cd.uc[0] & DRBIT) == 0)
+         {
+            p->drflag = (1 << 16); // Reset
+            p->drbit  = 0;
+         }
+         else
+         {
+            p->drflag = 1; // Set
+            p->drbit  = 1;
+         }
+      }
 
    // Motor Enable bit
    if ((pcan->cd.uc[0] & ENBIT) != 0)
@@ -363,6 +363,8 @@ p->xbit = 1;
    p->iobits = p->drflag | p->enflag;
    return;  
 }
+
+#ifdef GSM //working section
 /*#######################################################################################
  * ISR routine for TIM2
  * CH1 - OC timed interrupts  indexing interrupts
@@ -377,120 +379,124 @@ void stepper_items_TIM2_IRQHandler(void)
    // Capture DTW timer for cycle counting
       p->dtwentry = DTWTIME;
 
-     /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0	*/
-	if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
-	{ // Yes, either encoder channel A, or output compare
-		pT2base->SR = ~(1<<3);	// Reset CH3 flag
+     /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
+   if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
+   { // Yes, either encoder channel A, or output compare
+      pT2base->SR = ~(1<<3);  // Reset CH3 flag
 
-		/* Was this interrupt due to encoder input capture or output compare?. */
-		if ((pT2base->CCMR2 & 0x1) == 0)
-		{ // Here we are using TIM2CH3 as OC compare instead of input capture. */
-	 		// Duration increment computed from CL CAN msg
-    		pT2base->CCR3 += p->ocinc; // Schedule next faux encoder interrupt
-    		// Make faux encoder counter 
-    		drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
-    		if (p->drbit == 0)
-				drumstuff.decA.cur.cnt += 1;  
-			else
-				drumstuff.decA.cur.cnt -= 1; 
-		}
-		else
-		{ // Here, encoder driven input capture. Save for odometer and speed
-			drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
-			drumstuff.decA.cur.cnt = pT5base->CNT;    // Save current encoder count
-			p->drbit = (pT5base->CR1 & 0x10); // Encoding DIR (direction) (0|non-zero)
-		}
+      /* Was this interrupt due to encoder input capture or output compare?. */
+      if ((pT2base->CCMR2 & 0x1) == 0)
+      { // Here we are using TIM2CH3 as OC compare instead of input capture. */
+         // Duration increment computed from CL CAN msg
+         pT2base->CCR3 += p->ocinc; // Schedule next faux encoder interrupt
+         // Make faux encoder counter 
+         drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
+         if (p->drbit == 0)
+            drumstuff.decA.cur.cnt += 1;  
+         else
+            drumstuff.decA.cur.cnt -= 1; 
+      }
+      else
+      { // Here, encoder driven input capture. Save for odometer and speed
+         drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
+         drumstuff.decA.cur.cnt = pT5base->CNT;    // Save current encoder count
+         p->drbit = (pT5base->CR1 & 0x10); // Encoding DIR (direction) (0|non-zero)
+      }
 
-		/* Here: either encoder channel A driven input capture interrupt, or 
-		    CL controlled timer output compare interrupt. */
+      /* Here: either encoder channel A driven input capture interrupt, or 
+          CL controlled timer output compare interrupt. */
 
-		/* During indexing the encoder input capture or output compare
-		     interrupts do not drive
-		   the stepper. */
-		if (p->flagindexing == 0)
-		{ // Here, not indexing
+      /* During indexing the encoder input capture or output compare
+           interrupts do not drive
+         the stepper. */
+      if (p->flagindexing == 0)
+      { // Here, not indexing
 /* ------------ Tracking/sweep --------------------------------------------------- */
-			// Update enable i/o pin
-      		Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+         // Update enable i/o pin
+            Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
 
-      // forward (stepper) direction means position accumulator is increasing
-      // negative direction means position accumulator is decreasing
-      // drbit = 0 means positive drum direction
+         // forward (stepper) direction means position accumulator is increasing
+         // negative direction means position accumulator is decreasing
+         // drbit = 0 means positive drum direction
 
-      // update velocity integrator
-      
-      // invert velocity integrator if Drum Direction has changed
-      		if (p->drbit != p->drbit_prev)
-      		{  // Drum direction has changed
-         		p->drbit_prev = p->drbit;   // save new direction
-         		p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
-      		} 
-            
-      		else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
-      		{
-         		if (p->posaccum.s32 >= p->Lplus32)
-         		{  // in positive level-wind reversal region
-            		p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
-		        }
-        		else
-	        	{  // in negative level-wind reversal region
-    	        	p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
-        	 	}
-      		}
+         // update velocity integrator
          
-	      	p->dbg1 = p->velaccum.s32;
-    	  	p->dbg2 = p->posaccum.s16[1];
-	      	p->dbg3 = p->posaccum.u16[0];
+         // invert velocity integrator if Drum Direction has changed
+         if (p->drbit != p->drbit_prev)
+         {  // Drum direction has changed
+            p->drbit_prev = p->drbit;   // save new direction
+            p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
+         }         
+         else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
+         {
+            if (p->posaccum.s32 >= p->Lplus32)
+            {  // in positive level-wind reversal region
+               p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
+            }
+         else
+         {  // in negative level-wind reversal region
+            p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
+         }
+      }
          
-    	  	// update position integrator
-	      	p->posaccum.s32 += p->velaccum.s32;
+      // update position integrator
+      p->posaccum.s32 += p->velaccum.s32;
+
+#if DEBUG         
+p->dbg1 = p->velaccum.s32;
+p->dbg2 = p->posaccum.s16[1];
+p->dbg3 = p->posaccum.u16[0];
+#endif
       
-    	  	/* When accumulator upper 16b changes generate a stepper pulse. */
-      		if ((p->posaccum.s16[1]) != (p->posaccum_prev))
-      		{ // Here carry/borrow from low 16b to high 16b
-         		p->posaccum_prev = (p->posaccum.s16[1]);
+      /* When accumulator upper 16b changes generate a stepper pulse. */
+      if ((p->posaccum.s16[1]) != (p->posaccum_prev))
+      { // Here carry/borrow from low 16b to high 16b
+         p->posaccum_prev = (p->posaccum.s16[1]);
 
-         		/* Skip stepper pulses if motor not enabled. */
-         		if ((p->enflag & (2 << 0)) == 0) 
-         		{  // set direction based on sign of Velocity integrator
-            		// depends on velocity magnitude being <= 2^16
-            		Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
-               			? 1 : (1 << 16);
+         /* Skip stepper pulses if motor not enabled. */
+         if ((p->enflag & (2 << 0)) == 0) 
+         {  // set direction based on sign of Velocity integrator
+            // depends on velocity magnitude being <= 2^16
+            Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
+               ? 1 : (1 << 16);
 
-            		// Start TIM9 to generate a delayed pulse.
-            		pT9base->CR1 = 0x9;
-         		}
-      		}
+            // Start TIM9 to generate a delayed pulse.
+            pT9base->CR1 = 0x9;
+         }
+      }
 /* ------------ End tracking section --------------------------------------------- */
-		}
+   }
 
+#if DEBUG
 // Debugging
 p->ledctr1 += 1;
 if ((pT2base->CCMR2 & 0x1) != 0)
   p->ledctr2 = 0;
 else
   p->ledctr2 = 500;
-if (p->ledctr1 > p->ledctr2)			
+
+if (p->ledctr1 > p->ledctr2)        
 {
-	p->ledctr1 = 0;
-	HAL_GPIO_TogglePin(GPIOD,LED_GREEN_Pin); // GREEN LED			
+   p->ledctr1 = 0;
+   HAL_GPIO_TogglePin(GPIOD,LED_GREEN_Pin); // GREEN LED       
 }
+#endif
 
-	}
+   }
 
-	/* Indexing timer interrupt. */
-	if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag?
-	{ // Yes, OC drive 
-		pT2base->SR = ~(1<<1);	// Reset CH1 flag
+   /* Indexing timer interrupt. */
+   if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag?
+   { // Yes, OC drive 
+      pT2base->SR = ~(1<<1);  // Reset CH1 flag
 
- 		// Duration increment computed from CL CAN msg
-   		pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
+      // Duration increment computed from CL CAN msg
+         pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
 
-		if (p->flagindexing != 0)
-		{ // Here, indexing
-			/* == indexing section goes here. == */
-		}
-   	}
+      if (p->flagindexing != 0)
+      { // Here, indexing
+         /* == indexing section goes here. == */
+      }
+      }
 
    p->dtwdiff = DTWTIME - p->dtwentry;
    if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
@@ -499,6 +505,146 @@ if (p->ledctr1 > p->ledctr2)
    return;
 }
 
+#else // DEH reverson copy
+/*#######################################################################################
+ * ISR routine for TIM2
+ * CH1 - OC timed interrupts  indexing interrupts
+ * CH2 - OC timed interrupts  or, FreeRTOS task forces this interrupt?
+ * CH3 - IC encoder channel A or, OC generates faux encoder interrupts
+ * CH4 - IC encoder channel B not used in this version
+ *####################################################################################### */
+void stepper_items_TIM2_IRQHandler(void)
+{
+   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+
+   // Capture DTW timer for cycle counting
+      p->dtwentry = DTWTIME;
+
+     /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
+   if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
+   { // Yes, either encoder channel A, or output compare
+      pT2base->SR = ~(1<<3);  // Reset CH3 flag
+
+      /* Was this interrupt due to encoder input capture or output compare?. */
+      if ((pT2base->CCMR2 & 0x1) == 0)
+      { // Here we are using TIM2CH3 as OC compare instead of input capture. */
+         // Duration increment computed from CL CAN msg
+         pT2base->CCR3 += p->ocinc; // Schedule next faux encoder interrupt
+         // Make faux encoder counter 
+         drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
+         if (p->drbit == 0)
+            drumstuff.decA.cur.cnt += 1;  
+         else
+            drumstuff.decA.cur.cnt -= 1; 
+      }
+      else
+      { // Here, encoder driven input capture. Save for odometer and speed
+         drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
+         drumstuff.decA.cur.cnt = pT5base->CNT;    // Save current encoder count
+         p->drbit = (pT5base->CR1 & 0x10); // Encoding DIR (direction) (0|non-zero)
+      }
+
+      /* Here: either encoder channel A driven input capture interrupt, or 
+          CL controlled timer output compare interrupt. */
+
+      /* During indexing the encoder input capture or output compare
+           interrupts do not drive
+         the stepper. */
+      if (p->flagindexing == 0)
+      { // Here, not indexing
+/* ------------ Tracking/sweep --------------------------------------------------- */
+         // Update enable i/o pin
+            Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+
+      // forward (stepper) direction means position accumulator is increasing
+      // negative direction means position accumulator is decreasing
+      // drbit = 0 means positive drum direction
+
+      // update velocity integrator
+      
+      // invert velocity integrator if Drum Direction has changed
+            if (p->drbit != p->drbit_prev)
+            {  // Drum direction has changed
+               p->drbit_prev = p->drbit;   // save new direction
+               p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
+            } 
+            
+            else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
+            {
+               if (p->posaccum.s32 >= p->Lplus32)
+               {  // in positive level-wind reversal region
+                  p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
+              }
+            else
+            {  // in negative level-wind reversal region
+               p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
+            }
+            }
+         
+            p->dbg1 = p->velaccum.s32;
+            p->dbg2 = p->posaccum.s16[1];
+            p->dbg3 = p->posaccum.u16[0];
+         
+         // update position integrator
+            p->posaccum.s32 += p->velaccum.s32;
+      
+         /* When accumulator upper 16b changes generate a stepper pulse. */
+            if ((p->posaccum.s16[1]) != (p->posaccum_prev))
+            { // Here carry/borrow from low 16b to high 16b
+               p->posaccum_prev = (p->posaccum.s16[1]);
+
+               /* Skip stepper pulses if motor not enabled. */
+               if ((p->enflag & (2 << 0)) == 0) 
+               {  // set direction based on sign of Velocity integrator
+                  // depends on velocity magnitude being <= 2^16
+                  Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
+                        ? 1 : (1 << 16);
+
+                  // Start TIM9 to generate a delayed pulse.
+                  pT9base->CR1 = 0x9;
+               }
+            }
+/* ------------ End tracking section --------------------------------------------- */
+         }
+
+#if DEBUG   // Debugging
+      p->ledctr1 += 1;
+      if ((pT2base->CCMR2 & 0x1) != 0)
+        p->ledctr2 = 0;
+      else
+        p->ledctr2 = 500;
+      if (p->ledctr1 > p->ledctr2)        
+      {
+         p->ledctr1 = 0;
+         HAL_GPIO_TogglePin(GPIOD,LED_GREEN_Pin); // GREEN LED       
+      }
+#endif
+
+   }
+
+   /* Indexing timer interrupt. */
+   if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag?
+   { // Yes, OC drive 
+      pT2base->SR = ~(1<<1);  // Reset CH1 flag
+
+      // Duration increment computed from CL CAN msg
+         pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
+
+      if (p->flagindexing != 0)
+      { // Here, indexing
+         /* == indexing section goes here. == */
+      }
+   }
+
+   p->dtwdiff = DTWTIME - p->dtwentry;
+   if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
+   else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
+
+   return;
+}
+
+
+#endif
 /*#######################################################################################
  * ISR routine for TIM4
  * CH1 = OC stepper reversal
@@ -507,5 +653,26 @@ if (p->ledctr1 > p->ledctr2)
 void stepper_items_TIM4_IRQHandler(void)
 {
    pT4base->SR = ~(0x1F);  // Reset all flags
+   return;
+}
+
+/* *************************************************************************
+ * void index_init(void);
+ * @brief   : Initialization
+ * *************************************************************************/
+void stepper_items_index_init(void)
+{
+   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+   
+   // Position accumulator initial value. Reference paper for the value employed.
+   p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;   
+   p->posaccum_prev = p->posaccum.s32;
+   // initialize 32-bit values for Lplus32 and Lminus32. Reference paper.
+   p->Lminus32 = p->lc.Lminus << 16;
+   p->Lplus32  = p->Lminus32 
+      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->lc.Ks) * p->lc.Ks;
+   p->velaccum.s32 = 0;      // Velocity accumulator initial value  
+   p->drbit      = 0;        // Drum direction bit
+   p->drbit_prev = p->drbit;     
    return;
 }

@@ -184,6 +184,10 @@ struct STEPPERSTUFF
   void stepper_items_CANsend(void);
 /* @brief   : Send CAN msgs for stepper
  * *************************************************************************/
+  /* *************************************************************************/
+ void stepper_items_index_init(void);
+ /* @brief   : Initialization for indexing
+ * *************************************************************************/
 
  extern struct STEPPERSTUFF stepperstuff;
 
