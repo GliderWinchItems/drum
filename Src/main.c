@@ -1333,6 +1333,7 @@ uint8_t ratepace = 0;
 /* Temporary so 'switches can do some yprintf from here w/o changing main.c */
 if (stepper_switches_defaultTaskcall(pbuf1) == 0)
 {
+  #if 0 //  DEH realfaux debug
   /* Convert encoder IC/output capture mode to letter. */
   char q = 'E';
   if ((htim2.Instance->CCMR2 & 0x1) == 0) q = 'X';
@@ -1351,6 +1352,23 @@ if (stepper_switches_defaultTaskcall(pbuf1) == 0)
       drumstuff.Ccable_distance,
       q,w,
       (GPIOE->IDR >> 8) );
+    #else   //  GSM debug for stepper
+
+    
+    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X %7i %7i %7i %7i %4i %4i",
+      stepperstuff.cltimectr,
+      stepperstuff.pay0,
+      stepperstuff.clpos, 
+      stepperstuff.ocinc,
+      stepperstuff.iobits,
+      htim5.Instance->CNT,
+      stepperstuff.dbg1,
+      stepperstuff.dbg2,
+      stepperstuff.dbg3,
+      stepperstuff.dtwmax,
+      stepperstuff.dtwmin);
+     
+#endif
 }
 #endif      
     }
