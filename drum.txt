@@ -1,6 +1,6 @@
 Configuration	drum
 STM32CubeMX 	6.0.1
-Date	09/14/2020
+Date	09/15/2020
 MCU	STM32F407VGTx
 
 
@@ -28,13 +28,18 @@ TIM2	Output Compare No Output	TIM2_VS_no_output1	VP_TIM2_VS_no_output1
 TIM2	Input Capture direct mode	TIM2_CH2	PB3
 TIM2	Input Capture direct mode	TIM2_CH3	PA2
 TIM2	Input Capture direct mode	TIM2_CH4	PA3
+TIM3	Internal Clock	TIM3_VS_ClockSourceINT	VP_TIM3_VS_ClockSourceINT
+TIM3	Input Capture direct mode	TIM3_CH1	PC6
+TIM3	Input Capture direct mode	TIM3_CH2	PC7
+TIM3	Input Capture direct mode	TIM3_CH3	PC8
+TIM3	Input Capture direct mode	TIM3_CH4	PC9
 TIM4	Internal Clock	TIM4_VS_ClockSourceINT	VP_TIM4_VS_ClockSourceINT
 TIM4	Output Compare No Output	TIM4_VS_no_output1	VP_TIM4_VS_no_output1
 TIM4	Output Compare No Output	TIM4_VS_no_output2	VP_TIM4_VS_no_output2
+TIM4	PWM Generation CH3	TIM4_CH3	PB8
 TIM5	Encoder Mode	TIM5_CH1	PA0-WKUP
 TIM5	Encoder Mode	TIM5_CH2	PA1
 TIM8	Internal Clock	TIM8_VS_ClockSourceINT	VP_TIM8_VS_ClockSourceINT
-TIM8	PWM Generation CH1	TIM8_CH1	PC6
 TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
 TIM9	PWM Generation CH1	TIM9_CH1	PE5
 TIM9	One pulse	TIM9_VS_OPM	VP_TIM9_VS_OPM
@@ -80,7 +85,10 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 60	PD13	GPIO_Output	LED ORANGE
 61	PD14	GPIO_Output	LED RED
 62	PD15	GPIO_Output	LED BLUE
-63	PC6	TIM8_CH1	BrakeSolenoid
+63	PC6	TIM3_CH1	LimitSw:inside:NO
+64	PC7	TIM3_CH2	LimitSw:inside:NC
+65	PC8	TIM3_CH3	LimitSw:outside:NO
+66	PC9	TIM3_CH4	LimitSw:outside:NC
 72	PA13	SYS_JTMS-SWDIO	
 76	PA14	SYS_JTCK-SWCLK	
 78	PC10	USART3_TX	
@@ -90,6 +98,7 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 89	PB3	TIM2_CH2	encodertimeZ
 92	PB6	I2C1_SCL	
 93	PB7	I2C1_SDA	
+95	PB8	TIM4_CH3	BrakeSolenoid
 PERIPHERALS	MODES	FUNCTIONS	PINS
 ADC1	IN11	ADC1_IN11	PC1
 ADC1	IN12	ADC1_IN12	PC2
@@ -113,13 +122,18 @@ TIM2	Output Compare No Output	TIM2_VS_no_output1	VP_TIM2_VS_no_output1
 TIM2	Input Capture direct mode	TIM2_CH2	PB3
 TIM2	Input Capture direct mode	TIM2_CH3	PA2
 TIM2	Input Capture direct mode	TIM2_CH4	PA3
+TIM3	Internal Clock	TIM3_VS_ClockSourceINT	VP_TIM3_VS_ClockSourceINT
+TIM3	Input Capture direct mode	TIM3_CH1	PC6
+TIM3	Input Capture direct mode	TIM3_CH2	PC7
+TIM3	Input Capture direct mode	TIM3_CH3	PC8
+TIM3	Input Capture direct mode	TIM3_CH4	PC9
 TIM4	Internal Clock	TIM4_VS_ClockSourceINT	VP_TIM4_VS_ClockSourceINT
 TIM4	Output Compare No Output	TIM4_VS_no_output1	VP_TIM4_VS_no_output1
 TIM4	Output Compare No Output	TIM4_VS_no_output2	VP_TIM4_VS_no_output2
+TIM4	PWM Generation CH3	TIM4_CH3	PB8
 TIM5	Encoder Mode	TIM5_CH1	PA0-WKUP
 TIM5	Encoder Mode	TIM5_CH2	PA1
 TIM8	Internal Clock	TIM8_VS_ClockSourceINT	VP_TIM8_VS_ClockSourceINT
-TIM8	PWM Generation CH1	TIM8_CH1	PC6
 TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
 TIM9	PWM Generation CH1	TIM9_CH1	PE5
 TIM9	One pulse	TIM9_VS_OPM	VP_TIM9_VS_OPM
@@ -165,7 +179,10 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 60	PD13	GPIO_Output	LED ORANGE
 61	PD14	GPIO_Output	LED RED
 62	PD15	GPIO_Output	LED BLUE
-63	PC6	TIM8_CH1	BrakeSolenoid
+63	PC6	TIM3_CH1	LimitSw:inside:NO
+64	PC7	TIM3_CH2	LimitSw:inside:NC
+65	PC8	TIM3_CH3	LimitSw:outside:NO
+66	PC9	TIM3_CH4	LimitSw:outside:NC
 72	PA13	SYS_JTMS-SWDIO	
 76	PA14	SYS_JTCK-SWCLK	
 78	PC10	USART3_TX	
@@ -175,6 +192,7 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 89	PB3	TIM2_CH2	encodertimeZ
 92	PB6	I2C1_SCL	
 93	PB7	I2C1_SDA	
+95	PB8	TIM4_CH3	BrakeSolenoid
 
 
 

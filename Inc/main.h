@@ -146,10 +146,18 @@ void Error_Handler(void);
 #define LED_RED_GPIO_Port GPIOD
 #define LED_BLUE_Pin GPIO_PIN_15
 #define LED_BLUE_GPIO_Port GPIOD
-#define BrakeSolenoid_Pin GPIO_PIN_6
-#define BrakeSolenoid_GPIO_Port GPIOC
+#define LimitSw_inside_NOC6_Pin GPIO_PIN_6
+#define LimitSw_inside_NOC6_GPIO_Port GPIOC
+#define LimitSw_inside_NCC7_Pin GPIO_PIN_7
+#define LimitSw_inside_NCC7_GPIO_Port GPIOC
+#define LimitSw_outside_NOC8_Pin GPIO_PIN_8
+#define LimitSw_outside_NOC8_GPIO_Port GPIOC
+#define LimitSw_outside_NCC9_Pin GPIO_PIN_9
+#define LimitSw_outside_NCC9_GPIO_Port GPIOC
 #define encodertimeZ_Pin GPIO_PIN_3
 #define encodertimeZ_GPIO_Port GPIOB
+#define BrakeSolenoid_Pin GPIO_PIN_8
+#define BrakeSolenoid_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 // ===============================================================================
 // USART/UART assignments
