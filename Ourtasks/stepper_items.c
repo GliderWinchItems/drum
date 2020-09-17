@@ -23,38 +23,32 @@ PE5  - TIM9CH1 Stepper Pulse: PU (TIM1 Break shared interrupt vector)
 PB0  - Direction: DR 
 PB1  - Enable: EN  - High = enable (drive FET ON)
 
-Limit switches: resistor pullup to +5v. Contact closes to gnd
-   Interrupt vector: EXTI15_10_IRQHandler (common to PE10-PE15)
-PE10 - EXTI10 Inside  Limit switch: NO contacts (switch connects to gnd)
-PE11 - EXTI11 Inside  Limit switch: NC contacts (switch connects to gnd)
-PE12 - EXTI12 Outside Limit switch: NO contacts (switch connects to gnd)
-PE13 - EXTI13 Outside Limit switch: NC contacts (switch connects to gnd)
-
 Drum encoder: TIM2CH1. Pullup resistors
 PA0 - Encoder channel A
 PA1 - Encoder channel B
 
 TIM2 32b (84 MHz) capture mode (interrupt)
-      CH3 PA2 input capture: encoder A (TIM5 PA0)
-      CH4 PA3 input capture: encoder B (TIM5 PA1)
-      CH2 PB3 input capture: encoder Z
+   CH3 PA2 input capture: encoder A (TIM5 PA0)
+   CH4 PA3 input capture: encoder B (TIM5 PA1)
+   CH2 PB3 input capture: encoder Z
+   CH1 no-pin Indexing interrupts
 
-  TIM5 32b encoder counter (no interrupt)
-      CH3 PA0 encoder config: encoder A (TIM2 PA2)
-      CH4 PA1 encoder config: encoder B (TIM2 PA3)
+TIM5 32b encoder counter (no interrupt)
+   CH3 PA0 encoder config: encoder A (TIM2 PA2)
+   CH4 PA1 encoder config: encoder B (TIM2 PA3)
 
-  TIM9 (168 MHz) Delayed stepper pulse (no interrupt)
-      CH1 PE5 PWM/OPM: Stepper pulse
+TIM9 (168 MHz) Delayed stepper pulse (no interrupt)
+   CH1 PE5 PWM/OPM: Stepper pulse
 
-  TIM13 (84 MHz) Solenoid FET drive (no interrupt)
-      CH1 PA6 PWM (4 KHz)
+TIM13 (84 MHz) Solenoid FET drive (no interrupt)
+   CH1 PA6 PWM (4 KHz)
 
-  TIM14 (84 MHz) Oscope sync (no interrupt)
-      CH1 PA7 PWM/OPM; Scope pulse
+TIM14 (84 MHz) Oscope sync (no interrupt)
+   CH1 PA7 PWM/OPM; Scope pulse
 
-  TIM4 (84 MHz) (Interrupts. Same priority as TIM2)
-      CH1 output compare no output: Stepper reversal
-      CH2 output compare no output: faux encoder transition
+TIM4 (84 MHz) (Interrupts. Same priority as TIM2)
+   CH1 output compare no output: Stepper reversal
+   CH2 output compare no output: faux encoder transition
 
 */
 
@@ -129,22 +123,7 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
    p->canmsg[CID_STEPPER_HB].maxretryct = 8; // Max retry count
    return;
 }
-/* *************************************************************************
- * static void  switches_init(struct STEPPERSTUFF* p);
- * @brief   : Initialization for limit and overrun switches
- * *************************************************************************/
-static void  switches_init(struct STEPPERSTUFF* p)
-{
-   p->swbits = GPIOE->IDR & 0xfc00; // Save current switch bits PE10:15
 
-   EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
-   EXTI->FTSR |=  0xfc00;  // Trigger on falling edge
-   EXTI->IMR  &= ~0xf000;  // Interrupt mask reg: disable 10:15
-   EXTI->EMR  |=  0xfc00;  // Event mask reg: enable 10:15
-   EXTI->PR   |=  0xfc00;  // Clear any pending
-
-   return;
-}
 /* *************************************************************************
  * void stepper_items_init(void);
  * @brief   : Initialization
@@ -155,9 +134,6 @@ void stepper_items_init(void)
    
    // Initialize hardcoded parameters (used in some computations below)
    stepper_idx_v_struct_hardcode_params(p);
-
-   // Initialize for limit and overrun switches
-   switches_init(p);
 
    p->ledctr1   = 0;
    p->ledctr2   = 0;
@@ -306,30 +282,28 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    p->ocicbit = (pcan->cd.uc[0] & ZTBIT);
    if (p->ocicbit != p->ocicbit_prev)
    { // Here, the PREP bit changed
-         p->ocicbit_prev = p->ocicbit;
-         if (p->ocicbit != 0)
-         { // Here. PREP bit went from off to on
-            pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
+      p->ocicbit_prev = p->ocicbit;
+      if (p->ocicbit != 0)
+      { // Here. PREP bit went from off to on
+         pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
          if ((pT2base->CCMR2 & 0x1) != 0)
-            { // Here, currently using encoder input capture
-p->xbit =2;             
-               // Setup for output compare
-               pT2base->CCER  |=  (1<<11); // CC3NP: Configure as output
-               pT2base->CCER  &= ~(1<<8);  // CC3E = 0; Turn channel off
-               pT2base->CCMR2 &= ~(0xff << 0); // Change to Output compare, no pin
-               pT2base->CCR3 = pT2base->CNT + p->ocinc; // Schedule next faux encoder interrupt
-            }
-            else
-            { // Here, currently using output compare
-               // Setup for input capture
-p->xbit = 1;
-               pT2base->CCER  &= ~((1<<8) || (1<<11)); // CC3E, CC3NP = input
+         { // Here, currently using encoder input capture
+            // Setup for output compare
+            pT2base->CCER  |=  (1<<11); // CC3NP: Configure as output
+            pT2base->CCER  &= ~(1<<8);  // CC3E = 0; Turn channel off
+            pT2base->CCMR2 &= ~(0xff << 0); // Change to Output compare, no pin
+            pT2base->CCR3 = pT2base->CNT + p->ocinc; // Schedule next faux encoder interrupt
+         }
+         else
+         { // Here, currently using output compare
+            // Setup for input capture
+            pT2base->CCER  &= ~((1<<8) || (1<<11)); // CC3E, CC3NP = input
             pT2base->CCMR2 |= 0x01; // Input capture mapped to TI3
             pT2base->SR = ~(1<<3);  // Reset CH3 flag if on
-               pT2base->CCER  |= (1<<8); // Capture enabled on pin.
-            }
-            pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
+            pT2base->CCER  |= (1<<8); // Capture enabled on pin.
          }
+         pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
+      }
    }
 
    /* Payload byte bits for direction and enable. */
@@ -341,17 +315,17 @@ p->xbit = 1;
    if ((pT2base->CCMR2 & 0x1) == 0) // Which mode?
    { // Here TIM2CH3 mode is output compare. Use CAN payload bit
          // Output capture (no pin) is TIM2CH3 mode
-         if ((pcan->cd.uc[0] & DRBIT) == 0)
-         {
-            p->drflag = (1 << 16); // Reset
-            p->drbit  = 0;
-         }
-         else
-         {
-            p->drflag = 1; // Set
-            p->drbit  = 1;
-         }
+      if ((pcan->cd.uc[0] & DRBIT) == 0)
+      {
+         p->drflag = (1 << 16); // Reset
+         p->drbit  = 0;
       }
+      else
+      {
+         p->drflag = 1; // Set
+         p->drbit  = 1;
+      }
+   }
 
    // Motor Enable bit
    if ((pcan->cd.uc[0] & ENBIT) != 0)
@@ -413,7 +387,7 @@ void stepper_items_TIM2_IRQHandler(void)
       { // Here, not indexing
 /* ------------ Tracking/sweep --------------------------------------------------- */
          // Update enable i/o pin
-            Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+         Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
 
          // forward (stepper) direction means position accumulator is increasing
          // negative direction means position accumulator is decreasing
@@ -496,7 +470,7 @@ if (p->ledctr1 > p->ledctr2)
       { // Here, indexing
          /* == indexing section goes here. == */
       }
-      }
+   }
 
    p->dtwdiff = DTWTIME - p->dtwentry;
    if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;

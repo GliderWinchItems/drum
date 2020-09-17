@@ -5,9 +5,17 @@
 *******************************************************************************/
 
 /*
-stepper_items.c
-1) remove call to init switches
-2) static for TIM_TypeDef's
+Notes:
+
+PE9 - Input:pullup. Test sw bridges across overrun switches.
+
+Limit switches: resistor pullup to +5v. Contact closes to gnd
+   Interrupt vector: EXTI15_10_IRQHandler (common to PE10-PE15)
+PE10 - EXTI10 Inside  Limit switch: NO contacts (switch connects to gnd)
+PE11 - EXTI11 Inside  Limit switch: NC contacts (switch connects to gnd)
+PE12 - EXTI12 Outside Limit switch: NO contacts (switch connects to gnd)
+PE13 - EXTI13 Outside Limit switch: NC contacts (switch connects to gnd)
+
 */
 #include <stdint.h>
 #include <stdarg.h>

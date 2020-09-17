@@ -36,9 +36,10 @@ void StartLevelwindTask(void const * argument)
 	for (;;)
 	{
 		/* Wait for notifications */
-		xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
+		xTaskNotifyWait(0,noteuse, &noteval, portMAX_DELAY);
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
 		osDelay(10);
+		noteuse = 0xffffffff;
 	}
 }
 /* *************************************************************************

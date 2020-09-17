@@ -119,7 +119,6 @@ struct STEPPERSTUFF
    uint8_t  flagindexing; // 0 = sweep; 1 = indexing
    uint8_t  ocicbit;      //
    uint8_t  ocicbit_prev; //
-uint8_t xbit;   
 
    struct STEPPERSWCONTACT ctk[6]; // Measured switch contact open/close posaccum
    struct EXTISWITCHSTATUS sw[6]; // Limit & overrun switches
