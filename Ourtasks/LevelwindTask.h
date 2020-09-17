@@ -12,6 +12,18 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 #include "CanTask.h"
+#include "stepper_switches.h"
+
+
+/* Stepper switch bit positions */
+#define STEPPERSWSNOTEBITLIMINDB   (1<<LIMITDBINSIDE)  
+#define STEPPERSWSNOTEBITLIMOUTDB  (1<<LIMITDBOUTSIDE) 
+#define STEPPERSWSNOTEBITLIMINNC   (LIMITINSIDENC) 
+#define STEPPERSWSNOTEBITLIMINNO   (LIMITINSIDENO)
+#define STEPPERSWSNOTEBITLIMOUTNC  (LIMITOUTSIDENC)
+#define STEPPERSWSNOTEBITLIMOUTNO  (LIMITOUTSIDENO)
+#define STEPPERSWSNOTEBITLIMINOVR  (OVERRUNSWINSIDE)
+#define STEPPERSWSNOTEBITLIMOUTOVR (OVERRUNSWOUTSIDE)
 
 /* *************************************************************************/
  osThreadId xLevelwindTaskCreate(uint32_t taskpriority);

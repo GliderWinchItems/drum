@@ -15,8 +15,7 @@
 #include "stepper_items.h"
 #include "drum_items.h"
 #include "LevelwindTask.h"
-
-
+#include "stepper_switches.h"
 
 osThreadId LevelwindTaskHandle;
 
@@ -28,8 +27,17 @@ struct SWITCHPTR* psw_safeactivex; // Debugging
 
 void StartLevelwindTask(void const * argument)
 {
+	/* A notification copies the internal notification word to this. */
+	uint32_t noteval = 0;    // Receives notification word upon an API notify
+	uint32_t noteuse = 0xffffffff;
+
+	stepper_switches_init();
+
 	for (;;)
 	{
+		/* Wait for notifications */
+		xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
+		noteuse = 0;	// Accumulate bits in 'noteval' processed.
 		osDelay(10);
 	}
 }
