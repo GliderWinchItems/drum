@@ -175,7 +175,7 @@ void stepper_items_init(void)
    p->hbctr      = 0;
    p->ocinc      = 8400000;   // Default 1/10 sec duration
    p->ocidx      =   42000; // Default indexing increment 500 ms
-   p->dtwmin     = 0xffffffff;
+   p->dtwmin     = 0x7fffffff;
 
    /* Bit positions for low overhead toggling. */
    p->ledbit1= (LED_GREEN_Pin);

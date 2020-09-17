@@ -127,9 +127,9 @@ uint8_t xbit;
 
    // debug and characterization, potentially removable for operational code
    uint32_t dtwentry;   // DTW timer upon ISR entry
-   uint32_t dtwdiff;    // DTW timer minus entry upon ISR exit
-   uint32_t dtwmax;     // DTW difference max
-   uint32_t dtwmin;     // DTW difference min
+   int32_t dtwdiff;    // DTW timer minus entry upon ISR exit
+   int32_t dtwmax;     // DTW difference max
+   int32_t dtwmin;     // DTW difference min
    int32_t  dbg1;       // Debug 1
    int32_t  dbg2;       // Debug 2
    int32_t  dbg3;       // Debug 3
