@@ -82,6 +82,20 @@ TIM4 (84 MHz) (Interrupts. Same priority as TIM2)
 #define GSM    1
 #define DEBUG  1   // True for debugging
 
+#if DEBUG
+uint32_t dbgEncZdowncnt;
+uint32_t dbgEncZdowntim;
+uint32_t dbgEncZupcnt;
+uint32_t dbgEncZuptim;
+
+uint32_t dbgEncAdowncnt;
+uint32_t dbgEncAdowntim;
+uint32_t dbgEncAupcnt;
+uint32_t dbgEncAuptim;
+#endif
+
+
+
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT4base; // Register base address 
 TIM_TypeDef  *pT5base; // Register base address 
@@ -189,8 +203,12 @@ extern TIM_HandleTypeDef htim14;
    pT4base->ARR  = 0xffff;
 
    /* TIM2 Shaft encoder input capture times & output caputre indexing interrupts. */
-   pT2base->CCER |= 0x1100; // Input capture active: CH3,4
+   pT2base->CCER |= 0x1110; // Input capture active: CH2,3,4
+#if DEBUG
+   pT2base->DIER = 0xE; // CH1,2,3 interrupt enable
+#else
    pT2base->DIER = 0xA; // CH1,3 interrupt enable
+#endif   
    pT2base->CCR1 = pT2base->CNT + 1000; // 1 short delay
    pT2base->ARR  = 0xffffffff;
 
@@ -350,6 +368,27 @@ void stepper_items_TIM2_IRQHandler(void)
 {
    struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
+#if DEBUG
+     /* TIM2CH2 = encodertimeZ */
+   if ((pT2base->SR & (1<<2)) != 0) // CH2 Interrupt flag?
+   { // Yes, encoder channel Z transition
+      pT2base->SR = ~(1<<2);  // Reset CH2 flag   
+      if ((GPIOB->IDR & (1<<3)) == 0)
+      {
+         HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
+         dbgEncZdowncnt = pT5base->CNT;
+         dbgEncZdowntim = pT2base->CCR3;
+      }
+      else
+      {
+         HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
+         dbgEncZupcnt = pT5base->CNT;
+         dbgEncZuptim = pT2base->CCR3;
+      }
+      return;
+   }
+#endif   
+
    // Capture DTW timer for cycle counting
       p->dtwentry = DTWTIME;
 
@@ -453,8 +492,19 @@ else
 if (p->ledctr1 > p->ledctr2)        
 {
    p->ledctr1 = 0;
-   HAL_GPIO_TogglePin(GPIOD,LED_GREEN_Pin); // GREEN LED       
-}
+    if ((GPIOA->IDR & (1<<0)) == 0)
+    {
+      HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_SET); // GREEN LED       
+      dbgEncAdowncnt = pT5base->CNT;
+      dbgEncAdowntim = pT2base->CCR3;
+   }
+   else
+   {
+      HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_RESET); // GREEN LED    
+      dbgEncAupcnt = pT5base->CNT;
+      dbgEncAuptim = pT2base->CCR3;
+   }  
+}     
 #endif
 
    }

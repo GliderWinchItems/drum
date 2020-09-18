@@ -181,7 +181,7 @@ void Stepper_EXTI15_10_IRQHandler(void)
 				p->sw[LIMITDBINSIDE].flag2 += 1; // Flag for task(?)
 				/* Notification goes here. */
 				ptmp->sws |= LIMITDBINSIDE;
-HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);				
+//HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);				
 			}
 		}
 		return;
@@ -200,7 +200,7 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
 				/* Notification goes here. */
 				ptmp->sws |= LIMITDBINSIDE;
 
-HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);				
+//  HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);				
 
 			}
 		}
