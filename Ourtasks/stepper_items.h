@@ -129,6 +129,7 @@ struct STEPPERSTUFF
    int32_t dtwdiff;    // DTW timer minus entry upon ISR exit
    int32_t dtwmax;     // DTW difference max
    int32_t dtwmin;     // DTW difference min
+   uint32_t intcntr;    // interrupt counter
    int32_t  dbg1;       // Debug 1
    int32_t  dbg2;       // Debug 2
    int32_t  dbg3;       // Debug 3
