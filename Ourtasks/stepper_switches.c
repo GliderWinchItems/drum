@@ -11,10 +11,32 @@ PE9 - Input:pullup. Test sw bridges across overrun switches.
 
 Limit switches: resistor pullup to +5v. Contact closes to gnd
    Interrupt vector: EXTI15_10_IRQHandler (common to PE10-PE15)
-PE10 - EXTI10 Inside  Limit switch: NO contacts (switch connects to gnd)
+PE10 - EXTI10 Inside  Limit switch: NO contacts (switch connects to gnd) 
 PE11 - EXTI11 Inside  Limit switch: NC contacts (switch connects to gnd)
 PE12 - EXTI12 Outside Limit switch: NO contacts (switch connects to gnd)
 PE13 - EXTI13 Outside Limit switch: NC contacts (switch connects to gnd)
+PE14 - EXTI13 Inside Overrun switch: NC contacts (switch connects to gnd)
+PE15 - EXTI13 Outside Overrun switch: NC contacts (switch connects to gnd)
+
+Switch closed, the i/o pin shows--
+Inside limit switch: 
+  PE10 = 0
+  PE11 = 1
+Outside limit switch: 
+  PE12 = 0
+  PE13 = 1
+
+Inside overrun switch:
+  PE14 = 1
+
+Outside overrun switch:
+  PE15 = 1
+
+The following is held in abeyance for input capture timing of switches
+PC6 - PE10
+PC7 - PE11
+PC8 - PE12
+PC9 - PE13
 
 */
 #include <stdint.h>
@@ -45,10 +67,14 @@ static struct SWITCHXITION* padd;
 static struct SWITCHXITION* ptake;
 static struct SWITCHXITION* pend;
 
+static uint32_t integrity;
+static uint32_t alert;
+
 
 /* *************************************************************************
  * int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1);
  * @brief       : Call from main.c defaultTAsk jic
+ * @return      : 0 = use yprintf in main.c; not 0 = skip yprintf in main
  * *************************************************************************/
 int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1)
 {
@@ -87,9 +113,6 @@ extern TIM_HandleTypeDef htim5;
 		p->sw[LIMITDBOUTSIDE].dbs = 1; // Set debounced R-S
 		p->sw[LIMITDBOUTSIDE].flag1  = 1; // Flag for stepper ISR
 	}
-
-
-
 
 	EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
 	EXTI->FTSR |=  0xfc00;  // Trigger on falling edge
@@ -134,8 +157,8 @@ void Stepper_EXTI15_10_IRQHandler(void)
 	struct SWITCHXITION* ptmp;
 //HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
 
-	/* Here, one or more PE10-15 inputs changed. */
-	p->swbits = GPIOE->IDR & 0xfc00; // Save latest switch bits 10:15
+	/* Here, one or more PE9-PE15 inputs changed. */
+	p->swbits = GPIOE->IDR & 0xfe00; // Save latest switch bits 09:15
 
 	padd->sws = p->swbits;		// Save all switch contact bits
 	padd->tim = pT2base->CNT;   // 32b timer time
@@ -236,6 +259,81 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
 		/* Notification goes here. */
 		return;
 	}
+
+	return;
+}
+
+/* *************************************************************************
+ * void stepper_switches_error_check(void);
+ * @brief       : 
+ * *************************************************************************/
+void stepper_switches_error_check(void)
+{
+	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+
+/* === Illegal combinations */
+	/* 1: Open cable, or missing ground. */
+	if ((p->swbits & 0xfe00) == 0xfe00)
+		integrity |= STEPPERSWSTS01; // Error
+	else
+		integrity &= ~STEPPERSWSTS01;
+
+	/* 2: Inside-Outside limit sw NO both closed. */
+	if ((p->swbits & (LIMITINSIDENO | LIMITOUTSIDENO)) == 0)
+		integrity |= STEPPERSWSTS02; // Error
+	else
+		integrity &= ~STEPPERSWSTS02;
+
+	/* 3: Inside NC and NO are both closed. */
+	if ((p->swbits & (LIMITINSIDENO | LIMITINSIDENC)) == 0)
+		integrity |= STEPPERSWSTS03; // Error
+	else
+		integrity &= ~STEPPERSWSTS03;
+
+	/* 4: Inside NC and NO are both closed. */
+	if ((p->swbits & (LIMITOUTSIDENO | LIMITOUTSIDENC)) == 0)
+		integrity |= STEPPERSWSTS04; // Error
+	else
+		integrity &= ~STEPPERSWSTS04;
+
+	/* 5: Both overrun NC are open. */
+	if ((p->swbits & (OVERRUNSWINSIDE | OVERRUNSWOUTSIDE)) == 0)
+		integrity |= STEPPERSWSTS05; // Error
+	else
+		integrity &= ~STEPPERSWSTS05;
+
+	/* 6: Outside overrun closed, outside limit sw open */
+	if ((p->swbits & (OVERRUNSWOUTSIDE | LIMITOUTSIDENO)) == 0)
+		integrity |= STEPPERSWSTS06; // Error
+	else
+		integrity &= ~STEPPERSWSTS06;
+
+	/* 7: Inside overrun closed, outside limit sw open */
+	if ((p->swbits & (OVERRUNSWINSIDE | LIMITINSIDENO)) == 0)
+		integrity |= STEPPERSWSTS07; // Error
+	else
+		integrity &= ~STEPPERSWSTS07;
+
+
+/* ===== Alerts ===== */
+	/* 0: Bridge switch. */
+	if ((p->swbits & OVERRUNBRIDGE) == 0)
+		alert &= ~STEPPERSWALRT00; // Sw in operational position
+	else
+		alert |= STEPPERSWALRT00; // Sw in test (bridged power) position	
+
+	/* 1: Inside overun switch is closed. */
+	if ((p->swbits & OVERRUNSWINSIDE) != 0)
+		alert |= STEPPERSWALRT01; // 
+	else
+		alert &= ~STEPPERSWALRT01; // 	
+
+	/* 2: Outside overun switch is closed. */
+	if ((p->swbits & OVERRUNSWOUTSIDE) != 0)
+		alert |= STEPPERSWALRT02; // 
+	else
+		alert &= ~STEPPERSWALRT02; // 	
+
 
 	return;
 }
