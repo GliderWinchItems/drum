@@ -109,8 +109,8 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
    p->lc.Ka          = 8;     // Reversal rate
    p->lc.Nr          = 3500;  // Sweep rate to reversal rate ratio
    p->lc.Ks          = p->lc.Nr *  p->lc.Ka; // Sweep rate (Ks/65536) = stepper pulses per encoder edge
-   p->lc.Lplus       =   8000;
-   p->lc.Lminus      =  -8000;
+   p->lc.Lplus       = 4000;
+   p->lc.Lminus      =    0;
 
    /* Stepper sends these CAN msgs. */
    p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
@@ -416,7 +416,8 @@ void stepper_items_TIM2_IRQHandler(void)
       // update position integrator
       p->posaccum.s32 += p->velaccum.s32;
 
-#if DEBUG         
+#if DEBUG
+p->intcntr++;         
 p->dbg1 = p->velaccum.s32;
 p->dbg2 = p->posaccum.s16[1];
 p->dbg3 = p->posaccum.u16[0];

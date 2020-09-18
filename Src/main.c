@@ -696,7 +696,7 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_BOTHEDGE;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
   sConfigIC.ICFilter = 0;
@@ -1376,10 +1376,11 @@ uint8_t ratepace = 0;
 			noteused |= DEFAULTTSKBIT00;
 // ================= Higest rate =======================================
 
+    
     ratepace += 1;
-    if (ratepace > 2) // Slow down LCD output rate
+    if (ratepace > 0) // Slow down LCD output rate if desired
     {
-      ratepace = 0;
+      ratepace = 0; 
 
 	
 #ifdef STEPPERSHOW
@@ -1406,8 +1407,7 @@ if (stepper_switches_defaultTaskcall(pbuf1) == 0)
       drumstuff.Ccable_distance,
       q,w,
       (GPIOE->IDR >> 8) );
-    #else   //  GSM debug for stepper
-
+    
     
     yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X %7i %7i %7i %7i %4i %4i",
       stepperstuff.cltimectr,
@@ -1415,6 +1415,21 @@ if (stepper_switches_defaultTaskcall(pbuf1) == 0)
       stepperstuff.clpos, 
       stepperstuff.ocinc,
       stepperstuff.iobits,
+      htim5.Instance->CNT,
+      stepperstuff.dbg1,
+      stepperstuff.dbg2,
+      stepperstuff.dbg3,
+      stepperstuff.dtwmax,
+      stepperstuff.dtwmin);
+  #else   //  GSM debug for stepper
+
+
+    yprintf(&pbuf4,"\n\r%6.1f %7u %08X  %7i %7i %7i %7i %7i %4i %4i",
+      
+      stepperstuff.clpos, 
+      stepperstuff.ocinc,
+      stepperstuff.iobits,
+      stepperstuff.intcntr,
       htim5.Instance->CNT,
       stepperstuff.dbg1,
       stepperstuff.dbg2,
