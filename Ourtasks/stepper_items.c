@@ -79,8 +79,8 @@ TIM4 (84 MHz) (Interrupts. Same priority as TIM2)
 #define TIM9PWMCYCLE (168*10-30)   // 10us pwm cycle
 #define TIM9PULSEDELAY (TIM9PWMCYCLE - (168*3))
 
-#define GSM    1
-#define DEBUG  1   // True for debugging
+#define GSM    1  // True for GSM, False for DEH     
+#define DEBUG  1  // True for debugging
 
 #if DEBUG
 uint32_t dbgEncZdowncnt;
@@ -390,7 +390,7 @@ void stepper_items_TIM2_IRQHandler(void)
 #endif   
 
    // Capture DTW timer for cycle counting
-      p->dtwentry = DTWTIME;
+   p->dtwentry = DTWTIME;
 
      /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
    if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
@@ -417,7 +417,7 @@ void stepper_items_TIM2_IRQHandler(void)
       }
 
       /* Here: either encoder channel A driven input capture interrupt, or 
-          CL controlled timer output compare interrupt. */
+         CL controlled timer output compare interrupt. */
 
       /* During indexing the encoder input capture or output compare
            interrupts do not drive
@@ -432,81 +432,77 @@ void stepper_items_TIM2_IRQHandler(void)
          // negative direction means position accumulator is decreasing
          // drbit = 0 means positive drum direction
 
-         // update velocity integrator
+         // update velocity integrator         
          
-         // invert velocity integrator if Drum Direction has changed
-         if (p->drbit != p->drbit_prev)
+         if (p->drbit != p->drbit_prev)   
          {  // Drum direction has changed
             p->drbit_prev = p->drbit;   // save new direction
             p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
          }         
          else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
-         {
+         {  // in level-wind reversal region
             if (p->posaccum.s32 >= p->Lplus32)
-            {  // in positive level-wind reversal region
+            {  // in positive region
                p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
             }
          else
-         {  // in negative level-wind reversal region
-            p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
+            {  // in negative region
+               p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
+            }
          }
-      }
          
       // update position integrator
       p->posaccum.s32 += p->velaccum.s32;
 
 #if DEBUG
-p->intcntr++;         
-p->dbg1 = p->velaccum.s32;
-p->dbg2 = p->posaccum.s16[1];
-p->dbg3 = p->posaccum.u16[0];
+         p->intcntr++;         
+         p->dbg1 = p->velaccum.s32;
+         p->dbg2 = p->posaccum.s16[1];
+         p->dbg3 = p->posaccum.u16[0];
 #endif
       
-      /* When accumulator upper 16b changes generate a stepper pulse. */
-      if ((p->posaccum.s16[1]) != (p->posaccum_prev))
-      { // Here carry/borrow from low 16b to high 16b
-         p->posaccum_prev = (p->posaccum.s16[1]);
+         /* When accumulator upper 16b changes generate a stepper pulse. */
+         if ((p->posaccum.s16[1]) != (p->posaccum_prev))
+         { // Here carry/borrow from low 16b to high 16b
+            p->posaccum_prev = (p->posaccum.s16[1]);
 
-         /* Skip stepper pulses if motor not enabled. */
-         if ((p->enflag & (2 << 0)) == 0) 
-         {  // set direction based on sign of Velocity integrator
-            // depends on velocity magnitude being <= 2^16
-            Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
-               ? 1 : (1 << 16);
+            /* Skip stepper pulses if motor not enabled. */
+            if ((p->enflag & (2 << 0)) == 0) 
+            {  // set direction based on sign of Velocity integrator
+               // depends on velocity magnitude being <= 2^16
+               Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
+                  ? 1 : (1 << 16);
 
-            // Start TIM9 to generate a delayed pulse.
-            pT9base->CR1 = 0x9;
+               // Start TIM9 to generate a delayed pulse.
+               pT9base->CR1 = 0x9;
+            }
          }
       }
 /* ------------ End tracking section --------------------------------------------- */
-   }
-
 #if DEBUG
-// Debugging
-p->ledctr1 += 1;
-if ((pT2base->CCMR2 & 0x1) != 0)
-  p->ledctr2 = 0;
-else
-  p->ledctr2 = 500;
+      p->ledctr1 += 1;
+      if ((pT2base->CCMR2 & 0x1) != 0)
+        p->ledctr2 = 0;
+      else
+        p->ledctr2 = 500;
 
-if (p->ledctr1 > p->ledctr2)        
-{
-   p->ledctr1 = 0;
-    if ((GPIOA->IDR & (1<<0)) == 0)
-    {
-      HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_SET); // GREEN LED       
-      dbgEncAdowncnt = pT5base->CNT;
-      dbgEncAdowntim = pT2base->CCR3;
-   }
-   else
-   {
-      HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_RESET); // GREEN LED    
-      dbgEncAupcnt = pT5base->CNT;
-      dbgEncAuptim = pT2base->CCR3;
-   }  
-}     
+      if (p->ledctr1 > p->ledctr2)        
+      {
+         p->ledctr1 = 0;
+         if ((GPIOA->IDR & (1<<0)) == 0)
+         {
+            HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_SET); // GREEN LED       
+            dbgEncAdowncnt = pT5base->CNT;
+            dbgEncAdowntim = pT2base->CCR3;
+         }
+         else
+         {
+            HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_RESET); // GREEN LED    
+            dbgEncAupcnt = pT5base->CNT;
+            dbgEncAuptim = pT2base->CCR3;
+         }  
+      }     
 #endif
-
    }
 
    /* Indexing timer interrupt. */
@@ -573,64 +569,62 @@ void stepper_items_TIM2_IRQHandler(void)
           CL controlled timer output compare interrupt. */
 
       /* During indexing the encoder input capture or output compare
-           interrupts do not drive
-         the stepper. */
+           interrupts do not drive the stepper. */
       if (p->flagindexing == 0)
       { // Here, not indexing
 /* ------------ Tracking/sweep --------------------------------------------------- */
          // Update enable i/o pin
             Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
 
-      // forward (stepper) direction means position accumulator is increasing
-      // negative direction means position accumulator is decreasing
-      // drbit = 0 means positive drum direction
+         // forward (stepper) direction means position accumulator is increasing
+         // negative direction means position accumulator is decreasing
+         // drbit = 0 means positive drum direction
 
-      // update velocity integrator
+         // update velocity integrator
       
-      // invert velocity integrator if Drum Direction has changed
-            if (p->drbit != p->drbit_prev)
-            {  // Drum direction has changed
-               p->drbit_prev = p->drbit;   // save new direction
-               p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
-            } 
-            
-            else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
-            {
-               if (p->posaccum.s32 >= p->Lplus32)
-               {  // in positive level-wind reversal region
-                  p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
-              }
+         // invert velocity integrator if Drum Direction has changed
+         if (p->drbit != p->drbit_prev)
+         {  // Drum direction has changed
+            p->drbit_prev = p->drbit;   // save new direction
+            p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
+         } 
+         else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
+         {  // in a reversal region
+            if (p->posaccum.s32 >= p->Lplus32)
+            {  // in positive level-wind reversal region
+               p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
+            }
             else
             {  // in negative level-wind reversal region
                p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
             }
-            }
-         
-            p->dbg1 = p->velaccum.s32;
-            p->dbg2 = p->posaccum.s16[1];
-            p->dbg3 = p->posaccum.u16[0];
-         
-         // update position integrator
-            p->posaccum.s32 += p->velaccum.s32;
-      
-         /* When accumulator upper 16b changes generate a stepper pulse. */
-            if ((p->posaccum.s16[1]) != (p->posaccum_prev))
-            { // Here carry/borrow from low 16b to high 16b
-               p->posaccum_prev = (p->posaccum.s16[1]);
-
-               /* Skip stepper pulses if motor not enabled. */
-               if ((p->enflag & (2 << 0)) == 0) 
-               {  // set direction based on sign of Velocity integrator
-                  // depends on velocity magnitude being <= 2^16
-                  Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
-                        ? 1 : (1 << 16);
-
-                  // Start TIM9 to generate a delayed pulse.
-                  pT9base->CR1 = 0x9;
-               }
-            }
-/* ------------ End tracking section --------------------------------------------- */
          }
+      
+         p->dbg1 = p->velaccum.s32;
+         p->dbg2 = p->posaccum.s16[1];
+         p->dbg3 = p->posaccum.u16[0];
+      
+      // update position integrator
+         p->posaccum.s32 += p->velaccum.s32;
+   
+      /* When accumulator upper 16b changes generate a stepper pulse. */
+         if ((p->posaccum.s16[1]) != (p->posaccum_prev))
+         { // Here carry/borrow from low 16b to high 16b
+            p->posaccum_prev = (p->posaccum.s16[1]);
+
+            /* Skip stepper pulses if motor not enabled. */
+            if ((p->enflag & (2 << 0)) == 0) 
+            {  // set direction based on sign of Velocity integrator
+               // depends on velocity magnitude being <= 2^16
+               Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
+                     ? 1 : (1 << 16);
+
+               // Start TIM9 to generate a delayed pulse.
+               pT9base->CR1 = 0x9;
+            }
+         }
+/* ------------ End tracking section --------------------------------------------- */
+      }
 
 #if DEBUG   // Debugging
       p->ledctr1 += 1;
