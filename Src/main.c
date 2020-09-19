@@ -1364,7 +1364,7 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 uint8_t ratepace = 0;
 
 //osDelay(1);
-	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
+	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(16),0);
 // ===== BEGIN FOR LOOP ==============================
 
 	for ( ;; )
