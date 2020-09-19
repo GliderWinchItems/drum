@@ -152,10 +152,12 @@ void stepper_items_init(void)
    p->ledctr1   = 0;
    p->ledctr2   = 0;
    // Position accumulator initial value. Reference paper for the value employed.
-   p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;   
+   // p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
+   p->posaccum.s32 = 0;   
    p->posaccum_prev = p->posaccum.s32;
-   // initialize 32-bit values for Lplus32 and Lminus32. Reference paper.
-   p->Lminus32 = p->lc.Lminus << 16;
+   // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
+   // p->Lminus32 = p->lc.Lminus << 16;
+   p->Lminus32 = (p->lc.Lminus << 16) + (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
    p->Lplus32  = p->Lminus32 
       + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->lc.Ks) * p->lc.Ks;
    p->velaccum.s32 = 0;      // Velocity accumulator initial value  
@@ -439,20 +441,17 @@ void stepper_items_TIM2_IRQHandler(void)
             p->drbit_prev = p->drbit;   // save new direction
             p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
          }         
-         else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
-         {  // in level-wind reversal region
-            if (p->posaccum.s32 >= p->Lplus32)
-            {  // in positive region
-               p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
-            }
-         else
-            {  // in negative region
-               p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
-            }
+         else if (p->posaccum.s32 >= p->Lplus32)
+         {  // in positive level-wind region
+            p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
+         }
+         else if (p->posaccum.s32 <= p->Lminus32)
+         {  // in negative level-wind region
+            p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
          }
          
-      // update position integrator
-      p->posaccum.s32 += p->velaccum.s32;
+         // update position integrator
+         p->posaccum.s32 += p->velaccum.s32;
 
 #if DEBUG
          p->intcntr++;         
