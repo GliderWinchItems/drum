@@ -79,8 +79,9 @@ TIM4 (84 MHz) (Interrupts. Same priority as TIM2)
 #define TIM9PWMCYCLE (168*10-30)   // 10us pwm cycle
 #define TIM9PULSEDELAY (TIM9PWMCYCLE - (168*3))
 
-#define GSM    1  // True for GSM, False for DEH     
+ 
 #define DEBUG  1  // True for debugging
+#define DTW    1  // True to keep DTW timing Code
 
 #if DEBUG
 uint32_t dbgEncZdowncnt;
@@ -358,7 +359,7 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    return;  
 }
 
-#ifdef GSM //working section
+
 /*#######################################################################################
  * ISR routine for TIM2
  * CH1 - OC timed interrupts  indexing interrupts
@@ -370,11 +371,12 @@ void stepper_items_TIM2_IRQHandler(void)
 {
    struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
-#if DEBUG
+
      /* TIM2CH2 = encodertimeZ */
    if ((pT2base->SR & (1<<2)) != 0) // CH2 Interrupt flag?
    { // Yes, encoder channel Z transition
-      pT2base->SR = ~(1<<2);  // Reset CH2 flag   
+      pT2base->SR = ~(1<<2);  // Reset CH2 flag
+#if DEBUG   
       if ((GPIOB->IDR & (1<<3)) == 0)
       {
          HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
@@ -387,14 +389,16 @@ void stepper_items_TIM2_IRQHandler(void)
          dbgEncZupcnt = pT5base->CNT;
          dbgEncZuptim = pT2base->CCR3;
       }
+#endif
       return;
    }
-#endif   
 
+#if DTW
    // Capture DTW timer for cycle counting
    p->dtwentry = DTWTIME;
+#endif 
 
-     /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
+   /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
    if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
    { // Yes, either encoder channel A, or output compare
       pT2base->SR = ~(1<<3);  // Reset CH3 flag
@@ -424,245 +428,174 @@ void stepper_items_TIM2_IRQHandler(void)
       /* During indexing the encoder input capture or output compare
            interrupts do not drive
          the stepper. */
-      if (p->flagindexing == 0)
-      { // Here, not indexing
-/* ------------ Tracking/sweep --------------------------------------------------- */
-         // Update enable i/o pin
-         Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
 
-         // forward (stepper) direction means position accumulator is increasing
-         // negative direction means position accumulator is decreasing
-         // drbit = 0 means positive drum direction
-
-         // update velocity integrator         
-         
-         if (p->drbit != p->drbit_prev)   
-         {  // Drum direction has changed
-            p->drbit_prev = p->drbit;   // save new direction
-            p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
-         }         
-         else if (p->posaccum.s32 >= p->Lplus32)
-         {  // in positive level-wind region
-            p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
+      p->lw_state = LW_TRACK;   // mostly do nothing until state machine is further defined
+      switch (p->lw_state & 0xF0)
+      {
+         case (LW_TRACK & 0xF0):
+         {
+            // code here to check if LOS has occured. if so, switch to LOS
+            break;
          }
-         else if (p->posaccum.s32 <= p->Lminus32)
-         {  // in negative level-wind region
-            p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
+
+         case (LW_LOS & 0xF0):
+         {
+            
+            // code here looking for limit switch clousure to re-index on
+            p->lw_state = LW_TRACK; // switch back to tracking state
+            break;
          }
          
-         // update position integrator
-         p->posaccum.s32 += p->velaccum.s32;
+         default:
+         {  // When indexing, moving, sweeping, or off ignore encoder interrupts
+#if DEV
+            p->dtwdiff = DTWTIME - p->dtwentry;
+            if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
+            else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
+#endif
+            return;
+         }
+      }
+
+
+
+#if DEBUG   // move this out of ISR at some point
+      // Update enable i/o pin
+      Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+ #endif     
+
+      // forward (stepper) direction means position accumulator is increasing
+      // negative direction means position accumulator is decreasing
+      // drbit = 0 means positive drum direction
+
+      // update velocity integrator         
+      
+      if (p->drbit != p->drbit_prev)   
+      {  // Drum direction has changed
+         p->drbit_prev = p->drbit;   // save new direction
+         p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
+      }         
+      else if (p->posaccum.s32 >= p->Lplus32)
+      {  // in positive level-wind region
+         p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
+      }
+      else if (p->posaccum.s32 <= p->Lminus32)
+      {  // in negative level-wind region
+         p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
+      }
+      
+      // update position integrator
+      p->posaccum.s32 += p->velaccum.s32;
 
 #if DEBUG
-         p->intcntr++;         
-         p->dbg1 = p->velaccum.s32;
-         p->dbg2 = p->posaccum.s16[1];
-         p->dbg3 = p->posaccum.u16[0];
+      p->intcntr++;         
+      p->dbg1 = p->velaccum.s32;
+      p->dbg2 = p->posaccum.s16[1];
+      p->dbg3 = p->posaccum.u16[0];
 #endif
       
          /* When accumulator upper 16b changes generate a stepper pulse. */
-         if ((p->posaccum.s16[1]) != (p->posaccum_prev))
-         { // Here carry/borrow from low 16b to high 16b
-            p->posaccum_prev = (p->posaccum.s16[1]);
+      if ((p->posaccum.s16[1]) != (p->posaccum_prev))
+      { // Here carry/borrow from low 16b to high 16b
+         p->posaccum_prev = (p->posaccum.s16[1]);
 
-            /* Skip stepper pulses if motor not enabled. */
-            if ((p->enflag & (2 << 0)) == 0) 
-            {  // set direction based on sign of Velocity integrator
-               // depends on velocity magnitude being <= 2^16
-               Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
-                  ? 1 : (1 << 16);
+        // set direction based on sign of Velocity integrator
+         // depends on velocity magnitude being <= 2^16
+         Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
+            ? 1 : (1 << 16);
 
-               // Start TIM9 to generate a delayed pulse.
-               pT9base->CR1 = 0x9;
-            }
-         }
+         // Start TIM9 to generate a delayed pulse.
+         pT9base->CR1 = 0x9;         
       }
-/* ------------ End tracking section --------------------------------------------- */
-#if DEBUG
-      p->ledctr1 += 1;
-      if ((pT2base->CCMR2 & 0x1) != 0)
-        p->ledctr2 = 0;
-      else
-        p->ledctr2 = 500;
-
-      if (p->ledctr1 > p->ledctr2)        
-      {
-         p->ledctr1 = 0;
-         if ((GPIOA->IDR & (1<<0)) == 0)
-         {
-            HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_SET); // GREEN LED       
-            dbgEncAdowncnt = pT5base->CNT;
-            dbgEncAdowntim = pT2base->CCR3;
-         }
-         else
-         {
-            HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_RESET); // GREEN LED    
-            dbgEncAupcnt = pT5base->CNT;
-            dbgEncAuptim = pT2base->CCR3;
-         }  
-      }     
-#endif
    }
 
+
    /* Indexing timer interrupt. */
+   // WHY ARE CH1 INTERRUPTS Occuring
    if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag?
    { // Yes, OC drive 
       pT2base->SR = ~(1<<1);  // Reset CH1 flag
 
       // Duration increment computed from CL CAN msg
          pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
-
-      if (p->flagindexing != 0)
-      { // Here, indexing
-         /* == indexing section goes here. == */
-      }
-   }
-
-   p->dtwdiff = DTWTIME - p->dtwentry;
-   if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
-   else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
-
-   return;
-}
-
-#else // DEH reverson copy
-/*#######################################################################################
- * ISR routine for TIM2
- * CH1 - OC timed interrupts  indexing interrupts
- * CH2 - OC timed interrupts  or, FreeRTOS task forces this interrupt?
- * CH3 - IC encoder channel A or, OC generates faux encoder interrupts
- * CH4 - IC encoder channel B not used in this version
- *####################################################################################### */
-void stepper_items_TIM2_IRQHandler(void)
-{
-   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
-
-   // Capture DTW timer for cycle counting
-      p->dtwentry = DTWTIME;
-
-     /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
-   if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
-   { // Yes, either encoder channel A, or output compare
-      pT2base->SR = ~(1<<3);  // Reset CH3 flag
-
-      /* Was this interrupt due to encoder input capture or output compare?. */
-      if ((pT2base->CCMR2 & 0x1) == 0)
-      { // Here we are using TIM2CH3 as OC compare instead of input capture. */
-         // Duration increment computed from CL CAN msg
-         pT2base->CCR3 += p->ocinc; // Schedule next faux encoder interrupt
-         // Make faux encoder counter 
-         drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
-         if (p->drbit == 0)
-            drumstuff.decA.cur.cnt += 1;  
-         else
-            drumstuff.decA.cur.cnt -= 1; 
-      }
-      else
-      { // Here, encoder driven input capture. Save for odometer and speed
-         drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
-         drumstuff.decA.cur.cnt = pT5base->CNT;    // Save current encoder count
-         p->drbit = (pT5base->CR1 & 0x10); // Encoding DIR (direction) (0|non-zero)
-      }
-
-      /* Here: either encoder channel A driven input capture interrupt, or 
-          CL controlled timer output compare interrupt. */
-
-      /* During indexing the encoder input capture or output compare
-           interrupts do not drive the stepper. */
-      if (p->flagindexing == 0)
-      { // Here, not indexing
-/* ------------ Tracking/sweep --------------------------------------------------- */
-         // Update enable i/o pin
-            Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
-
-         // forward (stepper) direction means position accumulator is increasing
-         // negative direction means position accumulator is decreasing
-         // drbit = 0 means positive drum direction
-
-         // update velocity integrator
-      
-         // invert velocity integrator if Drum Direction has changed
-         if (p->drbit != p->drbit_prev)
-         {  // Drum direction has changed
-            p->drbit_prev = p->drbit;   // save new direction
-            p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
-         } 
-         else if (p->posaccum.s32 >= p->Lplus32 || p->posaccum.s32 <= p->Lminus32)     
-         {  // in a reversal region
-            if (p->posaccum.s32 >= p->Lplus32)
-            {  // in positive level-wind reversal region
-               p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
-            }
-            else
-            {  // in negative level-wind reversal region
-               p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
-            }
+     
+         /*
+         switch (p->lw_state & 0xF0)
+         {
+         case (LW_INDEX & 0xF0):
+         {
+            // code here looking for limit switch to index on then 
+            // sweeping for limit switch testing then stopping at 
+            // specifed spot. May sequence to sweep and then to move for
+            // final stop.
+            break;
          }
-      
-         p->dbg1 = p->velaccum.s32;
-         p->dbg2 = p->posaccum.s16[1];
-         p->dbg3 = p->posaccum.u16[0];
-      
-      // update position integrator
-         p->posaccum.s32 += p->velaccum.s32;
+
+         case (LW_MOVE & 0xF0):
+         {            
+            // code here dealing with stopping at specified location
+            p->lw_state = LW_OFF; // switch back to tracking state
+            break;
+         }
+
+         case (LW_SWEEP & 0xF0):
+         {            
+            // code here capturing limit switch closing points
+            break;
+         }
+         
+         default:
+         {  // When tracking or in LOS recovery ignore index interrupts
+#if DEV
+            p->dtwdiff = DTWTIME - p->dtwentry;
+            if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
+            else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
+#endif
+            return;
+         }
+      }
+   */
    
-      /* When accumulator upper 16b changes generate a stepper pulse. */
-         if ((p->posaccum.s16[1]) != (p->posaccum_prev))
-         { // Here carry/borrow from low 16b to high 16b
-            p->posaccum_prev = (p->posaccum.s16[1]);
+   }
 
-            /* Skip stepper pulses if motor not enabled. */
-            if ((p->enflag & (2 << 0)) == 0) 
-            {  // set direction based on sign of Velocity integrator
-               // depends on velocity magnitude being <= 2^16
-               Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
-                     ? 1 : (1 << 16);
 
-               // Start TIM9 to generate a delayed pulse.
-               pT9base->CR1 = 0x9;
-            }
-         }
-/* ------------ End tracking section --------------------------------------------- */
-      }
+#if DEBUG
+   p->ledctr1 += 1;
+   if ((pT2base->CCMR2 & 0x1) != 0)
+     p->ledctr2 = 0;
+   else
+     p->ledctr2 = 500;
 
-#if DEBUG   // Debugging
-      p->ledctr1 += 1;
-      if ((pT2base->CCMR2 & 0x1) != 0)
-        p->ledctr2 = 0;
-      else
-        p->ledctr2 = 500;
-      if (p->ledctr1 > p->ledctr2)        
+   if (p->ledctr1 > p->ledctr2)        
+   {
+      p->ledctr1 = 0;
+      if ((GPIOA->IDR & (1<<0)) == 0)
       {
-         p->ledctr1 = 0;
-         HAL_GPIO_TogglePin(GPIOD,LED_GREEN_Pin); // GREEN LED       
+         HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_SET); // GREEN LED       
+         dbgEncAdowncnt = pT5base->CNT;
+         dbgEncAdowntim = pT2base->CCR3;
       }
-#endif
-
+      else
+      {
+         HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_RESET); // GREEN LED    
+         dbgEncAupcnt = pT5base->CNT;
+         dbgEncAuptim = pT2base->CCR3;
+      }  
    }
+   #endif
 
-   /* Indexing timer interrupt. */
-   if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag?
-   { // Yes, OC drive 
-      pT2base->SR = ~(1<<1);  // Reset CH1 flag
+   
 
-      // Duration increment computed from CL CAN msg
-         pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
 
-      if (p->flagindexing != 0)
-      { // Here, indexing
-         /* == indexing section goes here. == */
-      }
-   }
-
+#if DTW
    p->dtwdiff = DTWTIME - p->dtwentry;
    if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
    else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
+#endif
 
    return;
 }
 
-
-#endif
 /*#######################################################################################
  * ISR routine for TIM4
  * CH1 = OC stepper reversal
