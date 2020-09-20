@@ -57,6 +57,17 @@
 (8) CP PB state: Prep (CP toggles freeze of CL setting)
 */
 
+// High level State definitions. Lower nibble reserved for sub-states
+#define LW_OFF   0 * 16
+#define LW_INDEX  1 * 16
+#define LW_MOVE   2 * 16
+#define LW_SWEEP  3 * 16
+#define LW_TRACK  4 * 16 
+#define LW_LOS    5 * 16 
+
+
+
+
 #define NUMCANMSGSSTEPPER 1  // Number of CAN msgs stepper sends
 
 /* Parameters stepper instance (LC = Local Copy) */
@@ -116,7 +127,8 @@ struct STEPPERSTUFF
    uint8_t  drbit;      // Direction bit (0|not-zero)
    uint8_t  drbit_prev; // Previous Direction bit
 
-   uint8_t  flagindexing; // 0 = sweep; 1 = indexing
+   uint8_t  flagindexing; //  0 = sweep; 1 = indexing
+   uint8_t  lw_state;      // level-wind states. defined above
    uint8_t  ocicbit;      //
    uint8_t  ocicbit_prev; //
 
