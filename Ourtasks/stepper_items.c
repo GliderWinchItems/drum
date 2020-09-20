@@ -447,8 +447,8 @@ void stepper_items_TIM2_IRQHandler(void)
          }
          
          default:
-         {  // When indexing, moving, sweeping, or off ignore encoder interrupts
-#if DEV
+         {  // ignore encoder interrupts when indexing, moving, sweeping, or off 
+#if DTW
             p->dtwdiff = DTWTIME - p->dtwentry;
             if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
             else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
@@ -456,7 +456,6 @@ void stepper_items_TIM2_IRQHandler(void)
             return;
          }
       }
-
 
 
 #if DEBUG   // move this out of ISR at some point
@@ -510,18 +509,17 @@ void stepper_items_TIM2_IRQHandler(void)
    }
 
 
-   /* Indexing timer interrupt. */
-   // WHY ARE CH1 INTERRUPTS Occuring
+   // Indexing timer interrupt
    if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag?
    { // Yes, OC drive 
       pT2base->SR = ~(1<<1);  // Reset CH1 flag
 
       // Duration increment computed from CL CAN msg
-         pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
+      pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
      
-         /*
-         switch (p->lw_state & 0xF0)
-         {
+      /*
+      switch (p->lw_state & 0xF0)
+      {
          case (LW_INDEX & 0xF0):
          {
             // code here looking for limit switch to index on then 
@@ -546,7 +544,7 @@ void stepper_items_TIM2_IRQHandler(void)
          
          default:
          {  // When tracking or in LOS recovery ignore index interrupts
-#if DEV
+#if DTW
             p->dtwdiff = DTWTIME - p->dtwentry;
             if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
             else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
@@ -554,8 +552,7 @@ void stepper_items_TIM2_IRQHandler(void)
             return;
          }
       }
-   */
-   
+      */
    }
 
 
@@ -582,8 +579,7 @@ void stepper_items_TIM2_IRQHandler(void)
          dbgEncAuptim = pT2base->CCR3;
       }  
    }
-   #endif
-
+#endif
    
 
 
