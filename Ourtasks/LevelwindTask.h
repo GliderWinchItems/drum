@@ -24,6 +24,7 @@
 #define STEPPERSWSNOTEBITLIMOUTNO  (LIMITOUTSIDENO)
 #define STEPPERSWSNOTEBITLIMINOVR  (OVERRUNSWINSIDE)
 #define STEPPERSWSNOTEBITLIMOUTOVR (OVERRUNSWOUTSIDE)
+#define STEPPERSWSNOTEBITISR       (1<<16)            // Stepper ISR
 
 /* *************************************************************************/
  osThreadId xLevelwindTaskCreate(uint32_t taskpriority);

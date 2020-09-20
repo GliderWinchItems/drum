@@ -33,6 +33,12 @@ void StartLevelwindTask(void const * argument)
 
 	stepper_switches_init();
 
+	HAL_NVIC_SetPriority(ETH_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(ETH_IRQn);
+
+    /* Set interrupt pending */
+  //NVIC_SetPendingIRQ(ETH_IRQn);
+
 	for (;;)
 	{
 		/* Wait for notifications */
@@ -54,4 +60,12 @@ osThreadId xLevelwindTaskCreate(uint32_t taskpriority)
 	LevelwindTaskHandle = osThreadCreate(osThread(LevelwindTask), NULL);
 	vTaskPrioritySet( LevelwindTaskHandle, taskpriority );
 	return LevelwindTaskHandle;
+}
+/* ##################################################################
+ * Commandeered vector for stepper_items_TIM2_IRQHandler notifications
+ * ################################################################## */
+void ETH_IRQHandler(void)
+{
+
+	return;
 }

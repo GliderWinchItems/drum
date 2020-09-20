@@ -19,12 +19,12 @@
 /* Positions of bits in 'switchbits' */
 #define LIMITDBINSIDE  0   // Debounced inside limit sw 1 = closed
 #define LIMITDBOUTSIDE 1   // Debounced outside limit sw 1 = closed
-#define LIMITINSIDENO    (LimitSw_inside_NO_Pin) // Inside  NC contact 0 = closed
-#define LIMITINSIDENC    (LimitSw_inside_NC_Pin) // Inside  NO contact 0 = closed
+#define LIMITINSIDENO    (LimitSw_inside_NO_Pin)  // Inside  NC contact 0 = closed
+#define LIMITINSIDENC    (LimitSw_inside_NC_Pin)  // Inside  NO contact 0 = closed
 #define LIMITOUTSIDENO   (LimitSw_outside_NO_Pin) // Outside NC contact 0 = closed
 #define LIMITOUTSIDENC   (LimitSw_outside_NC_Pin) // Outside NO contact 0 = closed
-#define OVERRUNSWINSIDE  (OverrunSw_Inside_Pin) // Inside  overrun closed = 0
-#define OVERRUNSWOUTSIDE (OverrunSw_outside_Pin) // Outside overrun closed = 0
+#define OVERRUNSWINSIDE  (OverrunSw_Inside_Pin)   // Inside  overrun closed = 0
+#define OVERRUNSWOUTSIDE (OverrunSw_outside_Pin)  // Outside overrun closed = 0
 #define OVERRUNBRIDGE (1<<9) // Bridge sw for testing overrun. 0 = test position
 
 /* Integrity status bits. */
