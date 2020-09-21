@@ -83,19 +83,6 @@ TIM4 (84 MHz) (Interrupts. Same priority as TIM2)
 #define DEBUG  1  // True for debugging
 #define DTW    1  // True to keep DTW timing Code
 
-#if DEBUG
-uint32_t dbgEncZdowncnt;
-uint32_t dbgEncZdowntim;
-uint32_t dbgEncZupcnt;
-uint32_t dbgEncZuptim;
-
-uint32_t dbgEncAdowncnt;
-uint32_t dbgEncAdowntim;
-uint32_t dbgEncAupcnt;
-uint32_t dbgEncAuptim;
-#endif
-
-
 
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT4base; // Register base address 
@@ -378,14 +365,10 @@ void stepper_items_TIM2_IRQHandler(void)
       if ((GPIOB->IDR & (1<<3)) == 0)
       {
          HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
-         dbgEncZdowncnt = pT5base->CNT;
-         dbgEncZdowntim = pT2base->CCR3;
       }
       else
       {
          HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
-         dbgEncZupcnt = pT5base->CNT;
-         dbgEncZuptim = pT2base->CCR3;
       }
 #endif
       return;
@@ -403,7 +386,6 @@ void stepper_items_TIM2_IRQHandler(void)
    uint8_t  emulation_run = 0;   
    p->lw_state = LW_TRACK;   // temporary until way to change states is implemented
 
-
    /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
    if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
    { // Yes, either encoder channel A, or output compare emulating an encoder edge
@@ -417,22 +399,17 @@ void stepper_items_TIM2_IRQHandler(void)
          // Duration increment computed from CL CAN msg
          pT2base->CCR3 += p->ocinc; // Schedule next faux encoder interrupt
          // Make faux encoder counter 
-         drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
          if (p->drflag == 1)
          {  
-            drumstuff.decA.cur.cnt += 1;
             ddir = 1;   //drum direction reverse
          }         
          else
          {
-            drumstuff.decA.cur.cnt -= 1;
             ddir = 0;   // drum direction forward
          } 
       }      
       else
       { // Here, encoder driven input capture. Save for odometer and speed
-         drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
-         drumstuff.decA.cur.cnt = pT5base->CNT;    // Save current encoder count
          ddir = (pT5base->CR1 & 0x10) ? 1 : 0;     // Encoding DIR (direction) (0|1)
       }
 
@@ -565,14 +542,10 @@ void stepper_items_TIM2_IRQHandler(void)
       if ((GPIOA->IDR & (1<<0)) == 0)
       {
          HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_SET); // GREEN LED       
-         dbgEncAdowncnt = pT5base->CNT;
-         dbgEncAdowntim = pT2base->CCR3;
       }
       else
       {
          HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_RESET); // GREEN LED    
-         dbgEncAupcnt = pT5base->CNT;
-         dbgEncAuptim = pT2base->CCR3;
       }  
    }
 #endif
