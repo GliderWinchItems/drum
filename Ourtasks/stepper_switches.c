@@ -76,8 +76,12 @@ static uint32_t alert;
  * @brief       : Call from main.c defaultTAsk jic
  * @return      : 0 = use yprintf in main.c; not 0 = skip yprintf in main
  * *************************************************************************/
+#include "yprintf.h"
+
 int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1)
 {
+extern uint32_t dbgEth;
+	yprintf(&pbuf1,"\n\rswitches %i",dbgEth);
 	return 0;
 }
 

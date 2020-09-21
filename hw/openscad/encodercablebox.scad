@@ -18,7 +18,7 @@
  boxfloor = 4;
  boxx = pbx + boxwall*0.5;
  boxy = pby + boxwall*0.5;
- boxz = 24;
+ boxz = 12;
  
  // Main box cutout
  boxqx = pbx - boxwall*0.5;
@@ -41,7 +41,26 @@
  pstd = 6;  // Diameter
  paa = 1.1; // Post center offset
  
- 
+ frad = 8; // fillet radius
+phole = 2.9; // Post screw hole diameter 
+
+ module post_fillet(r)
+ {
+     difference()
+     {
+         union()
+         {
+             translate([-phole*0.707-.01,phole*0.707,0])
+            cube([phole*0.707+pstd/2,frad,pstz],center=false);
+         }
+         union()
+         {
+            translate([(frad-phole*.707),frad,0])
+              cylinder(d=frad*2,h = pstz,center=false);
+         }         
+     }
+ }
+
  module post(a)
  {
      translate (a)
@@ -52,16 +71,18 @@
             union()
             {   
                 cylinder(d=pstd,h = pstz,center=false);
+               // rotate([0,0,90])
+                post_fillet([0,0,0]);
             }
             union()
             {
                 translate([0,0,pstz-30])
-                cylinder(d=2.9,h=60,center=false);
+                cylinder(d=phole,h=60,center=false);
             }
         }
     }
  }
- 
+ translate([100,0,0])post([0,0,0]);
  module mainbox()
  {
      difference()
@@ -84,10 +105,6 @@
              translate([boxwall*.25,boxwall*.25,boxz-pbz])
                 cube([pbx,pby,50],center=false);
              
-             // Switch cable
-             swcq = boxfloor + swcofz;
-             translate([boxwall*.25+swcofx,-4,swcq])
-                cube([swcx,20,swcz],center=false);
              
              // spi cable
 //             spiq = boxfloor + spiofz;
@@ -172,20 +189,9 @@ module togglehole(a)
              union()
              {
                 // Recess in cover
-//                translate([boxwall*.25+cvrdel*.5,boxwall*.25+cvrdel*.5,0])
-//                    cube([pbx-cvrdel,pby-cvrdel,cvrz-1.5],center=false);
+                translate([boxwall*.25+cvrdel*.5,boxwall*.25+cvrdel*.5,0])
+                    cube([pbx-cvrdel,pby-cvrdel,cvrz-1.5],center=false);
                  
-                // pushbutton plate window
-                 translate([cvrofx,cvrofy,-1])
-                    cube([cvrx,cvry, 30],center=false);
-    /*                
-                // Holes for toggle switches
-                 inc = 18; qx = (pbx - 3*inc)/2; qy = 13; 
-                 togglehole([qx+(0*inc),qy,0]);
-                 togglehole([qx+(1*inc),qy,0]);
-                 togglehole([qx+(2*inc),qy,0]);                 
-                 togglehole([qx+(3*inc),qy,0]);
-    */                 
              }
          }
      }

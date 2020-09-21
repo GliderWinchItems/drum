@@ -19,6 +19,8 @@
 
 osThreadId LevelwindTaskHandle;
 
+uint32_t dbgEth;
+
 /* *************************************************************************
  * void StartLevelwindTask(void const * argument);
  *	@brief	: Task startup
@@ -44,8 +46,12 @@ void StartLevelwindTask(void const * argument)
 		/* Wait for notifications */
 		xTaskNotifyWait(0,noteuse, &noteval, portMAX_DELAY);
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
-		osDelay(10);
-		noteuse = 0xffffffff;
+		if ((noteval & STEPPERSWSNOTEBITISR) != 0)
+		{ // Here stepper_items.c triggered the ETH_IRQHandler
+			noteuse |= STEPPERSWSNOTEBITISR;
+dbgEth += 1;
+
+		}
 	}
 }
 /* *************************************************************************
@@ -65,7 +71,14 @@ osThreadId xLevelwindTaskCreate(uint32_t taskpriority)
  * Commandeered vector for stepper_items_TIM2_IRQHandler notifications
  * ################################################################## */
 void ETH_IRQHandler(void)
-{
-
+{	
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	if (LevelwindTaskHandle != NULL)
+	{ // Here, notify one task a new msg added to circular buffer
+		xTaskNotifyFromISR(LevelwindTaskHandle,\
+		STEPPERSWSNOTEBITISR, eSetBits,\
+		&xHigherPriorityTaskWoken );
+		portYIELD_FROM_ISR( xHigherPriorityTaskWoken ); // Trigger scheduler
+	}
 	return;
 }
