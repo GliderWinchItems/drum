@@ -219,7 +219,7 @@ extern TIM_HandleTypeDef htim14;
    pT2base->CR1 |= 1;  // TIM2 CH1 oc, CH3 ic/oc
    pT5base->CR1 |= 1;  // TIM5 encoder CH1 CH2 (not interrupt)
 
-   /* Enable limite and overrun switch interrupts EXTI15_10. */
+   /* Enable limit and overrun switch interrupts EXTI15_10. */
    EXTI->IMR  |= 0xf000;  // Interrupt mask reg: enable 10:15
    return;
 }
@@ -337,15 +337,10 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    { // Here TIM2CH3 mode is output compare. Use CAN payload bit
          // Output capture (no pin) is TIM2CH3 mode
       if ((pcan->cd.uc[0] & DRBIT) == 0)
-      {
          p->drflag = (1 << 16); // Reset
-         p->drbit  = 0;
-      }
+
       else
-      {
          p->drflag = 1; // Set
-         p->drbit  = 1;
-      }
    }
 
    // Motor Enable bit
@@ -371,11 +366,14 @@ void stepper_items_TIM2_IRQHandler(void)
 {
    struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
 
+   /* This block for z channel (index) processing. It will be removed in operational
+      code. */
 
-     /* TIM2CH2 = encodertimeZ */
+   // TIM2CH2 = encodertimeZ
    if ((pT2base->SR & (1<<2)) != 0) // CH2 Interrupt flag?
    { // Yes, encoder channel Z transition
       pT2base->SR = ~(1<<2);  // Reset CH2 flag
+
 #if DEBUG   
       if ((GPIOB->IDR & (1<<3)) == 0)
       {
@@ -393,14 +391,24 @@ void stepper_items_TIM2_IRQHandler(void)
       return;
    }
 
-#if DTW
+   #if DTW
    // Capture DTW timer for cycle counting
    p->dtwentry = DTWTIME;
 #endif 
 
+   /* If we get here, we must have a TIM2 interrupt but it could be from channel 1
+   or channel 3 or both. We service both in a single pass if needed. If the reversing 
+   screw eumulation should be run, its switch block sets emulation_run to 1.*/   
+   
+   uint8_t  emulation_run = 0;   
+   p->lw_state = LW_TRACK;   // temporary until way to change states is implemented
+
+
    /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
    if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
-   { // Yes, either encoder channel A, or output compare
+   { // Yes, either encoder channel A, or output compare emulating an encoder edge
+      uint8_t  ddir; // temporary drum direction 
+
       pT2base->SR = ~(1<<3);  // Reset CH3 flag
 
       /* Was this interrupt due to encoder input capture or output compare?. */
@@ -410,56 +418,96 @@ void stepper_items_TIM2_IRQHandler(void)
          pT2base->CCR3 += p->ocinc; // Schedule next faux encoder interrupt
          // Make faux encoder counter 
          drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
-         if (p->drbit == 0)
-            drumstuff.decA.cur.cnt += 1;  
+         if (p->drflag == 1)
+         {  
+            drumstuff.decA.cur.cnt += 1;
+            ddir = 1;   //drum direction reverse
+         }         
          else
-            drumstuff.decA.cur.cnt -= 1; 
-      }
+         {
+            drumstuff.decA.cur.cnt -= 1;
+            ddir = 0;   // drum direction forward
+         } 
+      }      
       else
       { // Here, encoder driven input capture. Save for odometer and speed
          drumstuff.decA.cur.tim = pT2base->CCR3;   // Save current time
          drumstuff.decA.cur.cnt = pT5base->CNT;    // Save current encoder count
-         p->drbit = (pT5base->CR1 & 0x10); // Encoding DIR (direction) (0|non-zero)
+         ddir = (pT5base->CR1 & 0x10) ? 1 : 0;     // Encoding DIR (direction) (0|1)
       }
 
       /* Here: either encoder channel A driven input capture interrupt, or 
          CL controlled timer output compare interrupt. */
 
-      /* During indexing the encoder input capture or output compare
-           interrupts do not drive
-         the stepper. */
-
-      p->lw_state = LW_TRACK;   // mostly do nothing until state machine is further defined
-      switch (p->lw_state & 0xF0)
+      /* These encoder input capture or output compare interrupts do not drive the stepper
+         during indexing, sweeping, moving, and off states,  */
+      switch (p->lw_state & 0xF0)   // deal with interrupts based on lw_state msn
       {
          case (LW_TRACK & 0xF0):
          {
-            // code here to check if LOS has occured. if so, switch to LOS
+            /* code here to check if LOS has occured. if so, switch to LOS recovery
+               state. */
+            emulation_run = 1;
+            p->drbit = ddir;
             break;
          }
 
          case (LW_LOS & 0xF0):
-         {
-            
+         {            
             // code here looking for limit switch clousure to re-index on
-            p->lw_state = LW_TRACK; // switch back to tracking state
+            // then switch back to tracking state 
+            emulation_run = 1;
+            p->drbit = ddir;
             break;
          }
-         
-         default:
-         {  // ignore encoder interrupts when indexing, moving, sweeping, or off 
-#if DTW
-            p->dtwdiff = DTWTIME - p->dtwentry;
-            if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
-            else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
-#endif
-            return;
-         }
       }
+   }
 
+   // Indexing timer interrupt processing
+   if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag
+   { // Yes, OC drive 
+      pT2base->SR = ~(1<<1);  // Reset CH1 flag
 
+      // Duration increment computed from CL CAN msg (during development)
+      pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
+     
+      switch (p->lw_state & 0xF0)   // deal with interrupts based on lw_state
+      {
+         case (LW_INDEX & 0xF0):
+         {
+            /* code here looking for limit switch to index on */
+            emulation_run = 1;
+            p->drbit = 0;  // indexing interrupts always forward
+            // on indexing, switch to sweep state for limit switch testing
+            break;
+         }         
+
+         case (LW_SWEEP & 0xF0):
+         {            
+            /* code here testing limit switches in operational code and characterizing  
+            their behavior during development. If needed, this mode can be used for
+            calibrating limit switches for speed dependent corrections in LOS recovery. */
+            emulation_run = 1;
+            p->drbit = 0;  // indexing interrupts always forward
+            break;
+         }
+
+         case (LW_MOVE & 0xF0):
+         {            
+            // code here dealing with stopping at specified location
+            emulation_run = 1;
+            p->drbit = 0;  // indexing interrupts always forward
+            // transition to off state on completion
+            break;
+         }
+      }      
+   }
+
+   /* reversing screw emulation code */
+   if (emulation_run)
+   {
 #if DEBUG   // move this out of ISR at some point
-      // Update enable i/o pin
+   // Update enable i/o pin
       Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
  #endif     
 
@@ -468,20 +516,16 @@ void stepper_items_TIM2_IRQHandler(void)
       // drbit = 0 means positive drum direction
 
       // update velocity integrator         
-      
       if (p->drbit != p->drbit_prev)   
       {  // Drum direction has changed
          p->drbit_prev = p->drbit;   // save new direction
          p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
-      }         
-      else if (p->posaccum.s32 >= p->Lplus32)
-      {  // in positive level-wind region
+      }
+      else if (p->posaccum.s32 >= p->Lplus32)   // in positive level-wind region ?
          p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
-      }
-      else if (p->posaccum.s32 <= p->Lminus32)
-      {  // in negative level-wind region
+      
+      else if (p->posaccum.s32 <= p->Lminus32)  // in negative level-wind region ?
          p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
-      }
       
       // update position integrator
       p->posaccum.s32 += p->velaccum.s32;
@@ -492,14 +536,13 @@ void stepper_items_TIM2_IRQHandler(void)
       p->dbg2 = p->posaccum.s16[1];
       p->dbg3 = p->posaccum.u16[0];
 #endif
-      
-         /* When accumulator upper 16b changes generate a stepper pulse. */
+         
+      /* When accumulator upper 16b changes generate a stepper pulse. */
       if ((p->posaccum.s16[1]) != (p->posaccum_prev))
       { // Here carry/borrow from low 16b to high 16b
-         p->posaccum_prev = (p->posaccum.s16[1]);
+         p->posaccum_prev = p->posaccum.s16[1];
 
         // set direction based on sign of Velocity integrator
-         // depends on velocity magnitude being <= 2^16
          Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
             ? 1 : (1 << 16);
 
@@ -508,58 +551,11 @@ void stepper_items_TIM2_IRQHandler(void)
       }
    }
 
-
-   // Indexing timer interrupt
-   if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag?
-   { // Yes, OC drive 
-      pT2base->SR = ~(1<<1);  // Reset CH1 flag
-
-      // Duration increment computed from CL CAN msg
-      pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
-     
-      /*
-      switch (p->lw_state & 0xF0)
-      {
-         case (LW_INDEX & 0xF0):
-         {
-            // code here looking for limit switch to index on then 
-            // sweeping for limit switch testing then stopping at 
-            // specifed spot. May sequence to sweep and then to move for
-            // final stop.
-            break;
-         }
-
-         case (LW_MOVE & 0xF0):
-         {            
-            // code here dealing with stopping at specified location
-            p->lw_state = LW_OFF; // switch back to tracking state
-            break;
-         }
-
-         case (LW_SWEEP & 0xF0):
-         {            
-            // code here capturing limit switch closing points
-            break;
-         }
-         
-         default:
-         {  // When tracking or in LOS recovery ignore index interrupts
-#if DTW
-            p->dtwdiff = DTWTIME - p->dtwentry;
-            if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
-            else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
-#endif
-            return;
-         }
-      }
-      */
-   }
-
-
 #if DEBUG
    p->ledctr1 += 1;
    if ((pT2base->CCMR2 & 0x1) != 0)
      p->ledctr2 = 0;
+   
    else
      p->ledctr2 = 500;
 
@@ -580,8 +576,6 @@ void stepper_items_TIM2_IRQHandler(void)
       }  
    }
 #endif
-   
-
 
 #if DTW
    p->dtwdiff = DTWTIME - p->dtwentry;
