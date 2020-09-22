@@ -83,7 +83,7 @@ TIM4 (84 MHz) (Interrupts. Same priority as TIM2)
 #define DEBUG  1  // True for debugging
 #define DTW    1  // True to keep DTW timing Code
 
-#define STEPPERDBGBUFSIZE 64
+#define STEPPERDBGBUFSIZE (360*4)
 static struct STEPPERDBGBUF stepperdbgbuf[STEPPERDBGBUFSIZE];
 
 
@@ -517,6 +517,7 @@ void stepper_items_TIM2_IRQHandler(void)
       p->posaccum.s32 += p->velaccum.s32;
 
 #if DEBUG    
+   p->pdbgadd->tim5cnt = pT5base->CNT;
    p->intcntr++;         
    /* p->dbg1 = p->velaccum.s32;
       p->dbg2 = p->posaccum.s16[1];

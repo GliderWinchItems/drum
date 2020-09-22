@@ -1365,6 +1365,8 @@ uint8_t ratepace = 0;
 
 //osDelay(1);
 	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(16),0);
+
+  uint32_t stepctr = 1;
 // ===== BEGIN FOR LOOP ==============================
 
 	for ( ;; )
@@ -1429,18 +1431,31 @@ struct STEPPERDBGBUF* pdbg;
     if (pdbg != NULL)
     {
 
-    yprintf(&pbuf4,"\n\r%6.1f %7u %08X  %7i %7i %7i %7i %7i %4i %4i",
+// Alternated buffers to overlap 'printf with uart output      
+if ((stepctr & 1) == 0)
+{  
+    yprintf(&pbuf4,"\n\r%7u %7i %7i %7i %7i %7i %4i",
       
-      stepperstuff.clpos, 
-      stepperstuff.ocinc,
-      stepperstuff.iobits,
-      stepperstuff.intcntr,
-      htim5.Instance->CNT,
+      stepctr++, 
+      pdbg->intcntr,
+      pdbg->tim5cnt,
       pdbg->dbg1,
       pdbg->dbg2,
       pdbg->dbg3,
-      stepperstuff.dtwmax,
-      stepperstuff.dtwmin);
+      stepperstuff.dtwmax);
+}
+else
+{
+    yprintf(&pbuf3,"\n\r%7u %7i %7i %7i %7i %7i %4i",
+      
+      stepctr++, 
+      pdbg->intcntr,
+      pdbg->tim5cnt,
+      pdbg->dbg1,
+      pdbg->dbg2,
+      pdbg->dbg3,
+      stepperstuff.dtwmax);  
+}
     }
   }while (pdbg != NULL);
      

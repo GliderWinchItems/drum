@@ -73,6 +73,7 @@ struct STEPPERDBGBUF
    int32_t  dbg1;       // Debug 1
    int32_t  dbg2;       // Debug 2
    int32_t  dbg3;       // Debug 3
+   uint32_t tim5cnt;    // Encoder count
 };
 
 /* Parameters stepper instance (LC = Local Copy) */
