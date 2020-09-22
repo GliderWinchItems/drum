@@ -83,6 +83,10 @@ TIM4 (84 MHz) (Interrupts. Same priority as TIM2)
 #define DEBUG  1  // True for debugging
 #define DTW    1  // True to keep DTW timing Code
 
+#define STEPPERDBGBUFSIZE 64
+static struct STEPPERDBGBUF stepperdbgbuf[STEPPERDBGBUFSIZE];
+
+
 
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT4base; // Register base address 
@@ -133,7 +137,12 @@ void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
 void stepper_items_init(void)
 {
    struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
-   
+
+   p->pdbgbegin = &stepperdbgbuf[0];
+   p->pdbgadd   = &stepperdbgbuf[0];
+   p->pdbgtake  = &stepperdbgbuf[0];
+   p->pdbgend   = &stepperdbgbuf[STEPPERDBGBUFSIZE];;
+
    // Initialize hardcoded parameters (used in some computations below)
    stepper_idx_v_struct_hardcode_params(p);
 
@@ -507,11 +516,20 @@ void stepper_items_TIM2_IRQHandler(void)
       // update position integrator
       p->posaccum.s32 += p->velaccum.s32;
 
-#if DEBUG
-      p->intcntr++;         
-      p->dbg1 = p->velaccum.s32;
+#if DEBUG    
+   p->intcntr++;         
+   /* p->dbg1 = p->velaccum.s32;
       p->dbg2 = p->posaccum.s16[1];
-      p->dbg3 = p->posaccum.u16[0];
+      p->dbg3 = p->posaccum.u16[0]; */
+
+   // Store vars in buffer location. 
+   p->pdbgadd->intcntr   = p->intcntr;
+   p->pdbgadd->dbg1      = p->velaccum.s32;
+   p->pdbgadd->dbg2      = p->posaccum.s16[1];
+   p->pdbgadd->dbg3      = p->posaccum.u16[0];
+   p->pdbgadd += 1;    // Advance add pointer
+   if (p->pdbgadd >= p->pdbgend) p->pdbgadd = p->pdbgbegin;
+
 #endif
          
       /* When accumulator upper 16b changes generate a stepper pulse. */
@@ -589,4 +607,19 @@ void stepper_items_index_init(void)
    p->drbit      = 0;        // Drum direction bit
    p->drbit_prev = p->drbit;     
    return;
+}
+/* *************************************************************************
+ * struct STEPPERDBGBUF* stepper_items_getdbg(void);
+ * @brief   : Get pointer to debug buffer
+ * @return  : NULL = no new data; otherwise ptr struct with data
+ * *************************************************************************/
+struct STEPPERDBGBUF* stepper_items_getdbg(void)
+{
+   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+   struct STEPPERDBGBUF* ptmp;
+   if (p->pdbgadd == p->pdbgtake) return NULL;
+   ptmp = p->pdbgtake;
+   p->pdbgtake += 1;
+   if (p->pdbgtake >= p->pdbgend) p->pdbgtake = p->pdbgbegin;
+   return ptmp;
 }

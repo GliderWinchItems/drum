@@ -80,6 +80,7 @@ static uint32_t alert;
 
 int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1)
 {
+	return 0;
 extern uint32_t dbgEth;
 	yprintf(&pbuf1,"\n\rswitches %i",dbgEth);
 	return 0;

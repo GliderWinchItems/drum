@@ -65,10 +65,15 @@
 #define LW_TRACK  4 * 16 
 #define LW_LOS    5 * 16 
 
-
-
-
 #define NUMCANMSGSSTEPPER 1  // Number of CAN msgs stepper sends
+
+struct STEPPERDBGBUF
+{
+   uint32_t intcntr;    // interrupt counter
+   int32_t  dbg1;       // Debug 1
+   int32_t  dbg2;       // Debug 2
+   int32_t  dbg3;       // Debug 3
+};
 
 /* Parameters stepper instance (LC = Local Copy) */
 struct STEPPERLC
@@ -141,9 +146,12 @@ struct STEPPERSTUFF
    int32_t dtwmax;     // DTW difference max
    int32_t dtwmin;     // DTW difference min
    uint32_t intcntr;    // interrupt counter
-   int32_t  dbg1;       // Debug 1
-   int32_t  dbg2;       // Debug 2
-   int32_t  dbg3;       // Debug 3
+
+   struct STEPPERDBGBUF*  pdbgbegin;
+   struct STEPPERDBGBUF*  pdbgadd;
+   struct STEPPERDBGBUF*  pdbgtake;
+   struct STEPPERDBGBUF*  pdbgend;
+
 };
 #else
 struct STEPPERSTUFF
@@ -198,6 +206,10 @@ struct STEPPERSTUFF
   /* *************************************************************************/
  void stepper_items_index_init(void);
  /* @brief   : Initialization for indexing
+ * *************************************************************************/
+ struct STEPPERDBGBUF* stepper_items_getdbg(void);
+/* @brief   : Get pointer to debug buffer
+ * @return  : NULL = no new data; otherwise ptr struct with data
  * *************************************************************************/
 
  extern struct STEPPERSTUFF stepperstuff;

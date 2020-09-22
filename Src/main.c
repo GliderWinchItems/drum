@@ -1364,7 +1364,7 @@ uint16_t medtimectr = 0;  // Approx 8/sec
 uint8_t ratepace = 0;
 
 //osDelay(1);
-	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(64),0);
+	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(16),0);
 // ===== BEGIN FOR LOOP ==============================
 
 	for ( ;; )
@@ -1422,7 +1422,12 @@ if (stepper_switches_defaultTaskcall(pbuf1) == 0)
       stepperstuff.dtwmax,
       stepperstuff.dtwmin);
   #else   //  GSM debug for stepper
-
+struct STEPPERDBGBUF* pdbg;
+  do
+  {
+     pdbg = stepper_items_getdbg();
+    if (pdbg != NULL)
+    {
 
     yprintf(&pbuf4,"\n\r%6.1f %7u %08X  %7i %7i %7i %7i %7i %4i %4i",
       
@@ -1431,11 +1436,13 @@ if (stepper_switches_defaultTaskcall(pbuf1) == 0)
       stepperstuff.iobits,
       stepperstuff.intcntr,
       htim5.Instance->CNT,
-      stepperstuff.dbg1,
-      stepperstuff.dbg2,
-      stepperstuff.dbg3,
+      pdbg->dbg1,
+      pdbg->dbg2,
+      pdbg->dbg3,
       stepperstuff.dtwmax,
       stepperstuff.dtwmin);
+    }
+  }while (pdbg != NULL);
      
 #endif
 }
