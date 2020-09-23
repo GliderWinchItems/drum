@@ -43,13 +43,6 @@ TIM9 (168 MHz) Delayed stepper pulse (no interrupt)
 TIM13 (84 MHz) Solenoid FET drive (no interrupt)
    CH1 PA6 PWM (4 KHz)
 
-TIM14 (84 MHz) Oscope sync (no interrupt)
-   CH1 PA7 PWM/OPM; Scope pulse
-
-TIM4 (84 MHz) (Interrupts. Same priority as TIM2)
-   CH1 output compare no output: Stepper reversal
-   CH2 output compare no output: faux encoder transition
-
 */
 
 #include <stdint.h>
@@ -157,9 +150,8 @@ void stepper_items_init(void)
    p->Lminus32 = (p->lc.Lminus << 16) + (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
    p->Lplus32  = p->Lminus32 
       + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->lc.Ks) * p->lc.Ks;
-   p->velaccum.s32 = 0;      // Velocity accumulator initial value  
-   p->drbit      = 0;        // Drum direction bit
-   p->drbit_prev = p->drbit;     
+   p->velaccum.s32 = 0;             // Velocity accumulator initial value  
+   p->drbit = p->drbit_prev = 0;    // Drum direction bit
    p->cltimectr  = 0;
    p->hbctr      = 0;
    p->ocinc      = 8400000;   // Default 1/10 sec duration
@@ -282,7 +274,7 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    p->pf.u8[2] = pcan->cd.uc[3];
    p->pf.u8[3] = pcan->cd.uc[4];
 
-   p->clpos = p->pf.f; // Redundant
+   p->clpos = p->pf.f; // Redundant???
    p->pay0 = pcan->cd.uc[0];
 
    /* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
@@ -298,10 +290,10 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    // Each ZTBIT pushbutton press toggles beween IC and OC modes
    p->ocicbit = (pcan->cd.uc[0] & ZTBIT);
    if (p->ocicbit != p->ocicbit_prev)
-   { // Here, the PREP bit changed
+   { // Here, the PREP??? bit changed
       p->ocicbit_prev = p->ocicbit;
       if (p->ocicbit != 0)
-      { // Here. PREP bit went from off to on
+      { // Here. PREP??? bit went from off to on
          pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
          if ((pT2base->CCMR2 & 0x1) != 0)
          { // Here, currently using encoder input capture
@@ -332,24 +324,24 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
    if ((pT2base->CCMR2 & 0x1) == 0) // Which mode?
    { // Here TIM2CH3 mode is output compare. Use CAN payload bit
          // Output capture (no pin) is TIM2CH3 mode
-      if ((pcan->cd.uc[0] & DRBIT) == 0)
-         p->drflag = (1 << 16); // Reset
-
-      else
-         p->drflag = 1; // Set
+      if ((pcan->cd.uc[0] & DRBIT) == 0)  p->drflag = (1 << 16);  // Reset
+      else  p->drflag = 1;                                        // Set
    }
 
    // Motor Enable bit
    if ((pcan->cd.uc[0] & ENBIT) != 0)
+   {
       p->enflag = (2 << 16); // Reset
+   }
    else
+   {
       p->enflag = 2; // Set
+   }
 
    /* Bits positioned for updating PB BSRR register. */
    p->iobits = p->drflag | p->enflag;
    return;  
 }
-
 
 /*#######################################################################################
  * ISR routine for TIM2
@@ -393,7 +385,7 @@ void stepper_items_TIM2_IRQHandler(void)
    screw eumulation should be run, its switch block sets emulation_run to 1.*/   
    
    uint8_t  emulation_run = 0;   
-   p->lw_state = LW_TRACK;   // temporary until way to change states is implemented
+   p->lw_state = LW_INDEX;   // temporary until way to change states is implemented
 
    /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
    if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
@@ -462,6 +454,13 @@ void stepper_items_TIM2_IRQHandler(void)
          case (LW_INDEX & 0xF0):
          {
             /* code here looking for limit switch to index on */
+            if (p->pay0 & ARBIT) // temporary to use ARM PB as limit switch
+            {
+               stepper_items_index_init( );
+               p->lw_state = LW_TRACK;
+               break;
+            }
+
             emulation_run = 1;
             p->drbit = 0;  // indexing interrupts always forward
             // on indexing, switch to sweep state for limit switch testing
@@ -508,10 +507,13 @@ void stepper_items_TIM2_IRQHandler(void)
          p->velaccum.s32 = -p->velaccum.s32; // invert velocity value
       }
       else if (p->posaccum.s32 >= p->Lplus32)   // in positive level-wind region ?
+      {
          p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
-      
+      }      
       else if (p->posaccum.s32 <= p->Lminus32)  // in negative level-wind region ?
+      {
          p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
+      }
       
       // update position integrator
       p->posaccum.s32 += p->velaccum.s32;
@@ -550,10 +552,13 @@ void stepper_items_TIM2_IRQHandler(void)
 #if DEBUG
    p->ledctr1 += 1;
    if ((pT2base->CCMR2 & 0x1) != 0)
-     p->ledctr2 = 0;
-   
+   {
+      p->ledctr2 = 0;
+   }   
    else
-     p->ledctr2 = 500;
+   {
+      p->ledctr2 = 500;
+   }
 
    if (p->ledctr1 > p->ledctr2)        
    {
@@ -598,7 +603,8 @@ void stepper_items_index_init(void)
    struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
    
    // Position accumulator initial value. Reference paper for the value employed.
-   p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;   
+   p->posaccum.s32 = 0; // temporary intial value for testing
+   // p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;   
    p->posaccum_prev = p->posaccum.s32;
    // initialize 32-bit values for Lplus32 and Lminus32. Reference paper.
    p->Lminus32 = p->lc.Lminus << 16;
