@@ -157,6 +157,7 @@ void stepper_items_init(void)
    p->ocinc      = 8400000;   // Default 1/10 sec duration
    p->ocidx      =   42000; // Default indexing increment 500 ms
    p->dtwmin     = 0x7fffffff;
+   p->lw_state = LW_INDEX;   // temporary until way to change states is implemented
 
    /* Bit positions for low overhead toggling. */
    p->ledbit1= (LED_GREEN_Pin);
@@ -385,7 +386,6 @@ void stepper_items_TIM2_IRQHandler(void)
    screw eumulation should be run, its switch block sets emulation_run to 1.*/   
    
    uint8_t  emulation_run = 0;   
-   p->lw_state = LW_INDEX;   // temporary until way to change states is implemented
 
    /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
    if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
@@ -458,6 +458,7 @@ void stepper_items_TIM2_IRQHandler(void)
             {
                stepper_items_index_init( );
                p->lw_state = LW_TRACK;
+               pT5base->CNT = 0;
                break;
             }
 
@@ -603,16 +604,16 @@ void stepper_items_index_init(void)
    struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
    
    // Position accumulator initial value. Reference paper for the value employed.
-   p->posaccum.s32 = 0; // temporary intial value for testing
-   // p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;   
+   // p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
+   p->posaccum.s32 = 0;   
    p->posaccum_prev = p->posaccum.s32;
-   // initialize 32-bit values for Lplus32 and Lminus32. Reference paper.
-   p->Lminus32 = p->lc.Lminus << 16;
+   // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
+   // p->Lminus32 = p->lc.Lminus << 16;
+   p->Lminus32 = (p->lc.Lminus << 16) + (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
    p->Lplus32  = p->Lminus32 
       + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->lc.Ks) * p->lc.Ks;
-   p->velaccum.s32 = 0;      // Velocity accumulator initial value  
-   p->drbit      = 0;        // Drum direction bit
-   p->drbit_prev = p->drbit;     
+   p->velaccum.s32 = 0;             // Velocity accumulator initial value  
+   p->drbit = p->drbit_prev = 0;    // Drum direction bit  
    return;
 }
 /* *************************************************************************
