@@ -12,14 +12,30 @@
 #include "main.h"
 #include "morse.h"
 
-#include "stepper_items.h"
+#include "levelwind_items.h"
 #include "drum_items.h"
 #include "LevelwindTask.h"
+#include "levelwind_func_init.h"
 #include "stepper_switches.h"
+#include "MailboxTask.h"
+#include "levelwind_items.h"
+
 
 osThreadId LevelwindTaskHandle;
 
 uint32_t dbgEth;
+
+struct LEVELWINDFUNCTION levelwindfunction;
+
+/* *************************************************************************
+ * void swtim1_callback(TimerHandle_t tm);
+ * @brief	: Software timer 1 timeout callback
+ * *************************************************************************/
+static void swtim1_callback(TimerHandle_t tm)
+{
+	xTaskNotify(LevelwindTaskHandle, LEVELWINDSWSNOTEBITSWT1, eSetBits);
+	return;
+}
 
 /* *************************************************************************
  * void StartLevelwindTask(void const * argument);
@@ -29,29 +45,67 @@ struct SWITCHPTR* psw_safeactivex; // Debugging
 
 void StartLevelwindTask(void const * argument)
 {
+	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+
 	/* A notification copies the internal notification word to this. */
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
 	uint32_t noteuse = 0xffffffff;
 
+	/* Initialize function struct. */
+	levelwind_func_init_init(p);
+
+	/* Hardware filter CAN msgs. */
+	levelwind_func_init_canfilter(p);
+
+	/* Limit and overrun switches. */
 	stepper_switches_init();
 
-	HAL_NVIC_SetPriority(ETH_IRQn, 5, 0);
+	/* Notifications from levelwind_items ISR via intermediary vector. 
+	   with a priority within, but at the top of the FreeRTOS range. */
+	HAL_NVIC_SetPriority(ETH_IRQn, 5, 0); 
     HAL_NVIC_EnableIRQ(ETH_IRQn);
 
-    /* Set interrupt pending */
+    /* Levelwind ISR uses the following to trigger a notification */
   //NVIC_SetPendingIRQ(ETH_IRQn);
+
+    /* Create timer #1: hearbeat (2 per sec) */
+	levelwindfunction.swtim1 = xTimerCreate("swtim1",
+		   pdMS_TO_TICKS(p->lc.hbct_t), 
+		   pdTRUE, (void *) 0, 
+		   swtim1_callback);
+	if (levelwindfunction.swtim1 == NULL) {morse_trap(404);}
+
+	/* Start command/keep-alive timer */
+	BaseType_t bret = xTimerReset(p->swtim1, 10);
+	if (bret != pdPASS) {morse_trap(405);}
+
+extern CAN_HandleTypeDef hcan1;
+	HAL_CAN_Start(&hcan1); // CAN1
 
 	for (;;)
 	{
 		/* Wait for notifications */
 		xTaskNotifyWait(0,noteuse, &noteval, portMAX_DELAY);
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
-		if ((noteval & STEPPERSWSNOTEBITISR) != 0)
+		if ((noteval & LEVELWINDSWSNOTEBITISR) != 0)
 		{ // Here stepper_items.c triggered the ETH_IRQHandler
-			noteuse |= STEPPERSWSNOTEBITISR;
+			noteuse |= LEVELWINDSWSNOTEBITISR;
 dbgEth += 1;
-
 		}
+		if ((noteval & LEVELWINDSWSNOTEBITCAN1) != 0) 
+		{ // CAN:  CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
+		    // Received CAN msg with Control Lever position, direction and enable bits 
+			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
+			noteuse |= LEVELWINDSWSNOTEBITCAN1;
+		}	
+		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
+		{ // Software timer #1: Send heartbeat
+			levelwind_items_CANsendHB();
+			noteuse |= LEVELWINDSWSNOTEBITSWT1;
+		}
+
+	/* =========== States go here ============ */
+
 	}
 }
 /* *************************************************************************
@@ -76,7 +130,7 @@ void ETH_IRQHandler(void)
 	if (LevelwindTaskHandle != NULL)
 	{ // Here, notify one task a new msg added to circular buffer
 		xTaskNotifyFromISR(LevelwindTaskHandle,\
-		STEPPERSWSNOTEBITISR, eSetBits,\
+		LEVELWINDSWSNOTEBITISR, eSetBits,\
 		&xHigherPriorityTaskWoken );
 		portYIELD_FROM_ISR( xHigherPriorityTaskWoken ); // Trigger scheduler
 	}

@@ -1,30 +1,39 @@
 /******************************************************************************
-* File Name          : stepper_items.h
-* Date First Issued  : 07/31/2020
-* Description        : Stepper motor associated items
+* File Name          : levelwind_items.h
+* Date First Issued  : 09/23/2020
+* Description        : Levelwind levelwind motor algorithm and items
 *******************************************************************************/
 /*
 09/10/2020 realfaux branch 
-
-
 08/29/2020 fauxencoder
-
 */
 
+#ifndef __LEVELWIND_ITEMS
+#define __LEVELWIND_ITEMS
 
-#ifndef __STEPPER_ITEMS
-#define __STEPPER_ITEMS
+/* Debug */
+#define LEVELWINDDEBUG  1  // True includes debugging code
+#define LEVELWINDDBGBUFSIZE (360*4) // Circular buffer size
 
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
-#include "stepper_items.h"
+#include "levelwind_items.h"
 #include "common_can.h"
 #include "CanTask.h"
 #include "stepper_switches.h"
+#include "LevelwindTask.h"
 
-/* Port and pin numbers for stepper controller. */
+#define TIM3CNTRATE 84000000   // TIM3 counter rate (Hz)
+#define UPDATERATE 100000      // 100KHz interrupt/update rate
+#define TIM3DUR  (TIM3CNTRATE/UPDATERATE) // 1680 counts per interrupt
+
+#define TIM9CNTRATE 168000000 // TIM9 counter rate (Hz)
+#define TIM9PWMCYCLE (168*10-30)   // 10us pwm cycle
+#define TIM9PULSEDELAY (TIM9PWMCYCLE - (168*3))
+
+/* Port and pin numbers for levelwind controller. */
 #define PU_port  GPIOA      // Pulse
 #define PU_pin   GPIO_PIN_5 // Pulse
 #define DR_port  GPIOB      // Direction
@@ -65,9 +74,9 @@
 #define LW_TRACK  4 * 16 
 #define LW_LOS    5 * 16 
 
-#define NUMCANMSGSSTEPPER 1  // Number of CAN msgs stepper sends
+#define NUMCANMSGSLEVELWIND 1  // Number of CAN msgs levelwind sends
 
-struct STEPPERDBGBUF
+struct LEVELWINDDBGBUF
 {
    uint32_t intcntr;    // interrupt counter
    int32_t  dbg1;       // Debug 1
@@ -76,36 +85,12 @@ struct STEPPERDBGBUF
    uint32_t tim5cnt;    // Encoder count
 };
 
-/* Parameters stepper instance (LC = Local Copy) */
-struct STEPPERLC
-{
-   float  clfactor;   // Constant to compute oc duration at CL = 100.0
-   uint32_t cltimemax;  // Max timer count for shutdown
-   int32_t  Lplus;      //
-   int32_t  Lminus;     //
-   uint32_t hbct;       // Number of ticks between hb msgs
-   int32_t  Ka;      // reversal rate
-   int32_t  Nr;      // ratio of reversal rate to sweep rate      
-   int32_t  Ks;      // sweep rate
 
-   // stepper function sends: others receive the following CAN msgs
-   uint32_t cid_hb_stepper;        // CANID_HB_STEPPER: U8_U32','STEPPER: U8: Status, U32: stepper position accum
-};
 
-union PAYFLT
+struct LEVELWINDSTUFF
 {
-   float f;
-   uint8_t u8[4];
-   uint16_t u16[4];
-   uint32_t u32;
-   int32_t  s32;
-   int16_t  s16[2];
-}pf;
-
-struct STEPPERSTUFF
-{
-   struct   STEPPERLC lc; // Parameters for stepper
-   struct   CANTXQMSG canmsg[NUMCANMSGSSTEPPER]; // CAN msgs sent
+   struct   LEVELWINDLC lc; // Parameters for levelwind
+   struct   CANTXQMSG canmsg[NUMCANMSGSLEVELWIND]; // CAN msgs sent
    union    PAYFLT   pf; // For extracting float from payload
    union    PAYFLT   posaccum;  // Stepper position accumulator
    union    PAYFLT   velaccum;  // Stepper velocity accumulator
@@ -127,7 +112,7 @@ struct STEPPERSTUFF
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
    uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
    int16_t  posaccum_prev;  // Previous posaccum
-   uint8_t  stepperstatus;  // Reserved for CAN msg
+   uint8_t  levelwindstatus;  // Reserved for CAN msg
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
@@ -147,37 +132,33 @@ struct STEPPERSTUFF
    int32_t dtwmin;     // DTW difference min
    uint32_t intcntr;    // interrupt counter
 
-   struct STEPPERDBGBUF*  pdbgbegin;
-   struct STEPPERDBGBUF*  pdbgadd;
-   struct STEPPERDBGBUF*  pdbgtake;
-   struct STEPPERDBGBUF*  pdbgend;
+   struct LEVELWINDDBGBUF*  pdbgbegin;
+   struct LEVELWINDDBGBUF*  pdbgadd;
+   struct LEVELWINDDBGBUF*  pdbgtake;
+   struct LEVELWINDDBGBUF*  pdbgend;
 
 };
 
-
 /* *************************************************************************/
- void stepper_items_init(void);
- /* @brief   : Initialization
- * *************************************************************************/
-  void stepper_items_clupdate(struct CANRCVBUF* pcan);
+ void levelwind_items_clupdate(struct CANRCVBUF* pcan);
 /* @param   : pcan = pointer to CAN msg struct
  * @brief   : Initialization of channel increment
  * *************************************************************************/
-  void stepper_items_timeout(void);
+ void levelwind_items_timeout(void);
 /* @brief   : Check for loss of CL CAN msgs
  * *************************************************************************/
-  void stepper_items_CANsend(void);
-/* @brief   : Send CAN msgs for stepper
+ void levelwind_items_CANsendHB(void);
+/* @brief   : Send CAN heartbeat for levelwind
  * *************************************************************************/
-  /* *************************************************************************/
- void stepper_items_index_init(void);
- /* @brief   : Initialization for indexing
- * *************************************************************************/
- struct STEPPERDBGBUF* stepper_items_getdbg(void);
+ struct LEVELWINDDBGBUF* levelwind_items_getdbg(void);
 /* @brief   : Get pointer to debug buffer
  * @return  : NULL = no new data; otherwise ptr struct with data
  * *************************************************************************/
 
- extern struct STEPPERSTUFF stepperstuff;
+ extern struct LEVELWINDSTUFF levelwindstuff;
+
+#if LEVELWINDDEBUG 
+ extern struct LEVELWINDDBGBUF levelwinddbgbuf[LEVELWINDDBGBUFSIZE];
+#endif
 
 #endif

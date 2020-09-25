@@ -51,10 +51,11 @@ PC9 - PE13
 #include "stm32f4xx_hal.h"
 #include "morse.h"
 #include "main.h"
-#include "stepper_items.h"
+#include "levelwind_items.h"
 #include "DTW_counter.h"
 #include "drum_items.h"
 #include "stepper_switches.h"
+#include "LevelwindTask.h"
 
 static TIM_TypeDef  *pT2base; // Register base address 
 static TIM_TypeDef  *pT5base; // Register base address 
@@ -92,7 +93,7 @@ extern uint32_t dbgEth;
  * *************************************************************************/
 void stepper_switches_init(void)
 {
-	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim5;
@@ -158,7 +159,7 @@ OverrunSw_outside_Pin    GPIO_PIN_15
 */
 void Stepper_EXTI15_10_IRQHandler(void)
 {
-	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 	struct SWITCHXITION* ptmp;
 //HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
 
@@ -274,7 +275,7 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
  * *************************************************************************/
 void stepper_switches_error_check(void)
 {
-	struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
 /* === Illegal combinations */
 	/* 1: Open cable, or missing ground. */

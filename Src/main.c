@@ -66,14 +66,10 @@
 #include "DTW_counter.h"
 #include "SerialTaskReceive.h"
 #include "yscanf.h"
-#include "adctask.h"
-#include "ADCTask.h"
-#include "adcparams.h"
-#include "adcparamsinit.h"
 #include "morse.h"
 #include "MailboxTask.h"
 
-#include "stepper_items.h"
+#include "levelwind_items.h"
 #include "drum_items.h"
 #include "LevelwindTask.h"
 #include "DrumTask.h"
@@ -132,25 +128,13 @@ uint8_t canflag2;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-ADC_HandleTypeDef hadc1;
-DMA_HandleTypeDef hdma_adc1;
-
 CAN_HandleTypeDef hcan1;
-
-I2C_HandleTypeDef hi2c1;
-DMA_HandleTypeDef hdma_i2c1_tx;
-DMA_HandleTypeDef hdma_i2c1_rx;
-
-SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
-TIM_HandleTypeDef htim8;
 TIM_HandleTypeDef htim9;
 TIM_HandleTypeDef htim13;
-TIM_HandleTypeDef htim14;
 
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart3_rx;
@@ -167,17 +151,11 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_CAN1_Init(void);
-static void MX_ADC1_Init(void);
-static void MX_SPI2_Init(void);
 static void MX_USART3_UART_Init(void);
-static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM9_Init(void);
-static void MX_TIM4_Init(void);
 static void MX_TIM13_Init(void);
-static void MX_TIM14_Init(void);
-static void MX_TIM8_Init(void);
 static void MX_TIM3_Init(void);
 void StartDefaultTask(void const * argument);
 void CallbackdefaultTaskTimer(void const * argument);
@@ -246,17 +224,11 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_CAN1_Init();
-  MX_ADC1_Init();
-  MX_SPI2_Init();
   MX_USART3_UART_Init();
-  MX_I2C1_Init();
   MX_TIM2_Init();
   MX_TIM5_Init();
   MX_TIM9_Init();
-  MX_TIM4_Init();
   MX_TIM13_Init();
-  MX_TIM14_Init();
-  MX_TIM8_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
@@ -341,10 +313,6 @@ int main(void)
 	/* Create MailboxTask */
 	xMailboxTaskCreate(2); // (arg) = priority
 
-	/* GEVCUr state machine. */
-	Thrdret = xGevcuTaskCreate(2); // (arg) = priority
-	if (Thrdret == NULL) morse_trap(216);
-
 	/* Create Mailbox control block w 'take' pointer for each CAN module. */
 	struct MAILBOXCANNUM* pmbxret;
 	// (CAN1 control block pointer, size of circular buffer)
@@ -358,13 +326,12 @@ int main(void)
 #endif
 
   /* Levelwind (stepper) task */
-  Thrdret = xLevelwindTaskCreate(4); // (arg) = priority
+  Thrdret = xLevelwindTaskCreate(5); // (arg) = priority
   if (Thrdret == NULL) morse_trap(2161); 
 
   /* Drum task */
   Thrdret = xDrumTaskCreate(4); // (arg) = priority
   if (Thrdret == NULL) morse_trap(2162); 
-
 
 	/* Further initialization of mailboxes takes place when tasks start */
 
@@ -381,11 +348,6 @@ int main(void)
 		CAN_IT_RX_FIFO0_MSG_PENDING |  \
 		CAN_IT_RX_FIFO1_MSG_PENDING    );
 #endif
-
-
-	/* ADC summing, calibration, etc. */
-	xADCTaskCreate(3); // (arg) = priority
-
 
 /* =================================================== */
 
@@ -450,97 +412,6 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief ADC1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_ADC1_Init(void)
-{
-
-  /* USER CODE BEGIN ADC1_Init 0 */
-	m_trap = 457; // morse_trap(457);
-  /* USER CODE END ADC1_Init 0 */
-
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
-  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
-  */
-  hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ENABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 6;
-  hadc1.Init.DMAContinuousRequests = ENABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_11;
-  sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_12;
-  sConfig.Rank = 2;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_14;
-  sConfig.Rank = 3;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_15;
-  sConfig.Rank = 4;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
-  sConfig.Rank = 5;
-  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_VREFINT;
-  sConfig.Rank = 6;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC1_Init 2 */
-
-  /* USER CODE END ADC1_Init 2 */
-
-}
-
-/**
   * @brief CAN1 Initialization Function
   * @param None
   * @retval None
@@ -574,78 +445,6 @@ static void MX_CAN1_Init(void)
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
-
-}
-
-/**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C1_Init(void)
-{
-
-  /* USER CODE BEGIN I2C1_Init 0 */
-	m_trap = 455; // morse_trap(455);
-  /* USER CODE END I2C1_Init 0 */
-
-  /* USER CODE BEGIN I2C1_Init 1 */
-
-  /* USER CODE END I2C1_Init 1 */
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
-  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C1_Init 2 */
-
-  /* USER CODE END I2C1_Init 2 */
-
-}
-
-/**
-  * @brief SPI2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SPI2_Init(void)
-{
-
-  /* USER CODE BEGIN SPI2_Init 0 */
-	m_trap = 454; // morse_trap(454);
-  /* USER CODE END SPI2_Init 0 */
-
-  /* USER CODE BEGIN SPI2_Init 1 */
-
-  /* USER CODE END SPI2_Init 1 */
-  /* SPI2 parameter configuration*/
-  hspi2.Instance = SPI2;
-  hspi2.Init.Mode = SPI_MODE_MASTER;
-  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-  hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
-  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi2.Init.CRCPolynomial = 10;
-  if (HAL_SPI_Init(&hspi2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SPI2_Init 2 */
-
-  /* USER CODE END SPI2_Init 2 */
 
 }
 
@@ -789,78 +588,6 @@ static void MX_TIM3_Init(void)
 }
 
 /**
-  * @brief TIM4 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM4_Init(void)
-{
-
-  /* USER CODE BEGIN TIM4_Init 0 */
-
-  /* USER CODE END TIM4_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM4_Init 1 */
-
-  /* USER CODE END TIM4_Init 1 */
-  htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 840;
-  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 65535;
-  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_OC_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_TIMING;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM4_Init 2 */
-
-  /* USER CODE END TIM4_Init 2 */
-  HAL_TIM_MspPostInit(&htim4);
-
-}
-
-/**
   * @brief TIM5 Initialization Function
   * @param None
   * @retval None
@@ -906,52 +633,6 @@ static void MX_TIM5_Init(void)
   /* USER CODE BEGIN TIM5_Init 2 */
 
   /* USER CODE END TIM5_Init 2 */
-
-}
-
-/**
-  * @brief TIM8 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM8_Init(void)
-{
-
-  /* USER CODE BEGIN TIM8_Init 0 */
-
-  /* USER CODE END TIM8_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM8_Init 1 */
-
-  /* USER CODE END TIM8_Init 1 */
-  htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 0;
-  htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim8.Init.Period = 65535;
-  htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim8.Init.RepetitionCounter = 0;
-  htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim8, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM8_Init 2 */
-
-  /* USER CODE END TIM8_Init 2 */
 
 }
 
@@ -1058,56 +739,6 @@ static void MX_TIM13_Init(void)
 }
 
 /**
-  * @brief TIM14 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM14_Init(void)
-{
-
-  /* USER CODE BEGIN TIM14_Init 0 */
-
-  /* USER CODE END TIM14_Init 0 */
-
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM14_Init 1 */
-
-  /* USER CODE END TIM14_Init 1 */
-  htim14.Instance = TIM14;
-  htim14.Init.Prescaler = 0;
-  htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim14.Init.Period = 840;
-  htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_Init(&htim14) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_OnePulse_Init(&htim14, TIM_OPMODE_SINGLE) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 420;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim14, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM14_Init 2 */
-
-  /* USER CODE END TIM14_Init 2 */
-  HAL_TIM_MspPostInit(&htim14);
-
-}
-
-/**
   * @brief USART3 Initialization Function
   * @param None
   * @retval None
@@ -1147,25 +778,15 @@ static void MX_DMA_Init(void)
 {
 
   /* DMA controller clock enable */
-  __HAL_RCC_DMA2_CLK_ENABLE();
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
-  /* DMA1_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 8, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 10, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
   /* DMA1_Stream3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 10, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
-  /* DMA1_Stream7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream7_IRQn, 12, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream7_IRQn);
-  /* DMA2_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 6, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
 }
 
@@ -1181,26 +802,16 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, Stepper__DR__direction_Pin|Stepper__MF_not_enable_Pin|SPI2_NSS__CK_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, Stepper__DR__direction_Pin|Stepper__MF_not_enable_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin|LED_ORANGE_Pin|LED_RED_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : PA5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : Stepper__DR__direction_Pin */
   GPIO_InitStruct.Pin = Stepper__DR__direction_Pin;
@@ -1229,13 +840,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : SPI2_NSS__CK_Pin */
-  GPIO_InitStruct.Pin = SPI2_NSS__CK_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-  HAL_GPIO_Init(SPI2_NSS__CK_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_GREEN_Pin LED_ORANGE_Pin LED_RED_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = LED_GREEN_Pin|LED_ORANGE_Pin|LED_RED_Pin|LED_BLUE_Pin;
@@ -1273,11 +877,6 @@ osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
 //#define DISPLAYSTACKUSAGEFORTASKS
-//#define SHOWEXTENDEDSUMSOFADCRAWREADINGS
-//#define SHOWSUMSOFADCRAWREADINGS
-//#define SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-//#define SENDCANTESTMSGSINABURST
-//#define SHOWADCCOMMONCOMPUTATIONS
 #define STEPPERSHOW
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
@@ -1310,48 +909,9 @@ osDelay(0); // Debugging HardFault
 	uint32_t t2_DSUFT;
 #endif
 
-#ifdef SENDCANTESTMSGSINABURST
-	/* Test CAN msg */
-	struct CANTXQMSG testtx;
-	testtx.pctl = pctl0;
-	testtx.can.id = 0xc2200000;
-	testtx.can.dlc = 8;
-	int i;
-	for (i = 0; i < 8; i++)
-		testtx.can.cd.uc[i] = 0x30 + i;
-	testtx.maxretryct = 8;
-	testtx.bits = 0;
-#endif
-
 
 HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 
-
-#ifdef SHOWSUMSOFADCRAWREADINGS
-extern uint32_t adcsumdb[ADC1IDX_ADCSCANSIZE]; // debug
-extern uint32_t adcdbctr;    // debug
-uint32_t adcdbctr_prev = adcdbctr;
-uint16_t hdrctr = 999;
-#endif
-
-
-#ifdef SHOWEXTENDEDSUMSOFADCRAWREADINGS
-uint16_t idx_xsum_prev = 0;
-uint16_t hdrctr2 = 999;
-#endif
-
-
-#ifdef SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-float  fxxsum[ADC1IDX_ADCSCANSIZE];
-float ftmp;
-uint64_t xxsum[ADC1IDX_ADCSCANSIZE];
-uint32_t ravectr = 0;
-float frecip;
-uint16_t idx_xxsum_prev = 0;
-uint16_t hdrctr3 = 999;
-uint8_t ix;
-for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++) xxsum[ix] = 0;
-#endif
 
 #ifdef  SHOWSERIALPARALLELSTUFF
 uint32_t spispctr_prev = 0;
@@ -1390,76 +950,30 @@ uint8_t ratepace = 0;
 /* Temporary so 'switches can do some yprintf from here w/o changing main.c */
 if (stepper_switches_defaultTaskcall(pbuf1) == 0)
 {
-  #if 0 //  DEH realfaux debug
-  /* Convert encoder IC/output capture mode to letter. */
-  char q = 'E';
-  if ((htim2.Instance->CCMR2 & 0x1) == 0) q = 'X';
-
-  char w = '+';
-  if (stepperstuff.drbit != 0) w = '-';
-
-     drum_items_computespeed(&drumstuff);
-    yprintf(&pbuf4,"\n\r%2i %2X %6.1f %8i %10.4f %10.4f %10.4f %c %c %02X",
-      stepperstuff.cltimectr,
-      stepperstuff.pay0,
-      stepperstuff.clpos,
-      htim5.Instance->CNT, 
-      drumstuff.Cspeed_rpm_encoder,
-      drumstuff.Cspeed_cable,
-      drumstuff.Ccable_distance,
-      q,w,
-      (GPIOE->IDR >> 8) );
-    
-    
-    yprintf(&pbuf4,"\n\r%3i %X %6.1f %7u %08X %7i %7i %7i %7i %4i %4i",
-      stepperstuff.cltimectr,
-      stepperstuff.pay0,
-      stepperstuff.clpos, 
-      stepperstuff.ocinc,
-      stepperstuff.iobits,
-      htim5.Instance->CNT,
-      stepperstuff.dbg1,
-      stepperstuff.dbg2,
-      stepperstuff.dbg3,
-      stepperstuff.dtwmax,
-      stepperstuff.dtwmin);
-  #else   //  GSM debug for stepper
-struct STEPPERDBGBUF* pdbg;
+  struct LEVELWINDDBGBUF* pdbg;
+  struct SERIALSENDTASKBCB** ppbuf;
   do
   {
-     pdbg = stepper_items_getdbg();
+    pdbg = levelwind_items_getdbg();
     if (pdbg != NULL)
     {
+      // Alternated buffers to overlap 'printf with uart output      
+      if ((stepctr & 1) == 0)
+        ppbuf = &pbuf4;
+      else
+        ppbuf = &pbuf3;
 
-// Alternated buffers to overlap 'printf with uart output      
-if ((stepctr & 1) == 0)
-{  
-    yprintf(&pbuf4,"\n\r%7u %7i %7i %7i %7i %7i %4i",
-      
+      yprintf(ppbuf,"\n\r%7u %7i %7i %7i %7i %7i %4i",
       stepctr++, 
       pdbg->intcntr,
       pdbg->tim5cnt,
       pdbg->dbg1,
       pdbg->dbg2,
       pdbg->dbg3,
-      stepperstuff.dtwmax);
-}
-else
-{
-    yprintf(&pbuf3,"\n\r%7u %7i %7i %7i %7i %7i %4i",
-      
-      stepctr++, 
-      pdbg->intcntr,
-      pdbg->tim5cnt,
-      pdbg->dbg1,
-      pdbg->dbg2,
-      pdbg->dbg3,
-      stepperstuff.dtwmax);  
-}
+      levelwindfunction.dtwmax);
     }
   }while (pdbg != NULL);
      
-#endif
 }
 #endif      
     }
@@ -1477,7 +991,7 @@ else
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 10; showctr++)
+for (showctr = 0; showctr < 8; showctr++)
 {
 				switch (showctr)
 				{
@@ -1486,14 +1000,12 @@ case  0: stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--");break;
 case  1: stackwatermark_show(SerialTaskHandle ,&pbuf2,"SerialTask---");break;
 case  2: stackwatermark_show(CanTxTaskHandle  ,&pbuf3,"CanTxTask----");break;
 case  3: stackwatermark_show(MailboxTaskHandle,&pbuf4,"MailboxTask--");break;
-case  4: stackwatermark_show(ADCTaskHandle    ,&pbuf1,"ADCTask------");break;
-case  5: stackwatermark_show(SerialTaskReceiveHandle,&pbuf2,"SerialRcvTask");break;
-case  6: stackwatermark_show(GevcuTaskHandle,        &pbuf3,"GevcuTask----");break;
-case  7: stackwatermark_show(LevelwindTaskHandle,&pbuf4,"LevelwindTask----");break;
-case  8: stackwatermark_show(DrumTaskHandle,   &pbuf1,"DrumTask-----");break;
+case  4: stackwatermark_show(SerialTaskReceiveHandle,&pbuf1,"SerialRcvTask");break;
+case  5: stackwatermark_show(LevelwindTaskHandle,&pbuf2,"LevelwindTask");break;
+case  6: stackwatermark_show(DrumTaskHandle,   &pbuf3,"DrumTask-----");break;
 
-case 9:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
-			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
+case 7:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+			yprintf(&pbuf4,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
 				}
@@ -1501,32 +1013,8 @@ default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); 
 t2_DSUFT = DTWTIME;
 yprintf(&pbuf2,"\n\rDTW DUR: %d",t2_DSUFT - t1_DSUFT);
 
-
 #endif
 
-#ifdef TESTBEEPER
-			xQueueSendToBack(BeepTaskQHandle,&beepqtest,portMAX_DELAY);
-
-#endif
-
-#ifdef  SENDCANTESTMSGSINABURST
-			/* ==== CAN MSG sending test ===== */
-			/* Place test CAN msg to send on queue in a burst. */
-			/* Note: an odd makes the LED flash since it toggles on each msg. */
-uint16_t ib;
-			for (ib = 0; ib < 7; ib++)
-				xQueueSendToBack(CanTxQHandle,&testtx,portMAX_DELAY);
-#endif
-
-#ifdef DEBUGGINGCDCREADINGFROMPC
-/* Debugging CDC reading from PC */
-extern uint32_t dbuggateway1;
-extern uint32_t dbcdcrx;
-extern uint32_t dblen;
-extern uint32_t cdcifctr;
-extern uint32_t dbrxbuff;
-yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff: %d", dbuggateway1,dbcdcrx,dblen,cdcifctr,dbrxbuff);
-#endif
   			}
 // ================= Moderate ===================================
 /* Countdown timer notifications. */
@@ -1534,109 +1022,7 @@ yprintf(&pbuf2,"\n\rdbuggateway1: %d dbcdcrx: %d dblen: %d cdcifctr: %d dbrxbuff
 			if (medtimectr >= 4)
 			{
 				medtimectr = 0;
-			
-		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
-
-
-//#define SHOWMAILBOXGEVCU07
-#ifdef SHOWMAILBOXGEVCU07
-extern struct MAILBOXCAN* pdbg07mbx;
-yprintf(&pbuf3,"\n\rCONT %4d %08X %02X",pdbg07mbx->ctr,pdbg07mbx->ncan.can.id,pdbg07mbx->ncan.can.cd.uc[0]);
-#endif
-
-#ifdef STARTUPCHASINGLEDS
-				if (flag_clcalibed == 0)
-				{
-					chasectr += 1;
-					if (chasectr > 2)
-					{
-				chasectr = 0;
-				/* Send a lit LED down the row, over and over. */
-				spiledx.mode = LED_ON; // Turn current LED on
-				xQueueSendToBack(LEDTaskQHandle,&spiledx,portMAX_DELAY);
-
-				spiledx_prev.mode = LED_OFF; // Turn previous LED off
-				xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
-				
-				spiledx_prev = spiledx; // Update previous
-				spiledx.bitnum += 1;    // Advance new
-				if (spiledx.bitnum > 15) spiledx.bitnum = 0;
-					}
-				}
-				// When Calibration complete turn off the lit LED
-				if (flag_clcalibed == 1)
-				{
-			flag_clcalibed = 2;
-			spiledx_prev.mode = LED_OFF; // Turn previous LED off
-			xQueueSendToBack(LEDTaskQHandle,&spiledx_prev,portMAX_DELAY);
-				}
-#endif
-
-#ifdef SHOWADCCOMMONCOMPUTATIONS
-uint32_t dmact_prev = adcommon.dmact;
-extern volatile uint32_t adcdbg2;
-			yprintf(&pbuf4,"\n\rADC: Vdd: %7.4f %8.4f   Temp: %6.1f %6.1f %i",adcommon.fvdd,adcommon.fvddfilt,adcommon.degC,adcommon.degCfilt,(adcommon.dmact-dmact_prev));
-			dmact_prev = adcommon.dmact;
-
-//			yprintf(&pbuf4,"\n\rInternal ref:   %d %d %d\n\r",adc1.chan[ADC1IDX_INTERNALVREF].sum/ADC1DMANUMSEQ, adcommon.ivdd, adcdbg2);
-
-			yprintf(&pbuf1,"\n\rCalibrated: vref: %6.4f",adc1.common.fvref);
-#endif
-
-#ifdef SHOWSUMSOFADCRAWREADINGS
-				hdrctr += 1;
-				if (hdrctr >= 16) // Periodic print header
-				{
-					hdrctr = 0;
-yprintf(&pbuf1,"\n\r     count           CL     12V    5V    spare  temp   vref");
-				}
-yprintf(&pbuf2,"\n\rctr: %5d adcsum: %6d %6d %6d %6d %6d %6d",(adcdbctr-adcdbctr_prev),adcsumdb[0],adcsumdb[1],adcsumdb[2],adcsumdb[3],adcsumdb[4],adcsumdb[5]);
-		adcdbctr_prev = adcdbctr;
-#endif
-
-#ifdef SHOWEXTENDEDSUMSOFADCRAWREADINGS
-				if (adc1.idx_xsum != idx_xsum_prev)
-				{
-					hdrctr2 += 1;
-					if (hdrctr2 >= 16) // Periodic print header
-					{
-						hdrctr2 = 0;
-yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
-				}
-				idx_xsum_prev = adc1.idx_xsum;
-				yprintf(&pbuf3,"\n\rctr: %5d  exsum: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",hdrctr2,
-					(float)adc1.chan[0].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
-					(float)adc1.chan[1].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
-					(float)adc1.chan[2].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
-					(float)adc1.chan[3].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
-					(float)adc1.chan[4].xsum[1]*(1.0/(float)ADCEXTENDSUMCT),
-					(float)adc1.chan[5].xsum[1]*(1.0/(float)ADCEXTENDSUMCT)	);
-				}
-#endif
-
-#ifdef SHOWINCREASINGAVERAGEOFADCRAWREADINGS
-				if (adc1.idx_xsum != idx_xxsum_prev)
-				{
-					hdrctr3 += 1;
-					if (hdrctr3 >= 16) // Periodic print header
-					{
-						hdrctr3 = 0;
-yprintf(&pbuf3,"\n\r     count           CL     12V    5V    spare  temp   vref");
-					}
-					idx_xxsum_prev = adc1.idx_xsum;
-					ravectr += 1;
-					frecip =  (1.0/((float)ADCEXTENDSUMCT * (float)ravectr));
-	
-					for (ix = 0; ix < ADC1IDX_ADCSCANSIZE; ix++)
-					{
-						xxsum[ix] += adc1.chan[ix].xsum[1];	
-						ftmp = xxsum[ix];
-						fxxsum[ix] = ftmp * frecip;
-					}
-yprintf(&pbuf4,"\n\rctr: %5d incave: %6.0f %6.0f %6.0f %6.0f %6.0f %6.0f",
-		ravectr,fxxsum[0],fxxsum[1],fxxsum[2],fxxsum[3],fxxsum[4],fxxsum[5]);
-				}
-#endif
+    		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
 			}	
 	  }
 	}

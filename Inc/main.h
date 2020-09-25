@@ -92,10 +92,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define T9C1steppulse_Pin GPIO_PIN_5
 #define T9C1steppulse_GPIO_Port GPIOE
-#define Control_lever_Pin GPIO_PIN_1
-#define Control_lever_GPIO_Port GPIOC
-#define Supply_12v_Pin GPIO_PIN_2
-#define Supply_12v_GPIO_Port GPIOC
 #define encodectrA_Pin GPIO_PIN_0
 #define encodectrA_GPIO_Port GPIOA
 #define encodectrB_Pin GPIO_PIN_1
@@ -106,12 +102,6 @@ void Error_Handler(void);
 #define encodertimeB_GPIO_Port GPIOA
 #define solenoiddrive_Pin GPIO_PIN_6
 #define solenoiddrive_GPIO_Port GPIOA
-#define Oscope_sync_Pin GPIO_PIN_7
-#define Oscope_sync_GPIO_Port GPIOA
-#define Supply_5v_Pin GPIO_PIN_4
-#define Supply_5v_GPIO_Port GPIOC
-#define Spare_Pin GPIO_PIN_5
-#define Spare_GPIO_Port GPIOC
 #define Stepper__DR__direction_Pin GPIO_PIN_0
 #define Stepper__DR__direction_GPIO_Port GPIOB
 #define Stepper__MF_not_enable_Pin GPIO_PIN_1
@@ -136,8 +126,6 @@ void Error_Handler(void);
 #define OverrunSw_outside_Pin GPIO_PIN_15
 #define OverrunSw_outside_GPIO_Port GPIOE
 #define OverrunSw_outside_EXTI_IRQn EXTI15_10_IRQn
-#define SPI2_NSS__CK_Pin GPIO_PIN_12
-#define SPI2_NSS__CK_GPIO_Port GPIOB
 #define LED_GREEN_Pin GPIO_PIN_12
 #define LED_GREEN_GPIO_Port GPIOD
 #define LED_ORANGE_Pin GPIO_PIN_13
@@ -156,8 +144,6 @@ void Error_Handler(void);
 #define LimitSw_outside_NCC9_GPIO_Port GPIOC
 #define encodertimeZ_Pin GPIO_PIN_3
 #define encodertimeZ_GPIO_Port GPIOB
-#define BrakeSolenoid_Pin GPIO_PIN_8
-#define BrakeSolenoid_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 // ===============================================================================
 // USART/UART assignments

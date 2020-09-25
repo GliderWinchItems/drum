@@ -1,7 +1,7 @@
 /******************************************************************************
-* File Name          : stepper_items.c
-* Date First Issued  : 07/31/2020
-* Description        : Stepper motor associated items
+* File Name          : levelwind_items.c
+* Date First Issued  : 09/23/2020
+* Description        : Levelwind levelwind motor algorithm and items
 *******************************************************************************/
 /*
 09/10/2020 realfaux branch
@@ -15,7 +15,7 @@ Mods reminder list
 
 08/23/2020 druminversion branch started
 
-08/10/2020 - pins added to Control Panel for stepper testing
+08/10/2020 - pins added to Control Panel for levelwind testing
 
 Control lines: Output pin drives FET gate, open drain to controller opto-isolator
 PE5  - TIM9CH1 Stepper Pulse: PU (TIM1 Break shared interrupt vector)
@@ -37,7 +37,7 @@ TIM5 32b encoder counter (no interrupt)
    CH3 PA0 encoder config: encoder A (TIM2 PA2)
    CH4 PA1 encoder config: encoder B (TIM2 PA3)
 
-TIM9 (168 MHz) Delayed stepper pulse (no interrupt)
+TIM9 (168 MHz) Delayed levelwind pulse (no interrupt)
    CH1 PE5 PWM/OPM: Stepper pulse
 
 TIM13 (84 MHz) Solenoid FET drive (no interrupt)
@@ -59,83 +59,44 @@ TIM13 (84 MHz) Solenoid FET drive (no interrupt)
 #include "morse.h"
 #include "yprintf.h"
 #include "main.h"
-#include "stepper_items.h"
+#include "levelwind_items.h"
 #include "DTW_counter.h"
 #include "drum_items.h"
 #include "stepper_switches.h"
+#include "levelwind_items.h"
 
-#define TIM3CNTRATE 84000000   // TIM3 counter rate (Hz)
-#define UPDATERATE 100000      // 100KHz interrupt/update rate
-#define TIM3DUR  (TIM3CNTRATE/UPDATERATE) // 1680 counts per interrupt
-
-#define TIM9CNTRATE 168000000 // TIM9 counter rate (Hz)
-#define TIM9PWMCYCLE (168*10-30)   // 10us pwm cycle
-#define TIM9PULSEDELAY (TIM9PWMCYCLE - (168*3))
-
- 
-#define DEBUG  1  // True for debugging
 #define DTW    1  // True to keep DTW timing Code
 
-#define STEPPERDBGBUFSIZE (360*4)
-static struct STEPPERDBGBUF stepperdbgbuf[STEPPERDBGBUFSIZE];
+static void levelwind_items_index_init(void);
 
-
+struct LEVELWINDDBGBUF levelwinddbgbuf[LEVELWINDDBGBUFSIZE];
 
 TIM_TypeDef  *pT2base; // Register base address 
 TIM_TypeDef  *pT5base; // Register base address 
 TIM_TypeDef  *pT9base; // Register base address 
 
 /* Struct with all you want to know. */
-struct STEPPERSTUFF stepperstuff;
+struct LEVELWINDFUNCTION levelwindfunction;
 
 /* CAN msgs */
 
-enum cididx
-{
-   CID_STEPPER_HB 
-};
-/* *************************************************************************
- * void stepper_idx_v_struct_hardcode_params(void);
- * @brief       : Initialization of parameters
- * *************************************************************************/
-void stepper_idx_v_struct_hardcode_params(struct STEPPERSTUFF* p)
-{
-   p->lc.clfactor    = 168E3;    // CL scaling: 100% = 50 us
-   p->lc.cltimemax   = 512;   // Number of software timeout ticks max
-   p->lc.hbct        = 64;    // Number of swctr ticks between heartbeats
-   p->lc.Ka          = 8;     // Reversal rate
-   p->lc.Nr          = 3500;  // Sweep rate to reversal rate ratio
-   p->lc.Ks          = p->lc.Nr *  p->lc.Ka; // Sweep rate (Ks/65536) = stepper pulses per encoder edge
-   p->lc.Lplus       = 4000;
-   p->lc.Lminus      =    0;
-
-   /* Stepper sends these CAN msgs. */
-   p->lc.cid_hb_stepper      = 0xE4A00000;   // CANID_HB_STEPPER: U8_U32, Heartbeat Status, stepper position accum');
-
-   /* Pre-load CAN msg id and dlc. */
-   // Stepper heartbeat
-   p->canmsg[CID_STEPPER_HB].can.id  = p->lc.cid_hb_stepper; // CAN id.
-   p->canmsg[CID_STEPPER_HB].can.dlc = 5;    // U8_U32 payload
-   p->canmsg[CID_STEPPER_HB].pctl = pctl0;     // CAN1 control block pointer
-   p->canmsg[CID_STEPPER_HB].maxretryct = 8; // Max retry count
-   return;
-}
+#ifdef NOLONGEUSEDSTUFF
 
 /* *************************************************************************
- * void stepper_items_init(void);
+ * void levelwind_items_init(void);
  * @brief   : Initialization
  * *************************************************************************/
-void stepper_items_init(void)
+void levelwind_items_init(void)
 {
-   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
-   p->pdbgbegin = &stepperdbgbuf[0];
-   p->pdbgadd   = &stepperdbgbuf[0];
-   p->pdbgtake  = &stepperdbgbuf[0];
-   p->pdbgend   = &stepperdbgbuf[STEPPERDBGBUFSIZE];;
+   p->pdbgbegin = &levelwinddbgbuf[0];
+   p->pdbgadd   = &levelwinddbgbuf[0];
+   p->pdbgtake  = &levelwinddbgbuf[0];
+   p->pdbgend   = &levelwinddbgbuf[LEVELWINDDBGBUFSIZE];;
 
    // Initialize hardcoded parameters (used in some computations below)
-   stepper_idx_v_struct_hardcode_params(p);
+   levelwind_idx_v_struct_hardcode_params(p);
 
    p->ledctr1   = 0;
    p->ledctr2   = 0;
@@ -147,7 +108,7 @@ void stepper_items_init(void)
    // p->Lminus32 = p->lc.Lminus << 16;
    p->Lminus32 = (p->lc.Lminus << 16) + (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
    p->Lplus32  = p->Lminus32 
-      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->lc.Ks) * p->lc.Ks;
+      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
    p->velaccum.s32 = 0;             // Velocity accumulator initial value  
    p->drbit = p->drbit_prev = 0;    // Drum direction bit
    p->cltimectr  = 0;
@@ -170,7 +131,7 @@ extern TIM_HandleTypeDef htim9;
    pT9base  = htim9.Instance;
 
 /* ### NOTE ### These might override STM32CubeMX settings. ### */
-   /* Generate pulse for stepper controller (PU line) */
+   /* Generate pulse for levelwind controller (PU line) */
    pT9base->DIER = 0;// No interrupt
    pT9base->CCR1 = TIM9PULSEDELAY; // Delay count
    pT9base->ARR  = (TIM9PWMCYCLE - 1); // (10 us)
@@ -180,7 +141,7 @@ extern TIM_HandleTypeDef htim9;
 
    /* TIM2 Shaft encoder input capture times & output caputre indexing interrupts. */
    pT2base->CCER |= 0x1110; // Input capture active: CH2,3,4
-#if DEBUG
+#if LEVELWINDDEBUG
    pT2base->DIER = 0xE; // CH1,2,3 interrupt enable
 #else
    pT2base->DIER = 0xA; // CH1,3 interrupt enable
@@ -196,20 +157,22 @@ extern TIM_HandleTypeDef htim9;
    EXTI->IMR  |= 0xf000;  // Interrupt mask reg: enable 10:15
    return;
 }
+#endif
+
 /* *************************************************************************
- * void stepper_items_timeout(void);
+ * void levelwind_items_timeout(void);
  * @brief   : Check for loss of CL CAN msgs
  * *************************************************************************/
-void stepper_items_timeout(void)
+void levelwind_items_timeout(void)
 {
-   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
    p->cltimectr += 1;
    if (p->cltimectr >= p->lc.cltimemax)
-   { // We timed out! Stop the stepper
+   { // We timed out! Stop the levelwind
       p->cltimectr = p->lc.cltimemax;
 
-      /* Set enable bit which turns FET on, which disables stepper. */
+      /* Set enable bit which turns FET on, which disables levelwind. */
       p->enflag = (2 << 16); // Set bit with BSRR storing
 
       /* Bits positioned for updating PB BSRR register. */
@@ -218,37 +181,31 @@ void stepper_items_timeout(void)
    return;
 }
 /* *************************************************************************
- * void stepper_items_CANsend(void);
- * @brief   : Send CAN msgs for stepper
+ * void levelwind_items_CANsendHB(void);
+ * @brief   : Send CAN heartbeat for levelwind
  * *************************************************************************/
- void stepper_items_CANsend(void)
+ void levelwind_items_CANsendHB(void)
  {
-   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
-   p->hbctr += 1;
-   if (p->hbctr >= p->lc.hbct)
-   {
-      p->hbctr = 0;
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+   /* Setup CAN msg */
+   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[0] = p->levelwindstatus;
+   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[1] = p->posaccum.s32 >>  0;
+   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[2] = p->posaccum.s32 >>  8;
+   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[3] = p->posaccum.s32 >> 16;
+   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[4] = p->posaccum.s32 >> 24;
 
-      /* Setup CAN msg */
-      p->canmsg[CID_STEPPER_HB].can.cd.uc[0] = p->stepperstatus;
-      p->canmsg[CID_STEPPER_HB].can.cd.uc[1] = p->posaccum.s32 >>  0;
-      p->canmsg[CID_STEPPER_HB].can.cd.uc[2] = p->posaccum.s32 >>  8;
-      p->canmsg[CID_STEPPER_HB].can.cd.uc[3] = p->posaccum.s32 >> 16;
-      p->canmsg[CID_STEPPER_HB].can.cd.uc[4] = p->posaccum.s32 >> 24;
-
-      /* Queue CAN msg to send. */
-      xQueueSendToBack(CanTxQHandle,&p->canmsg[CID_STEPPER_HB],4);   
-   }
+   /* Queue CAN msg to send. */
+   xQueueSendToBack(CanTxQHandle,&p->canmsg[CID_LEVELWIND_HB],4);   
    return;
  }
 /* *************************************************************************
- * void stepper_items_clupdate(struct CANRCVBUF* pcan);
+ * void levelwind_items_clupdate(struct CANRCVBUF* pcan);
  * @param   : pcan = pointer to CAN msg struct
  * @brief   : Initialization of channel increment
  * *************************************************************************/
-void stepper_items_clupdate(struct CANRCVBUF* pcan)
+void levelwind_items_clupdate(struct CANRCVBUF* pcan)
 {
-   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
    /* Reset loss of CL CAN msgs timeout counter. */
    p->cltimectr = 0; 
@@ -335,19 +292,19 @@ void stepper_items_clupdate(struct CANRCVBUF* pcan)
  * CH3 - IC encoder channel A or, OC generates faux encoder interrupts
  * CH4 - IC encoder channel B not used in this version
  *####################################################################################### */
-void stepper_items_TIM2_IRQHandler(void)
+void levelwind_items_TIM2_IRQHandler(void)
 {
-   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
    /* This block for z channel (index) processing. It will be removed in operational
       code. */
 
    // TIM2CH2 = encodertimeZ
+#if LEVELWINDDEBUG   
    if ((pT2base->SR & (1<<2)) != 0) // CH2 Interrupt flag?
    { // Yes, encoder channel Z transition
       pT2base->SR = ~(1<<2);  // Reset CH2 flag
 
-#if DEBUG   
       if ((GPIOB->IDR & (1<<3)) == 0)
       {
          HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
@@ -356,11 +313,11 @@ void stepper_items_TIM2_IRQHandler(void)
       {
          HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
       }
-#endif
       return;
    }
+#endif
 
-   #if DTW
+#if DTW
    // Capture DTW timer for cycle counting
    p->dtwentry = DTWTIME;
 #endif 
@@ -401,7 +358,7 @@ void stepper_items_TIM2_IRQHandler(void)
       /* Here: either encoder channel A driven input capture interrupt, or 
          CL controlled timer output compare interrupt. */
 
-      /* These encoder input capture or output compare interrupts do not drive the stepper
+      /* These encoder input capture or output compare interrupts do not drive the levelwind
          during indexing, sweeping, moving, and off states,  */
       switch (p->lw_state & 0xF0)   // deal with interrupts based on lw_state msn
       {
@@ -440,7 +397,7 @@ void stepper_items_TIM2_IRQHandler(void)
             /* code here looking for limit switch to index on */
             if (p->pay0 & ARBIT) // temporary to use ARM PB as limit switch
             {
-               stepper_items_index_init( );
+               levelwind_items_index_init( );
                p->lw_state = LW_TRACK;
                pT5base->CNT = 0;
                break;
@@ -476,12 +433,12 @@ void stepper_items_TIM2_IRQHandler(void)
    /* reversing screw emulation code */
    if (emulation_run)
    {
-#if DEBUG   // move this out of ISR at some point
+#if LEVELWINDDEBUG   // move this out of ISR at some point
    // Update enable i/o pin
       Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
- #endif     
+#endif     
 
-      // forward (stepper) direction means position accumulator is increasing
+      // forward (levelwind) direction means position accumulator is increasing
       // negative direction means position accumulator is decreasing
       // drbit = 0 means positive drum direction
 
@@ -503,7 +460,7 @@ void stepper_items_TIM2_IRQHandler(void)
       // update position integrator
       p->posaccum.s32 += p->velaccum.s32;
 
-#if DEBUG    
+#if LEVELWINDDEBUG    
    p->pdbgadd->tim5cnt = pT5base->CNT;
    p->intcntr++;         
    /* p->dbg1 = p->velaccum.s32;
@@ -520,7 +477,7 @@ void stepper_items_TIM2_IRQHandler(void)
 
 #endif
          
-      /* When accumulator upper 16b changes generate a stepper pulse. */
+      /* When accumulator upper 16b changes generate a levelwind pulse. */
       if ((p->posaccum.s16[1]) != (p->posaccum_prev))
       { // Here carry/borrow from low 16b to high 16b
          p->posaccum_prev = p->posaccum.s16[1];
@@ -534,7 +491,7 @@ void stepper_items_TIM2_IRQHandler(void)
       }
    }
 
-#if DEBUG
+#if LEVELWINDDEBUG
    p->ledctr1 += 1;
    if ((pT2base->CCMR2 & 0x1) != 0)
    {
@@ -572,9 +529,9 @@ void stepper_items_TIM2_IRQHandler(void)
  * void index_init(void);
  * @brief   : Initialization
  * *************************************************************************/
-void stepper_items_index_init(void)
+static void levelwind_items_index_init(void)
 {
-   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
    
    // Position accumulator initial value. Reference paper for the value employed.
    // p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
@@ -584,20 +541,20 @@ void stepper_items_index_init(void)
    // p->Lminus32 = p->lc.Lminus << 16;
    p->Lminus32 = (p->lc.Lminus << 16) + (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
    p->Lplus32  = p->Lminus32 
-      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->lc.Ks) * p->lc.Ks;
+      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
    p->velaccum.s32 = 0;             // Velocity accumulator initial value  
    p->drbit = p->drbit_prev = 0;    // Drum direction bit  
    return;
 }
 /* *************************************************************************
- * struct STEPPERDBGBUF* stepper_items_getdbg(void);
+ * struct LEVELWINDDBGBUF* levelwind_items_getdbg(void);
  * @brief   : Get pointer to debug buffer
  * @return  : NULL = no new data; otherwise ptr struct with data
  * *************************************************************************/
-struct STEPPERDBGBUF* stepper_items_getdbg(void)
+struct LEVELWINDDBGBUF* levelwind_items_getdbg(void)
 {
-   struct STEPPERSTUFF* p = &stepperstuff; // Convenience pointer
-   struct STEPPERDBGBUF* ptmp;
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+   struct LEVELWINDDBGBUF* ptmp;
    if (p->pdbgadd == p->pdbgtake) return NULL;
    ptmp = p->pdbgtake;
    p->pdbgtake += 1;

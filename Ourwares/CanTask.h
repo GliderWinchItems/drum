@@ -18,8 +18,8 @@
 /* CAN msg passed on queue from a Task sending a CAN msg */
 struct CANTXQMSG
 {
-	struct CAN_CTLBLOCK* pctl;	// Pointer to control block for this CAN
 	struct CANRCVBUF can;		// CAN msg
+	struct CAN_CTLBLOCK* pctl;	// Pointer to control block for this CAN
 	uint8_t maxretryct;
 	uint8_t bits;
 };
