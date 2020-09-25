@@ -73,6 +73,7 @@
 #include "drum_items.h"
 #include "LevelwindTask.h"
 #include "DrumTask.h"
+#include "BrakeTask.h"
 
 
 /* USER CODE END Includes */
@@ -332,6 +333,11 @@ int main(void)
   /* Drum task */
   Thrdret = xDrumTaskCreate(4); // (arg) = priority
   if (Thrdret == NULL) morse_trap(2162); 
+
+  /* Brake task */
+  Thrdret = xBrakeTaskCreate(4); // (arg) = priority
+  if (Thrdret == NULL) morse_trap(2162); 
+
 
 	/* Further initialization of mailboxes takes place when tasks start */
 
@@ -994,7 +1000,7 @@ if (stepper_switches_defaultTaskcall(pbuf1) == 0)
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 8; showctr++)
+for (showctr = 0; showctr < 9; showctr++)
 {
 				switch (showctr)
 				{
@@ -1006,8 +1012,9 @@ case  3: stackwatermark_show(MailboxTaskHandle,&pbuf4,"MailboxTask--");break;
 case  4: stackwatermark_show(SerialTaskReceiveHandle,&pbuf1,"SerialRcvTask");break;
 case  5: stackwatermark_show(LevelwindTaskHandle,&pbuf2,"LevelwindTask");break;
 case  6: stackwatermark_show(DrumTaskHandle,   &pbuf3,"DrumTask-----");break;
+case  7: stackwatermark_show(BrakeTaskHandle,  &pbuf3,"BrakeTask----");break;
 
-case 7:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+case 8:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf4,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;

@@ -97,6 +97,7 @@ C_SOURCES += Ourtasks/stepper_switches.c
 C_SOURCES += Ourtasks/drum_items.c
 C_SOURCES += Ourtasks/LevelwindTask.c
 C_SOURCES += Ourtasks/DrumTask.c
+C_SOURCES += Ourtasks/BrakeTask.c
 
 
 # /* USER CODE END */ 
