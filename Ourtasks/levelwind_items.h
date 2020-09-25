@@ -85,60 +85,6 @@ struct LEVELWINDDBGBUF
    uint32_t tim5cnt;    // Encoder count
 };
 
-
-
-struct LEVELWINDSTUFF
-{
-   struct   LEVELWINDLC lc; // Parameters for levelwind
-   struct   CANTXQMSG canmsg[NUMCANMSGSLEVELWIND]; // CAN msgs sent
-   union    PAYFLT   pf; // For extracting float from payload
-   union    PAYFLT   posaccum;  // Stepper position accumulator
-   union    PAYFLT   velaccum;  // Stepper velocity accumulator
-   int32_t  Lplus32;    // 32-bit extended Lplus
-   int32_t  Lminus32;   // 32-bit extended Lminus
-   float    speedcmdf;  // Speed command (float)
-   float    focdur;     // Temp for computer inverse of CL position
-   float    clpos;      // CL position extracted from CAN msg
-   uint32_t ledctr1;    // Counter for throttling green LED
-   uint32_t ledctr2;    // Counter for throttling orangeLED
-   uint32_t ledbit1;    // Bit for toggling green led
-   uint32_t ledbit2;    // Bit for toggling orange led
-   uint32_t cltimectr;  // Counter for loss of CL msgs
-   uint32_t speedcmdi;   // Commanded speed (integer)
-   uint32_t ocinc;      // OC register increment for CL faux encoder  
-   uint32_t ocidx;      // OC register increment for indexing
-   uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
-   uint32_t drflag;     // BSRR pin set/reset bit position: direction
-   uint32_t enflag;     // BSRR pin set/reset bit position: enable
-   uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
-   int16_t  posaccum_prev;  // Previous posaccum
-   uint8_t  levelwindstatus;  // Reserved for CAN msg
-   uint8_t  pay0;       // canmsg.cd.uc[0] saved
-   uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
-   uint8_t  drbit_prev; // Previous Direction bit
-
-   uint8_t  lw_state;      // level-wind states. defined above
-   uint8_t  ocicbit;      //
-   uint8_t  ocicbit_prev; //
-
-   struct STEPPERSWCONTACT ctk[6]; // Measured switch contact open/close posaccum
-   struct EXTISWITCHSTATUS sw[6]; // Limit & overrun switches
-   uint16_t swbits;     // Port E switch bits (10:15)
-
-   // debug and characterization, potentially removable for operational code
-   uint32_t dtwentry;   // DTW timer upon ISR entry
-   int32_t dtwdiff;    // DTW timer minus entry upon ISR exit
-   int32_t dtwmax;     // DTW difference max
-   int32_t dtwmin;     // DTW difference min
-   uint32_t intcntr;    // interrupt counter
-
-   struct LEVELWINDDBGBUF*  pdbgbegin;
-   struct LEVELWINDDBGBUF*  pdbgadd;
-   struct LEVELWINDDBGBUF*  pdbgtake;
-   struct LEVELWINDDBGBUF*  pdbgend;
-
-};
-
 /* *************************************************************************/
  void levelwind_items_clupdate(struct CANRCVBUF* pcan);
 /* @param   : pcan = pointer to CAN msg struct

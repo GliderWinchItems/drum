@@ -52,7 +52,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
 	/* Convert levelwind_idx_v_struct times to timer ticks. */
 	p->keepalive_k= (p->lc.ka_levelwind_t); // keep-alive timeout (timeout delay ms)
-	p->hbct_k     = (p->lc.hbct_t); // Heartbeat ct: ticks between sending msgs hv1:cur1
 	
 // Skip CAN msg arrival notifications for lines that are commented out.
 	/* Add CAN Mailboxes                               CAN     CAN ID             TaskHandle,Notify bit,Skip, Paytype */

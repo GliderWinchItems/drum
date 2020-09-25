@@ -14,6 +14,7 @@
 #include "CanTask.h"
 #include "stepper_switches.h"
 #include "levelwind_idx_v_struct.h"
+#include "levelwind_items.h"
 
 /* Stepper switch bit positions */
 #define LEVELWINDSWSNOTEBITLIMINDB   (1<<LIMITDBINSIDE)  
@@ -132,14 +133,16 @@ struct LEVELWINDFUNCTION
    uint32_t intcntr;    // interrupt counter
 
    uint32_t keepalive_k;  // keep-alive timeout (timeout delay timer ticks) 
-   uint32_t hbct_k;      // Heartbeat ct: ticks between sending   
 
    TimerHandle_t swtim1; // RTOS Timer #1 handle
 
+/* Pointer into circular buffer for levelwind_items.c debugging. */
+#if LEVELWINDDEBUG
    struct LEVELWINDDBGBUF*  pdbgbegin;
    struct LEVELWINDDBGBUF*  pdbgadd;
    struct LEVELWINDDBGBUF*  pdbgtake;
    struct LEVELWINDDBGBUF*  pdbgend;
+#endif
 
 	/* Pointers to incoming CAN msg mailboxes. */
 	struct MAILBOXCAN* pmbx_cid_gps_sync;        // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg

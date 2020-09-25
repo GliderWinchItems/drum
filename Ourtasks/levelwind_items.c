@@ -551,6 +551,7 @@ static void levelwind_items_index_init(void)
  * @brief   : Get pointer to debug buffer
  * @return  : NULL = no new data; otherwise ptr struct with data
  * *************************************************************************/
+#if LEVELWINDDEBUG 
 struct LEVELWINDDBGBUF* levelwind_items_getdbg(void)
 {
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
@@ -561,3 +562,4 @@ struct LEVELWINDDBGBUF* levelwind_items_getdbg(void)
    if (p->pdbgtake >= p->pdbgend) p->pdbgtake = p->pdbgbegin;
    return ptmp;
 }
+#endif

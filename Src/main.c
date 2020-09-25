@@ -950,6 +950,7 @@ uint8_t ratepace = 0;
 /* Temporary so 'switches can do some yprintf from here w/o changing main.c */
 if (stepper_switches_defaultTaskcall(pbuf1) == 0)
 {
+#if LEVELWINDDEBUG 
   struct LEVELWINDDBGBUF* pdbg;
   struct SERIALSENDTASKBCB** ppbuf;
   do
@@ -973,7 +974,9 @@ if (stepper_switches_defaultTaskcall(pbuf1) == 0)
       levelwindfunction.dtwmax);
     }
   }while (pdbg != NULL);
-     
+#else
+  yprintf(&pbuf4,"\n\r%9i LEVELWINDDEBUG: No debugging buffer",stepctr++);
+#endif     
 }
 #endif      
     }
