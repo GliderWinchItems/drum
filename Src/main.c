@@ -335,7 +335,7 @@ int main(void)
   if (Thrdret == NULL) morse_trap(2162); 
 
   /* Brake task */
-  Thrdret = xBrakeTaskCreate(4); // (arg) = priority
+  Thrdret = xBrakeTaskCreate(1); // (arg) = priority
   if (Thrdret == NULL) morse_trap(2162); 
 
 
