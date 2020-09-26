@@ -954,7 +954,7 @@ uint8_t ratepace = 0;
 #ifdef STEPPERSHOW
 
 /* Temporary so 'switches can do some yprintf from here w/o changing main.c */
-if (stepper_switches_defaultTaskcall(pbuf1) == 0)
+if (levelwind_switches_defaultTaskcall(pbuf1) == 0)
 {
 #if LEVELWINDDEBUG 
   struct LEVELWINDDBGBUF* pdbg;

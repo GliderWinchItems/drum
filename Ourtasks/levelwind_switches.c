@@ -1,5 +1,5 @@
 /******************************************************************************
-* File Name          : stepper_switches.c
+* File Name          : levelwind_switches.c
 * Date First Issued  : 09/16/2020
 * Description        : Levelwind function w STM32CubeMX w FreeRTOS
 *******************************************************************************/
@@ -73,13 +73,13 @@ static uint32_t alert;
 
 
 /* *************************************************************************
- * int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1);
+ * int levelwind_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1);
  * @brief       : Call from main.c defaultTAsk jic
  * @return      : 0 = use yprintf in main.c; not 0 = skip yprintf in main
  * *************************************************************************/
 #include "yprintf.h"
 
-int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1)
+int levelwind_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1)
 {
 	return 0;
 extern uint32_t dbgEth;
@@ -88,10 +88,10 @@ extern uint32_t dbgEth;
 }
 
 /* *************************************************************************
- * void stepper_switches_init(void);
+ * void levelwind_switches_init(void);
  * @brief       : Initialization
  * *************************************************************************/
-void stepper_switches_init(void)
+void levelwind_switches_init(void)
 {
 	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
@@ -130,11 +130,11 @@ extern TIM_HandleTypeDef htim5;
 }
 
 /* *************************************************************************
- * struct SWITCHXITION* stepper_switches_get(void);
+ * struct SWITCHXITION* levelwind_switches_get(void);
  * @brief       : Get pointer to circular buffer if reading available
  * @return      : pointer to buffer entry; NULL = no reading
  * *************************************************************************/
-struct SWITCHXITION* stepper_switches_get(void)
+struct SWITCHXITION* levelwind_switches_get(void)
 {
 	struct SWITCHXITION* ptmp;
 	if (ptake == padd) return NULL;
@@ -270,10 +270,10 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
 }
 
 /* *************************************************************************
- * void stepper_switches_error_check(void);
+ * void levelwind_switches_error_check(void);
  * @brief       : 
  * *************************************************************************/
-void stepper_switches_error_check(void)
+void levelwind_switches_error_check(void)
 {
 	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 

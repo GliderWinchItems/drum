@@ -58,7 +58,7 @@ void StartLevelwindTask(void const * argument)
 	levelwind_func_init_canfilter(p);
 
 	/* Limit and overrun switches. */
-	stepper_switches_init();
+	levelwind_switches_init();
 
 	/* Notifications from levelwind_items ISR via intermediary vector. 
 	   with a priority within, but at the top of the FreeRTOS range. */
@@ -88,7 +88,7 @@ extern CAN_HandleTypeDef hcan1;
 		xTaskNotifyWait(0,noteuse, &noteval, portMAX_DELAY);
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
 		if ((noteval & LEVELWINDSWSNOTEBITISR) != 0)
-		{ // Here stepper_items.c triggered the ETH_IRQHandler
+		{ // Here levelwind_items.c triggered the ETH_IRQHandler
 			noteuse |= LEVELWINDSWSNOTEBITISR;
 dbgEth += 1;
 		}
@@ -122,7 +122,7 @@ osThreadId xLevelwindTaskCreate(uint32_t taskpriority)
 	return LevelwindTaskHandle;
 }
 /* ##################################################################
- * Commandeered vector for stepper_items_TIM2_IRQHandler notifications
+ * Commandeered vector for levelwind_items_TIM2_IRQHandler notifications
  * ################################################################## */
 void ETH_IRQHandler(void)
 {	
