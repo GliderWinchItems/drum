@@ -333,7 +333,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             
             if (p->velaccum.s32 == 0)
                {
-                  p->ocidx = 42000/8; // speed up sweep interrupt rate 
+                  p->ocidx = 21000/8;  // speed up sweep interrupt rate 
                }
             
                         

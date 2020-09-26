@@ -97,7 +97,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->cltimectr  = 0;
    p->hbctr      = 0;
    p->ocinc      = 8400000;   // Default 1/10 sec duration
-   p->ocidx      = 42000;   // Default indexing increment 500 ms
+   p->ocidx      = 21000;     // Default indexing increment 250 ms
    p->dtwmin     = 0x7fffffff;
    p->lw_state = LW_INDEX;   // temporary until way to change states is implemented
 
