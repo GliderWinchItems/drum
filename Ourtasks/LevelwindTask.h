@@ -96,6 +96,7 @@ struct LEVELWINDFUNCTION
    int32_t  Lplus32;    // 32-bit extended Lplus
    int32_t  Lminus32;   // 32-bit extended Lminus
    int32_t  Ks;         // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
+   int32_t  rvrsldx;     // Reversal Distance
    float    speedcmdf;  // Speed command (float)
    float    focdur;     // Temp for computer inverse of CL position
    float    clpos;      // CL position extracted from CAN msg

@@ -37,7 +37,7 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->Nr          = 3500;  // Sweep rate to reversal rate ratio
 // Ks is a computed value, not a basic parameter, so it goes in struct LEVELWINDFUNCTION   
 //   p->Ks          = p->Nr *  p->Ka; // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
-   p->Lplus       = 4000;
+   p->Lplus       = 15000;
    p->Lminus      =    0;
 
 // CAN ids levelwind sends

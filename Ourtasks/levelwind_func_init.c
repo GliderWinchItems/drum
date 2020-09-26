@@ -82,13 +82,14 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
    p->ledctr1   = 0;
    p->ledctr2   = 0;
+   p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
    // Position accumulator initial value. Reference paper for the value employed.
-   // p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
+   // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
    p->posaccum.s32 = 0;   
    p->posaccum_prev = p->posaccum.s32;
    // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
    // p->Lminus32 = p->lc.Lminus << 16;
-   p->Lminus32 = (p->lc.Lminus << 16) + (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
+   p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
    p->Lplus32  = p->Lminus32 
       + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
    p->velaccum.s32 = 0;             // Velocity accumulator initial value  
@@ -96,7 +97,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->cltimectr  = 0;
    p->hbctr      = 0;
    p->ocinc      = 8400000;   // Default 1/10 sec duration
-   p->ocidx      =   42000;   // Default indexing increment 500 ms
+   p->ocidx      = 42000;   // Default indexing increment 500 ms
    p->dtwmin     = 0x7fffffff;
    p->lw_state = LW_INDEX;   // temporary until way to change states is implemented
 
