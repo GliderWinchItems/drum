@@ -393,19 +393,17 @@ void levelwind_items_TIM2_IRQHandler(void)
       switch (p->lw_state & 0xF0)   // deal with interrupts based on lw_state
       {
          case (LW_INDEX & 0xF0):
-         {
-            /* code here looking for limit switch to index on */
-            if (p->pay0 & ARBIT) // temporary to use ARM PB as limit switch
+         {  
+            // on indexing, switch to sweep state for limit switch testing
+            if (p->sw[LIMITDBINSIDE].flag1) // limit switch has activated
             {
-               levelwind_items_index_init( );
-               p->lw_state = LW_TRACK;
-               pT5base->CNT = 0;
-               break;
+               p->posaccum.s32 = p->Lplus32 - p->Ks * 1000;
+               p->posaccum_prev = p->posaccum.s16[1];
+               p->lw_state = LW_SWEEP; // move to sweep state
+               pT5base->CNT = 0; // reset odometer to 0 for testing
             }
 
-            emulation_run = 1;
-            p->drbit = 0;  // indexing interrupts always forward
-            // on indexing, switch to sweep state for limit switch testing
+            emulation_run = 1;            
             break;
          }         
 
@@ -414,17 +412,37 @@ void levelwind_items_TIM2_IRQHandler(void)
             /* code here testing limit switches in operational code and characterizing  
             their behavior during development. If needed, this mode can be used for
             calibrating limit switches for speed dependent corrections in LOS recovery. */
+            
+            
+            if (p->velaccum.s32 == 0)
+               {
+                  p->ocidx = 42000/8; // speed up sweep interrupt rate 
+               }
+            
+                        
+            if (p->sw[LIMITDBOUTSIDE].flag1)
+            {
+               p->lw_state = LW_MOVE;   
+            }
+
+
             emulation_run = 1;
-            p->drbit = 0;  // indexing interrupts always forward
             break;
          }
 
          case (LW_MOVE & 0xF0):
          {            
             // code here dealing with stopping at specified location
-            emulation_run = 1;
-            p->drbit = 0;  // indexing interrupts always forward
+            
             // transition to off state on completion
+            
+            if (p->velaccum.s32 == 0)
+               {
+                  p->lw_state = LW_TRACK;
+                  break;
+               }
+
+            emulation_run = 1;
             break;
          }
       }      
@@ -525,27 +543,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    return;
 }
 
-/* *************************************************************************
- * void index_init(void);
- * @brief   : Initialization
- * *************************************************************************/
-static void levelwind_items_index_init(void)
-{
-   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-   
-   // Position accumulator initial value. Reference paper for the value employed.
-   // p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
-   p->posaccum.s32 = 0;   
-   p->posaccum_prev = p->posaccum.s32;
-   // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
-   // p->Lminus32 = p->lc.Lminus << 16;
-   p->Lminus32 = (p->lc.Lminus << 16) + (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
-   p->Lplus32  = p->Lminus32 
-      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
-   p->velaccum.s32 = 0;             // Velocity accumulator initial value  
-   p->drbit = p->drbit_prev = 0;    // Drum direction bit  
-   return;
-}
+
 /* *************************************************************************
  * struct LEVELWINDDBGBUF* levelwind_items_getdbg(void);
  * @brief   : Get pointer to debug buffer
