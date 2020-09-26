@@ -62,12 +62,10 @@ TIM13 (84 MHz) Solenoid FET drive (no interrupt)
 #include "levelwind_items.h"
 #include "DTW_counter.h"
 #include "drum_items.h"
-#include "stepper_switches.h"
+#include "levelwind_switches.h"
 #include "levelwind_items.h"
 
 #define DTW    1  // True to keep DTW timing Code
-
-static void levelwind_items_index_init(void);
 
 struct LEVELWINDDBGBUF levelwinddbgbuf[LEVELWINDDBGBUFSIZE];
 
@@ -77,87 +75,6 @@ TIM_TypeDef  *pT9base; // Register base address
 
 /* Struct with all you want to know. */
 struct LEVELWINDFUNCTION levelwindfunction;
-
-/* CAN msgs */
-
-#ifdef NOLONGEUSEDSTUFF
-
-/* *************************************************************************
- * void levelwind_items_init(void);
- * @brief   : Initialization
- * *************************************************************************/
-void levelwind_items_init(void)
-{
-   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-
-   p->pdbgbegin = &levelwinddbgbuf[0];
-   p->pdbgadd   = &levelwinddbgbuf[0];
-   p->pdbgtake  = &levelwinddbgbuf[0];
-   p->pdbgend   = &levelwinddbgbuf[LEVELWINDDBGBUFSIZE];;
-
-   // Initialize hardcoded parameters (used in some computations below)
-   levelwind_idx_v_struct_hardcode_params(p);
-
-   p->ledctr1   = 0;
-   p->ledctr2   = 0;
-   // Position accumulator initial value. Reference paper for the value employed.
-   // p->posaccum.s32 = (p->lc.Lminus << 16) - (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
-   p->posaccum.s32 = 0;   
-   p->posaccum_prev = p->posaccum.s32;
-   // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
-   // p->Lminus32 = p->lc.Lminus << 16;
-   p->Lminus32 = (p->lc.Lminus << 16) + (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
-   p->Lplus32  = p->Lminus32 
-      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
-   p->velaccum.s32 = 0;             // Velocity accumulator initial value  
-   p->drbit = p->drbit_prev = 0;    // Drum direction bit
-   p->cltimectr  = 0;
-   p->hbctr      = 0;
-   p->ocinc      = 8400000;   // Default 1/10 sec duration
-   p->ocidx      =   42000; // Default indexing increment 500 ms
-   p->dtwmin     = 0x7fffffff;
-   p->lw_state = LW_INDEX;   // temporary until way to change states is implemented
-
-   /* Bit positions for low overhead toggling. */
-   p->ledbit1= (LED_GREEN_Pin);
-   p->ledbit2= (LED_ORANGE_Pin);
-
-   /* Save base addresses of timers for faster use later. */
-extern TIM_HandleTypeDef htim2;
-extern TIM_HandleTypeDef htim5;
-extern TIM_HandleTypeDef htim9;
-   pT2base  = htim2.Instance;
-   pT5base  = htim5.Instance;
-   pT9base  = htim9.Instance;
-
-/* ### NOTE ### These might override STM32CubeMX settings. ### */
-   /* Generate pulse for levelwind controller (PU line) */
-   pT9base->DIER = 0;// No interrupt
-   pT9base->CCR1 = TIM9PULSEDELAY; // Delay count
-   pT9base->ARR  = (TIM9PWMCYCLE - 1); // (10 us)
-   pT9base->CCER = 0x3; // OC active high; signal on pin
-
-/* ### NOTE ### These might override STM32CubeMX settings. ### */
-
-   /* TIM2 Shaft encoder input capture times & output caputre indexing interrupts. */
-   pT2base->CCER |= 0x1110; // Input capture active: CH2,3,4
-#if LEVELWINDDEBUG
-   pT2base->DIER = 0xE; // CH1,2,3 interrupt enable
-#else
-   pT2base->DIER = 0xA; // CH1,3 interrupt enable
-#endif   
-   pT2base->CCR1 = pT2base->CNT + 1000; // 1 short delay
-   pT2base->ARR  = 0xffffffff;
-
-   /* Start counters. */
-   pT2base->CR1 |= 1;  // TIM2 CH1 oc, CH3 ic/oc
-   pT5base->CR1 |= 1;  // TIM5 encoder CH1 CH2 (not interrupt)
-
-   /* Enable limit and overrun switch interrupts EXTI15_10. */
-   EXTI->IMR  |= 0xf000;  // Interrupt mask reg: enable 10:15
-   return;
-}
-#endif
 
 /* *************************************************************************
  * void levelwind_items_timeout(void);

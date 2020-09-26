@@ -16,7 +16,7 @@
 #include "drum_items.h"
 #include "LevelwindTask.h"
 #include "levelwind_func_init.h"
-#include "stepper_switches.h"
+#include "levelwind_switches.h"
 #include "MailboxTask.h"
 #include "levelwind_items.h"
 

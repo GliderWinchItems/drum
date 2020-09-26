@@ -54,7 +54,7 @@ PC9 - PE13
 #include "levelwind_items.h"
 #include "DTW_counter.h"
 #include "drum_items.h"
-#include "stepper_switches.h"
+#include "levelwind_switches.h"
 #include "LevelwindTask.h"
 
 static TIM_TypeDef  *pT2base; // Register base address 
@@ -122,7 +122,7 @@ extern TIM_HandleTypeDef htim5;
 
 	EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
 	EXTI->FTSR |=  0xfc00;  // Trigger on falling edge
-	EXTI->IMR  &= ~0xf000;  // Interrupt mask reg: disable 10:15
+	EXTI->IMR  |=  0xfc00;  // Interrupt mask reg: 10:15
 	EXTI->EMR  |=  0xfc00;  // Event mask reg: enable 10:15
 	EXTI->PR   |=  0xfc00;  // Clear any pending
 

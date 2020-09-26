@@ -12,7 +12,7 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 #include "CanTask.h"
-#include "stepper_switches.h"
+#include "levelwind_switches.h"
 #include "levelwind_idx_v_struct.h"
 #include "levelwind_items.h"
 
@@ -151,7 +151,6 @@ struct LEVELWINDFUNCTION
 	/* CAN msgs */
 	struct CANTXQMSG canmsg[NUMCANMSGSLEVELWIND];
 };
-
 
 /* *************************************************************************/
  osThreadId xLevelwindTaskCreate(uint32_t taskpriority);
