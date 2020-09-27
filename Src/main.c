@@ -72,6 +72,7 @@
 #include "levelwind_items.h"
 #include "drum_items.h"
 #include "LevelwindTask.h"
+#include "levelwind_switches.h"
 #include "DrumTask.h"
 #include "BrakeTask.h"
 
@@ -981,7 +982,7 @@ if (levelwind_switches_defaultTaskcall(pbuf1) == 0)
     }
   }while (pdbg != NULL);
 #else
-  yprintf(&pbuf4,"\n\r%9i LEVELWINDDEBUG: No debugging buffer",stepctr++);
+  yprintf(&pbuf4,"\n\r%9i LEVELWINDDEBUG: No debugging buffer %4i",stepctr++,levelwindfunction.dtwmax);
 #endif     
 }
 #endif      

@@ -78,13 +78,15 @@ static uint32_t alert;
  * @return      : 0 = use yprintf in main.c; not 0 = skip yprintf in main
  * *************************************************************************/
 #include "yprintf.h"
-
+uint32_t linectr;
 int stepper_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1)
 {
-	return 0;
 extern uint32_t dbgEth;
-	yprintf(&pbuf1,"\n\rswitches %i",dbgEth);
-	return 0;
+	yprintf(&pbuf1,"\n\r%6u %04X %04X %i %i",linectr++,levelwindfunction.swbits,
+		GPIOE->IDR & 0xfe00,
+		levelwindfunction.sw[LIMITDBINSIDE].dbs,
+		levelwindfunction.sw[LIMITDBOUTSIDE].dbs);
+	return 1;
 }
 
 /* *************************************************************************
@@ -122,7 +124,7 @@ extern TIM_HandleTypeDef htim5;
 
 	EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
 	EXTI->FTSR |=  0xfc00;  // Trigger on falling edge
-	EXTI->IMR  &= ~0xf000;  // Interrupt mask reg: disable 10:15
+	EXTI->IMR  |=  0xfc00;  // Interrupt mask reg: enable 10:15
 	EXTI->EMR  |=  0xfc00;  // Event mask reg: enable 10:15
 	EXTI->PR   |=  0xfc00;  // Clear any pending
 
@@ -190,7 +192,7 @@ void Stepper_EXTI15_10_IRQHandler(void)
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);				
 			}
 		}
-		return;
+//		return;
 	}
 	if ((EXTI->PR & (LimitSw_inside_NC_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
@@ -210,7 +212,7 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
 
 			}
 		}
-		return;
+//		return;
 	}
 
 	if ((EXTI->PR & (LimitSw_outside_NO_Pin)) != 0)
@@ -230,7 +232,7 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
 HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);			
 			}
 		}
-		return;
+//		return;
 	}
 	if ((EXTI->PR & (LimitSw_outside_NC_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
@@ -249,7 +251,7 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
 HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);							
 			}
 		}
-		return;
+//		return;
 	}
 
 	/* These are the NO contacts on overrun switches. */
@@ -257,13 +259,13 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
 	{ // Here Pending Register shows this switch transitioned
 		EXTI->PR = OverrunSw_Inside_Pin; // Reset request
 		/* Notification goes here. */
-		return;
+//		return;
 	}
 		if ((EXTI->PR & (OverrunSw_outside_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
 		EXTI->PR = OverrunSw_outside_Pin; // Reset request
 		/* Notification goes here. */
-		return;
+//		return;
 	}
 
 	return;

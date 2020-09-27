@@ -5,8 +5,8 @@
 *******************************************************************************/
 
 
-#ifndef __STEPPERSWITCHES
-#define __STEPPERSWITCHES
+#ifndef __LEVELWINDSWITCHES
+#define __LEVELWINDSWITCHES
 
 #include <stdint.h>
 #include "FreeRTOS.h"
