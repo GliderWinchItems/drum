@@ -65,11 +65,13 @@
 
 // Super-state definitions. Lower nibble reserved for sub-states
 #define LW_OFF    0 * 16
+#define LW_MANUAL 6 * 16
 #define LW_INDEX  1 * 16
-#define LW_MOVE   2 * 16
 #define LW_SWEEP  3 * 16
+#define LW_ARREST 2 * 16
 #define LW_TRACK  4 * 16 
 #define LW_LOS    5 * 16 
+
 
 #define NUMCANMSGSLEVELWIND 1  // Number of CAN msgs stepper sends
 enum cididx

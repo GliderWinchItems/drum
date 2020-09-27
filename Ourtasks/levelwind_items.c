@@ -309,6 +309,14 @@ void levelwind_items_TIM2_IRQHandler(void)
      
       switch (p->lw_state & 0xF0)   // deal with interrupts based on lw_state
       {
+         case (LW_MANUAL & 0xF0):
+         {
+            // code to manually move the mechanism based on CP CL and direction values
+            // a variation may be employed to center the indexed LW to the drum center
+            break;
+         }
+
+
          case (LW_INDEX & 0xF0):
          {  
             // on indexing, switch to sweep state for limit switch testing
@@ -333,7 +341,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             
             if (p->velaccum.s32 == 0)
                {
-                  p->ocidx = 21000/8;  // speed up sweep interrupt rate 
+                  p->ocidx = 21000/6;  // speed up sweep interrupt rate 
                }
             
                         
@@ -347,7 +355,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             break;
          }
 
-         case (LW_MOVE & 0xF0):
+         case (LW_ARREST & 0xF0):
          {            
             // code here dealing with stopping at specified location
             
