@@ -22,7 +22,7 @@
 #include "levelwind_items.h"
 #include "common_can.h"
 #include "CanTask.h"
-#include "stepper_switches.h"
+#include "levelwind_switches.h"
 #include "LevelwindTask.h"
 
 #define TIM3CNTRATE 84000000   // TIM3 counter rate (Hz)
