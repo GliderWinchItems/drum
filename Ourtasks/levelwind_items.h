@@ -68,11 +68,12 @@
 
 // Super-state definitions. Lower nibble reserved for sub-states
 #define LW_OFF    0 * 16
-#define LW_INDEX  1 * 16
-#define LW_MOVE   2 * 16
+#define LW_MANUAL 1 * 16
+#define LW_INDEX  2 * 16
 #define LW_SWEEP  3 * 16
-#define LW_TRACK  4 * 16 
-#define LW_LOS    5 * 16 
+#define LW_ARREST 4 * 16
+#define LW_TRACK  5 * 16 
+#define LW_LOS    6 * 16 
 
 #define NUMCANMSGSLEVELWIND 1  // Number of CAN msgs levelwind sends
 
@@ -95,6 +96,21 @@ struct LEVELWINDDBGBUF
  * *************************************************************************/
  void levelwind_items_CANsendHB(void);
 /* @brief   : Send CAN heartbeat for levelwind
+ * *************************************************************************/
+  uint8_t levelwind_items_index_case(struct LEVELWINDFUNCTION* p); 
+/* *************************************************************************
+ * @brief   : Handle INDEX case
+ * @param   : p    = pointer to levelwind function parameters
+ * *************************************************************************/
+ uint8_t levelwind_items_sweep_case(struct LEVELWINDFUNCTION* p);
+ /* *************************************************************************
+ * @brief   : Handle SWEEP case
+ * @param   : p    = pointer to levelwind function parameters
+ * *************************************************************************/
+ uint8_t levelwind_items_arrest_case(struct LEVELWINDFUNCTION* p);
+ /* *************************************************************************
+ * @brief   : Handle ARREST case
+ * @param   : p    = pointer to levelwind function parameters
  * *************************************************************************/
  struct LEVELWINDDBGBUF* levelwind_items_getdbg(void);
 /* @brief   : Get pointer to debug buffer

@@ -316,58 +316,24 @@ void levelwind_items_TIM2_IRQHandler(void)
             break;
          }
 
-
          case (LW_INDEX & 0xF0):
          {  
-            // on indexing, switch to sweep state for limit switch testing
-            if (p->sw[LIMITDBINSIDE].flag1) // limit switch has activated
-            {
-               p->posaccum.s32 = p->Lplus32 - p->Ks * 1000;
-               p->posaccum_prev = p->posaccum.s16[1];
-               p->lw_state = LW_SWEEP; // move to sweep state
-               pT5base->CNT = 0; // reset odometer to 0 for testing
-            }
-
-            emulation_run = 1;            
+            emulation_run = levelwind_items_index_case(p);
             break;
          }         
 
          case (LW_SWEEP & 0xF0):
-         {            
+         {  
             /* code here testing limit switches in operational code and characterizing  
             their behavior during development. If needed, this mode can be used for
             calibrating limit switches for speed dependent corrections in LOS recovery. */
-            
-            
-            if (p->velaccum.s32 == 0)
-               {
-                  p->ocidx = 21000/6;  // speed up sweep interrupt rate 
-               }
-            
-                        
-            if (p->sw[LIMITDBOUTSIDE].flag1)
-            {
-               p->lw_state = LW_MOVE;   
-            }
-
-
-            emulation_run = 1;
+            emulation_run = levelwind_items_sweep_case(p);
             break;
          }
 
          case (LW_ARREST & 0xF0):
-         {            
-            // code here dealing with stopping at specified location
-            
-            // transition to off state on completion
-            
-            if (p->velaccum.s32 == 0)
-               {
-                  p->lw_state = LW_TRACK;
-                  break;
-               }
-
-            emulation_run = 1;
+         {
+            emulation_run = levelwind_items_arrest_case(p);
             break;
          }
       }      
@@ -468,6 +434,62 @@ void levelwind_items_TIM2_IRQHandler(void)
    return;
 }
 
+/* *************************************************************************
+ * uint8_t levelwind_items_index_case(struct LEVELWINDFUNCTION* p);
+ * @brief   : Handle INDEX case
+ * @param   : p    = pointer to levelwind function parameters
+ * *************************************************************************/
+uint8_t levelwind_items_index_case(struct LEVELWINDFUNCTION* p)
+{  // function to handle INDEX case
+   // on indexing, switch to sweep state for limit switch testing
+   if (p->sw[LIMITDBINSIDE].flag1) // limit switch has activated
+   {
+      p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000);
+      p->posaccum_prev = p->posaccum.s16[1];
+      p->lw_state = LW_SWEEP; // move to sweep state
+      pT5base->CNT = 0; // reset odometer to 0 for testing
+   }
+   return(1);
+}
+
+/* *************************************************************************
+ * uint8_t levelwind_items_sweep_case(struct LEVELWINDFUNCTION* p);
+ * @brief   : Handle SWEEP case
+ * @param   : p    = pointer to levelwind function parameters
+ * *************************************************************************/
+uint8_t levelwind_items_sweep_case(struct LEVELWINDFUNCTION* p)
+{  // function to handle SWEEP case
+   if (p->velaccum.s32 == 0)
+   {
+      p->ocidx = 21000/6;  // speed up sweep interrupt rate 
+   }
+
+   if (p->sw[LIMITDBOUTSIDE].flag1)
+   {
+      p->lw_state = LW_ARREST;   
+   }
+   
+   return(1);
+}
+
+/* *************************************************************************
+ * uint8_t levelwind_items_sweep_case(struct LEVELWINDFUNCTION* p);
+ * @brief   : Handle ARREST case
+ * @param   : p    = pointer to levelwind function parameters
+ * *************************************************************************/
+uint8_t levelwind_items_arrest_case(struct LEVELWINDFUNCTION* p)
+{  
+   // code here dealing with stopping at specified location
+            
+   // transition to off state on completion   
+   if (p->velaccum.s32 == 0)
+   {
+      p->lw_state = LW_TRACK;
+      return (0);
+   }
+   else
+      return (1);
+}
 
 /* *************************************************************************
  * struct LEVELWINDDBGBUF* levelwind_items_getdbg(void);
