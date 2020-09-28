@@ -4,7 +4,7 @@
  * Latest edit: 202009192020
  */
  
- $fn = 30;
+ $fn = 40;
  
  // Perfboard dimensions
  pbdel = 0.5;  // A little extra
@@ -41,48 +41,61 @@
  pstd = 6;  // Diameter
  paa = 1.1; // Post center offset
  
- frad = 8; // fillet radius
+ frad = 4; // fillet radius
 phole = 2.9; // Post screw hole diameter 
 
- module post_fillet(r)
+ module post_fillet(r,zzz)
  {
+hrad = phole/2;     
+hx = hrad * (1/sqrt(2));
+prad = pstd/2;
+alpha = acos((frad-hrad)/(frad+prad));
+ofx = (pstd/2)*cos(alpha);
+ofy = (pstd/2)*sin(alpha);     
      difference()
      {
          union()
          {
-             translate([-phole*0.707-.01,phole*0.707,0])
-            cube([phole*0.707+pstd/2,frad,pstz],center=false);
+             translate([-hrad,hx,0])
+            cube([frad-prad*cos(alpha),(frad+prad)*sin(alpha)-hx,zzz],center=false);
          }
          union()
          {
-            translate([(frad-phole*.707),frad,0])
-              cylinder(d=frad*2,h = pstz,center=false);
+            translate([(prad+frad)*cos(alpha),(prad+frad)*sin(alpha),0])
+              cylinder(d=frad*2,h=zzz,center=false);
          }         
      }
  }
 
- module post(a)
+ module postf(a,zz,ahole)
  {
      translate (a)
      {
-        translate([0,0,boxz-pstz])
+        translate([0,0,boxz-zz])
         difference()
         {
             union()
             {   
-                cylinder(d=pstd,h = pstz,center=false);
-               // rotate([0,0,90])
-                post_fillet([0,0,0]);
+                cylinder(d=pstd,h = zz,center=false);
+                rotate([0,0,0])
+                  post_fillet([0,0,0],zz);
+                translate([0,0,zz])
+                rotate([180,0,0])
+                rotate([0,0,90])
+                  post_fillet([0,0,0],zz);
+
             }
             union()
             {
-                translate([0,0,pstz-30])
-                cylinder(d=phole,h=60,center=false);
+                translate([0,0,zz-30])
+                cylinder(d=ahole,h=60,center=false);
             }
         }
     }
- }
- translate([100,0,0])post([0,0,0]);
+}
+/* Insert perf board */
+edia = 4.6; // encoder cable dia     
+
  module mainbox()
  {
      difference()
@@ -90,10 +103,25 @@ phole = 2.9; // Post screw hole diameter
          union()
          {
              cube ([boxx,boxy,boxz],center=false);
-             post([    -paa,    -paa,0]);
-             post([boxx+paa,    -paa,0]);
-             post([boxx+paa,boxy+paa,0]);
-             post([    -paa,boxy+paa,0]);
+
+             translate([    -paa,    -paa,0])
+             rotate([0,0,-90])
+                postf([0,0,0],pstz,phole);
+
+             translate([boxx+paa,    -paa,0])
+             rotate([0,0,0]) 
+                postf([0,0,0],pstz,phole);
+
+             translate([boxx+paa,boxy+paa,pstz])
+             rotate([180,0,0])
+                postf([0,0,0],pstz,phole);
+
+             translate([    -paa,boxy+paa,0])
+             rotate([0,0,180]) 
+                postf([0,0,0],pstz,phole);
+             
+             
+             
          }
          union()
          {
@@ -102,14 +130,17 @@ phole = 2.9; // Post screw hole diameter
                 cube([boxqx,boxqy,50],center=false);
              
              // Recess for perf board
-             translate([boxwall*.25,boxwall*.25,boxz-pbz])
+             translate([boxwall*.25,boxwall*.25,boxz-4])
                 cube([pbx,pby,50],center=false);
              
              
-             // spi cable
-//             spiq = boxfloor + spiofz;
-//             translate([boxwall*.25+spiofx,boxy-8,spiq])
-//                cube([spix,30,spiz],center=false);
+             // encoder cable
+             spiq = boxfloor + spiofz;
+             translate([boxx-5,(boxy-boxwall)/2+edia/2,boxz-edia/2])
+                rotate([0,90,0])
+                cylinder(d=edia,h=20, center=true);
+             translate([boxx-5,(boxy-boxwall)/2+edia/2,boxz+5-edia/2])
+                cube ([20,edia,10],center=true);
              
          }
      }
@@ -140,6 +171,62 @@ phole = 2.9; // Post screw hole diameter
         }
     }
  }
+ edia1 = edia - 0.5;
+ module cvrcabletab(a)
+ {
+    translate(a)
+    translate([boxx-cvrdel/2,boxy/2,-cvrlh+6]) 
+    {
+     difference()
+     {
+         union()
+         {
+            cube([cvrdel,edia,4],center = true);
+         }
+         
+         translate([0,0,-edia/2]) 
+          rotate([0,90,0])
+           cylinder(d=edia,h=20,center=true); 
+     }
+    }
+ }
+ module cvrcabletabW(a)
+ {
+     
+    translate(a)
+    translate([boxx-cvrdel/2+1.5,boxy/2,-cvrlh+6-.5]) 
+    {
+     difference()
+     {
+         union()
+         {
+            cube([1,edia,4],center = true);
+//             translate([.5,0,-edia1*.5])
+  //           ring(edia1);
+         }
+         union()
+         {
+            translate([0,0,-edia1/2]) 
+             rotate([0,90,0])
+              cylinder(d=edia1,h=20,center=true); 
+         }
+     }
+    }
+ }
+ 
+ module ring(wdia)
+ {
+     sc = 0.75;
+     
+     
+     translate([0,0,0])
+     rotate([0,90,0])
+     rotate_extrude(convexity = 10)
+        translate([wdia*.5, 0, 0])
+            polygon(points=[[0,0],[cos(60)*sc,0.5*sc],[cos(60)*sc,-0.5*sc]]);
+ }
+ //ring(edia);
+ 
  cvrw = 1.5;
  cvrlj = 2.0;
  cvrlh = cvrz + cvrlj;
@@ -162,14 +249,14 @@ phole = 2.9; // Post screw hole diameter
         }    
     }
  }
- 
- // Toggle switch hole in cover
-module togglehole(a)
+module encodercablecvr()
 {
-   translate(a)
-    cylinder(d = 6.4, h = 20, center=true);
+   translate([0,0,0])
+    cube([boxwall,edia,4],center=true);
 } 
+
  
+chole = 3.2;
  module cover(a)
  {
      translate(a)
@@ -179,12 +266,36 @@ module togglehole(a)
              union()
              {
                 cube ([boxx,boxy,cvrz],center=false);
-                cvrpost([    -paa,    -paa,0]);
+/*                cvrpost([    -paa,    -paa,0]);
                 cvrpost([boxx+paa,    -paa,0]);
                 cvrpost([boxx+paa,boxy+paa,0]);
                 cvrpost([    -paa,boxy+paa,0]);
-                 
-//cvrlip([boxx/2,-cvrw,0],[0,0,0],boxx-2*boxwall-8);                 
+                 */
+            translate([    -paa,    -paa,-2*cvrz])
+             rotate([0,0,-90])
+                postf([0,0,0],cvrz,chole);
+
+             translate([boxx+paa,    -paa,-2*cvrz])
+             rotate([0,0,0]) 
+                postf([0,0,0],cvrz,chole);
+
+             translate([boxx+paa,boxy+paa,3*cvrz])
+             rotate([180,0,0])
+                postf([0,0,0],cvrz,chole);
+
+             translate([    -paa,boxy+paa,-2*cvrz])
+             rotate([0,0,180]) 
+                postf([0,0,0],cvrz,chole);  
+  
+cvrcabletab([0,0,0]);  
+cvrcabletabW([0,0,0]);
+
+             translate([boxx-cvrdel*.5,boxy*.5,-edia1*.5])
+             ring(edia-1);
+
+
+            
+                
              }
              union()
              {

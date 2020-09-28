@@ -1,6 +1,6 @@
 Configuration	drum
 STM32CubeMX 	6.0.1
-Date	09/24/2020
+Date	09/27/2020
 MCU	STM32F407VGTx
 
 
@@ -42,7 +42,7 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 24	PA1	TIM5_CH2	encodectrB
 25	PA2	TIM2_CH3	encodertimeA
 26	PA3	TIM2_CH4	encodertimeB
-31	PA6	TIM13_CH1	solenoiddrive
+31	PA6	TIM13_CH1	fieldfetdrive
 35	PB0	GPIO_Output	Stepper: DR--direction
 36	PB1	GPIO_Output	Stepper: MF-not-enable
 40	PE9	GPIO_Input	StepperBridge
@@ -104,7 +104,7 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 24	PA1	TIM5_CH2	encodectrB
 25	PA2	TIM2_CH3	encodertimeA
 26	PA3	TIM2_CH4	encodertimeB
-31	PA6	TIM13_CH1	solenoiddrive
+31	PA6	TIM13_CH1	fieldfetdrive
 35	PB0	GPIO_Output	Stepper: DR--direction
 36	PB1	GPIO_Output	Stepper: MF-not-enable
 40	PE9	GPIO_Input	StepperBridge

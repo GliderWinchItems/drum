@@ -42,27 +42,6 @@
 #define LMOUT_port GPIOE       // Limit switch outside
 #define LMOUT_pin  GPIO_PIN_10 // Limit switch outside
 
-/* CAN msg: cid_drum_tst_stepcmd: payload[0] bit definitions. */
-/* CAN msg: cid_drum_tst_stepcmd: payload[0] bit definitions. */
-#define DRBIT 0x01 // (1) Bit mask Direction output pin: 0 = low; 1 = high
-#define ENBIT 0x02 // (2) Bit mask Enable output pin: 0 = low; 1 = high
-#define LMBIT 0x04 // (3) Bit mask Limit switch simulation
-#define IXBIT 0x08 // (4) Bit mask Indexing command
-#define ZTBIT 0x10 // (5) Bit mask PB State: Zero Tension
-#define ZOBIT 0x20 // (6) Bit mask PB State: Zero Odometer
-#define ARBIT 0x40 // (7) Bit mask PB State: ARM
-#define PRBIT 0x80 // (8) Bit Mask PB State: PREP
-/* Notes of above bit usage--
-(1) CP PB processed: Zero Odometer TOGGLES direction minus sign on LCD
-(2) CP SAFE/ACTIVE: Bit sets when in CP goes into ARM state
-(3) CP PB: Zero Tension PB state simulates limit switch
-(4) CP PB: ARM PB state simulates CP begin indexing command
-(5) CP PB state: Zero Tension (CP toggles direction)
-(6) CP PB state: Zero Odometer
-(7) CP PB state: ARM
-(8) CP PB state: Prep (CP toggles freeze of CL setting)
-*/
-
 // Super-state definitions. Lower nibble reserved for sub-states
 #define LW_OFF    0 * 16
 #define LW_MANUAL 1 * 16
@@ -71,7 +50,6 @@
 #define LW_ARREST 4 * 16
 #define LW_TRACK  5 * 16 
 #define LW_LOS    6 * 16 
-
 
 #define NUMCANMSGSLEVELWIND 1  // Number of CAN msgs stepper sends
 enum cididx
@@ -102,10 +80,6 @@ struct LEVELWINDFUNCTION
    float    speedcmdf;  // Speed command (float)
    float    focdur;     // Temp for computer inverse of CL position
    float    clpos;      // CL position extracted from CAN msg
-   uint32_t ledctr1;    // Counter for throttling green LED
-   uint32_t ledctr2;    // Counter for throttling orangeLED
-   uint32_t ledbit1;    // Bit for toggling green led
-   uint32_t ledbit2;    // Bit for toggling orange led
    uint32_t cltimectr;  // Counter for loss of CL msgs
    uint32_t speedcmdi;  // Commanded speed (integer)
    uint32_t ocinc;      // OC register increment for indexing and sweeping
@@ -145,6 +119,11 @@ struct LEVELWINDFUNCTION
    struct LEVELWINDDBGBUF*  pdbgadd;
    struct LEVELWINDDBGBUF*  pdbgtake;
    struct LEVELWINDDBGBUF*  pdbgend;
+
+   uint32_t ledctr1;    // Counter for throttling green LED
+   uint32_t ledctr2;    // Counter for throttling orangeLED
+   uint32_t ledbit1;    // Bit for toggling green led
+   uint32_t ledbit2;    // Bit for toggling orange led
 #endif
 
 	/* Pointers to incoming CAN msg mailboxes. */

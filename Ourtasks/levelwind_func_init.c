@@ -75,10 +75,15 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->pdbgadd   = &levelwinddbgbuf[0];
    p->pdbgtake  = &levelwinddbgbuf[0];
    p->pdbgend   = &levelwinddbgbuf[LEVELWINDDBGBUFSIZE];;
-#endif   
 
    p->ledctr1   = 0;
    p->ledctr2   = 0;
+
+   /* Bit positions for low overhead toggling. */
+   p->ledbit1= (LED_GREEN_Pin);
+   p->ledbit2= (LED_ORANGE_Pin);
+#endif   
+
    p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
    // Position accumulator initial value. Reference paper for the value employed.
    // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
@@ -103,10 +108,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->lw_state = LW_INDEX;   // temporary until way to change states is implemented
    /* Convert levelwind_idx_v_struct times to timer ticks. */
    p->keepalive_k = (p->lc.ka_levelwind_t); // keep-alive timeout (timeout delay ms)
-
-   /* Bit positions for low overhead toggling. */
-   p->ledbit1= (LED_GREEN_Pin);
-   p->ledbit2= (LED_ORANGE_Pin);
 
    /* Save base addresses of timers for faster use later. */
    pT2base  = htim2.Instance;
