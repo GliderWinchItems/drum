@@ -37,13 +37,18 @@ struct LEVELWINDLC
 	uint32_t ka_levelwind_t; // keepalive from PC (ms) 
 	uint32_t hbct_t;      // Heartbeat ct: ms between sending 
 
-   float    clfactor;   // Constant to compute oc duration at CL = 100.0
-   uint32_t cltimemax;  // Max timer count for shutdown
    int32_t  Lplus;      //
    int32_t  Lminus;     //
    uint32_t hbct;       // Number of ticks between hb msgs
    int32_t  Ka;         // reversal rate
-   int32_t  Nr;         // ratio of reversal rate to sweep rate      
+   int32_t  Nr;         // ratio of reversal rate to sweep rate
+
+   uint32_t ocidx;      // OC register increment for indexing 
+   uint32_t ocswp;      // OC register increment for test sweeping 
+
+   // For development, these will likely not be needed in operational code
+   float    clfactor;   // Constant to compute oc duration at CL = 100.0
+   uint32_t cltimemax;  // Max timer count for shutdown     
 
  // CAN ids ...........................................................................
    //                                  CANID_NAME             CAN_MSG_FMT     DESCRIPTION

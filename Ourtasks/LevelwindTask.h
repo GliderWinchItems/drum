@@ -108,8 +108,7 @@ struct LEVELWINDFUNCTION
    uint32_t ledbit2;    // Bit for toggling orange led
    uint32_t cltimectr;  // Counter for loss of CL msgs
    uint32_t speedcmdi;  // Commanded speed (integer)
-   uint32_t ocinc;      // OC register increment for CL faux encoder  
-   uint32_t ocidx;      // OC register increment for indexing
+   uint32_t ocinc;      // OC register increment for indexing and sweeping
    uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
    uint32_t drflag;     // BSRR pin set/reset bit position: direction
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
@@ -134,6 +133,7 @@ struct LEVELWINDFUNCTION
    int32_t dtwmax;     // DTW difference max
    int32_t dtwmin;     // DTW difference min
    uint32_t intcntr;    // interrupt counter
+   uint32_t ocfauxinc;  // OC register increment for CL faux encoder  
 
    uint32_t keepalive_k;  // keep-alive timeout (timeout delay timer ticks) 
 

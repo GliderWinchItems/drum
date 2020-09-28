@@ -27,18 +27,22 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
  count = 4 -> 64/sec (if we want to approximate the logging rate)
  count = 64 -> 1/sec 
 */ 
-	p->ka_levelwind_t = 2555;  // keep-alive timeout (timeout delay ms)
 	p->hbct_t     = 500;   // Heartbeat ct: milliseconds between sending 
-
-   p->clfactor    = 168E3; // CL scaling: 100% = 50 us
-   p->cltimemax   = 512;   // Number of software timeout ticks max
+   
    p->hbct        = 64;    // Number of swctr ticks between heartbeats
    p->Ka          = 8;     // Reversal rate
    p->Nr          = 3500;  // Sweep rate to reversal rate ratio
-// Ks is a computed value, not a basic parameter, so it goes in struct LEVELWINDFUNCTION   
-//   p->Ks          = p->Nr *  p->Ka; // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
-   p->Lplus       = 15000;
-   p->Lminus      =    0;
+   p->Lplus       = 15000; // Calibrated start of positive reversal region
+   p->Lminus      =    0;  // Calibrated start of negative reversal region
+
+   p->ocidx      = 21000;        // Indexing increment 250 ms
+   p->ocswp      = p->ocidx/6;   // Sweeping increment
+
+// For development; these will likely not be in operational code
+   p->clfactor    = 168E3; // CL scaling: 100% = 50 us
+   p->ka_levelwind_t = 2555;  // keep-alive timeout (timeout delay ms)
+   p->cltimemax   = 512;   // Number of software timeout ticks max
+
 
 // CAN ids levelwind sends
    //                      CANID_HEX      CANID_NAME             CAN_MSG_FMT     DESCRIPTION

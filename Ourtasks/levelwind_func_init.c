@@ -37,10 +37,9 @@ extern TIM_TypeDef  *pT9base; // Register base address
 
 /* *************************************************************************
  * void levelwind_func_init_init(struct LEVELWINDFUNCTION* p);
- *	@brief	: Initialize working struct for ContactorTask
- * @param	: p    = pointer to ContactorTask
+ *	@brief	: Initialize working struct for Levelwind Task
+ * @param	: p    = pointer to Levelwind Task
  * *************************************************************************/
-
 void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 {
 	int i;
@@ -50,9 +49,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
 	p->Ks = p->lc.Nr * p->lc.Ka; // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
 
-	/* Convert levelwind_idx_v_struct times to timer ticks. */
-	p->keepalive_k= (p->lc.ka_levelwind_t); // keep-alive timeout (timeout delay ms)
-	
+		
 // Skip CAN msg arrival notifications for lines that are commented out.
 	/* Add CAN Mailboxes                               CAN     CAN ID             TaskHandle,Notify bit,Skip, Paytype */
 //	p->pmbx_cid_gps_sync          =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,          NULL,LEVELWINDBIT06,0,U8);
@@ -94,12 +91,18 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
       + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
    p->velaccum.s32 = 0;             // Velocity accumulator initial value  
    p->drbit = p->drbit_prev = 0;    // Drum direction bit
-   p->cltimectr  = 0;
    p->hbctr      = 0;
-   p->ocinc      = 8400000;   // Default 1/10 sec duration
-   p->ocidx      = 21000;     // Default indexing increment 250 ms
+   
+   p->ocinc      = p->lc.ocidx;     // initialize to indexing increment
    p->dtwmin     = 0x7fffffff;
+   
+
+   // for development;these will likely not be in operational code
+   p->ocfauxinc      = 8400000;   // Default 1/10 sec duration
+   p->cltimectr  = 0;
    p->lw_state = LW_INDEX;   // temporary until way to change states is implemented
+   /* Convert levelwind_idx_v_struct times to timer ticks. */
+   p->keepalive_k = (p->lc.ka_levelwind_t); // keep-alive timeout (timeout delay ms)
 
    /* Bit positions for low overhead toggling. */
    p->ledbit1= (LED_GREEN_Pin);

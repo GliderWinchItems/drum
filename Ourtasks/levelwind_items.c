@@ -63,7 +63,7 @@ TIM13 (84 MHz) Solenoid FET drive (no interrupt)
 #include "DTW_counter.h"
 #include "drum_items.h"
 #include "levelwind_switches.h"
-#include "levelwind_items.h"
+
 
 #define DTW    1  // True to keep DTW timing Code
 
@@ -143,7 +143,7 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
    { 
       p->focdur = MAXDURF; // Hold at max
    }
-   p->ocinc = p->focdur;   // Convert to integer
+   p->ocfauxinc = p->focdur;   // Convert to integer
 
   /* Configure TIM2CH3 to be either input capture from encoder, or output compare (no pin). */
    // Each ZTBIT pushbutton press toggles beween IC and OC modes
@@ -160,7 +160,7 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
             pT2base->CCER  |=  (1<<11); // CC3NP: Configure as output
             pT2base->CCER  &= ~(1<<8);  // CC3E = 0; Turn channel off
             pT2base->CCMR2 &= ~(0xff << 0); // Change to Output compare, no pin
-            pT2base->CCR3 = pT2base->CNT + p->ocinc; // Schedule next faux encoder interrupt
+            pT2base->CCR3 = pT2base->CNT + p->ocfauxinc; // Schedule next faux encoder interrupt
          }
          else
          { // Here, currently using output compare
@@ -256,7 +256,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       if ((pT2base->CCMR2 & 0x1) == 0)
       { // Here we are using TIM2CH3 as OC compare instead of input capture. */
          // Duration increment computed from CL CAN msg
-         pT2base->CCR3 += p->ocinc; // Schedule next faux encoder interrupt
+         pT2base->CCR3 += p->ocfauxinc; // Schedule next faux encoder interrupt
          // Make faux encoder counter 
          if (p->drflag == 1)
          {  
@@ -305,7 +305,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       pT2base->SR = ~(1<<1);  // Reset CH1 flag
 
       // Duration increment computed from CL CAN msg (during development)
-      pT2base->CCR1 += p->ocidx; // Schedule next indexing interrupt
+      pT2base->CCR1 += p->ocinc; // Schedule next indexing interrupt
      
       switch (p->lw_state & 0xF0)   // deal with interrupts based on lw_state
       {
@@ -318,7 +318,7 @@ void levelwind_items_TIM2_IRQHandler(void)
 
          case (LW_INDEX & 0xF0):
          {  
-            emulation_run = levelwind_items_index_case(p);
+            emulation_run = levelwind_items_index_case();
             break;
          }         
 
@@ -327,13 +327,13 @@ void levelwind_items_TIM2_IRQHandler(void)
             /* code here testing limit switches in operational code and characterizing  
             their behavior during development. If needed, this mode can be used for
             calibrating limit switches for speed dependent corrections in LOS recovery. */
-            emulation_run = levelwind_items_sweep_case(p);
+            emulation_run = levelwind_items_sweep_case();
             break;
          }
 
          case (LW_ARREST & 0xF0):
          {
-            emulation_run = levelwind_items_arrest_case(p);
+            emulation_run = levelwind_items_arrest_case();
             break;
          }
       }      
@@ -435,12 +435,15 @@ void levelwind_items_TIM2_IRQHandler(void)
 }
 
 /* *************************************************************************
- * uint8_t levelwind_items_index_case(struct LEVELWINDFUNCTION* p);
+ * uint8_t levelwind_items_index_case(void);
  * @brief   : Handle INDEX case
  * @param   : p    = pointer to levelwind function parameters
  * *************************************************************************/
-uint8_t levelwind_items_index_case(struct LEVELWINDFUNCTION* p)
+uint8_t levelwind_items_index_case(void)
 {  // function to handle INDEX case
+   
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+
    // on indexing, switch to sweep state for limit switch testing
    if (p->sw[LIMITDBINSIDE].flag1) // limit switch has activated
    {
@@ -453,15 +456,18 @@ uint8_t levelwind_items_index_case(struct LEVELWINDFUNCTION* p)
 }
 
 /* *************************************************************************
- * uint8_t levelwind_items_sweep_case(struct LEVELWINDFUNCTION* p);
+ * uint8_t levelwind_items_sweep_case(void);
  * @brief   : Handle SWEEP case
  * @param   : p    = pointer to levelwind function parameters
  * *************************************************************************/
-uint8_t levelwind_items_sweep_case(struct LEVELWINDFUNCTION* p)
+uint8_t levelwind_items_sweep_case(void)
 {  // function to handle SWEEP case
+   
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+
    if (p->velaccum.s32 == 0)
    {
-      p->ocidx = 21000/6;  // speed up sweep interrupt rate 
+      p->ocinc = p->lc.ocswp;  // speed up interrupt rate for test sweep
    }
 
    if (p->sw[LIMITDBOUTSIDE].flag1)
@@ -473,14 +479,15 @@ uint8_t levelwind_items_sweep_case(struct LEVELWINDFUNCTION* p)
 }
 
 /* *************************************************************************
- * uint8_t levelwind_items_sweep_case(struct LEVELWINDFUNCTION* p);
+ * uint8_t levelwind_items_sweep_case(void);
  * @brief   : Handle ARREST case
  * @param   : p    = pointer to levelwind function parameters
  * *************************************************************************/
-uint8_t levelwind_items_arrest_case(struct LEVELWINDFUNCTION* p)
-{  
-   // code here dealing with stopping at specified location
-            
+uint8_t levelwind_items_arrest_case(void)
+{  // code here dealing with stopping at specified location
+   
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+
    // transition to off state on completion   
    if (p->velaccum.s32 == 0)
    {
