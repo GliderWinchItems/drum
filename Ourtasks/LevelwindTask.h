@@ -124,6 +124,8 @@ struct LEVELWINDFUNCTION
    uint32_t ledctr2;    // Counter for throttling orangeLED
    uint32_t ledbit1;    // Bit for toggling green led
    uint32_t ledbit2;    // Bit for toggling orange led
+
+   uint32_t tim5cnt_offset;
 #endif
 
 	/* Pointers to incoming CAN msg mailboxes. */

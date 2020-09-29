@@ -370,7 +370,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       p->posaccum.s32 += p->velaccum.s32;
 
 #if LEVELWINDDEBUG    
-   p->pdbgadd->tim5cnt = pT5base->CNT;
+   p->pdbgadd->tim5cnt = p->tim5cnt_offset + pT5base->CNT;
    p->intcntr++;         
    /* p->dbg1 = p->velaccum.s32;
       p->dbg2 = p->posaccum.s16[1];
@@ -450,7 +450,9 @@ uint8_t levelwind_items_index_case(void)
       p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000);
       p->posaccum_prev = p->posaccum.s16[1];
       p->lw_state = LW_SWEEP; // move to sweep state
-      pT5base->CNT = 0; // reset odometer to 0 for testing
+#if LEVELWINDDEBUG
+      p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing
+#endif      
    }
    return(1);
 }

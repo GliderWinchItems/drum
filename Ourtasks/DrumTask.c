@@ -16,7 +16,8 @@
 #include "drum_items.h"
 #include "DrumTask.h"
 
-
+/* Struct with many things for the drum function. */
+struct DRUMFUNCTION drumfunction;
 
 osThreadId DrumTaskHandle;
 
@@ -26,6 +27,10 @@ osThreadId DrumTaskHandle;
  * *************************************************************************/
 void StartDrumTask(void const * argument)
 {
+	struct DRUMFUNCTION* p = &drumfunction;
+
+	drum_items_init(p);
+
 	for (;;)
 	{
 		osDelay(10);
