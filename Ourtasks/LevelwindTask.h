@@ -43,22 +43,13 @@
 #define LMOUT_pin  GPIO_PIN_10 // Limit switch outside
 
 // LW state machine  definitions. Lower nibble reserved for sub-states
-#define LW_OFF    0 * 16
-#define LW_MANUAL 1 * 16
-#define LW_CENTER 2 * 16
-#define LW_INDEX  3 * 16
-#define LW_TRACK  4 * 16 
-#define LW_LOS    5 * 16 
-
-// LW mode definitions. Lower nibble reserved for sub-states
-#define LW_ISR_OFF    0 * 16
-#define LW_ISR_MANUAL 1 * 16
-#define LW_ISR_INDEX  2 * 16
-#define LW_ISR_SWEEP  3 * 16
-#define LW_ISR_ARREST 4 * 16
-#define LW_ISR_TRACK  5 * 16 
-#define LW_ISR_LOS    6 * 16 
-
+#define LW_OFF       0 << 4
+#define LW_OVERRUN   1 << 4
+#define LW_MANUAL    2 << 4
+#define LW_CENTER    3 << 4
+#define LW_INDEX     4 << 4
+#define LW_TRACK     5 << 4 
+#define LW_LOS       6 << 4 
 
 #define NUMCANMSGSLEVELWIND 1  // Number of CAN msgs stepper sends
 enum cididx
@@ -92,6 +83,7 @@ struct LEVELWINDFUNCTION
    uint32_t cltimectr;  // Counter for loss of CL msgs
    uint32_t speedcmdi;  // Commanded speed (integer)
    uint32_t ocinc;      // OC register increment for indexing and sweeping
+   uint32_t ocswp;      // OC register increment for sweep
    uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
    uint32_t drflag;     // BSRR pin set/reset bit position: direction
    uint32_t enflag;     // BSRR pin set/reset bit position: enable

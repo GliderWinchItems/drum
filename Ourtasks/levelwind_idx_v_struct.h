@@ -44,7 +44,7 @@ struct LEVELWINDLC
    int32_t  Nr;         // ratio of reversal rate to sweep rate
 
    uint32_t ocidx;      // OC register increment for indexing 
-   uint32_t ocswp;      // OC register increment for test sweeping 
+   uint8_t  Nswp;       // sweep rate speed-up factor
 
    // For development, these will likely not be needed in operational code
    float    clfactor;   // Constant to compute oc duration at CL = 100.0

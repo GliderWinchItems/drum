@@ -66,6 +66,15 @@
 (8) CP PB state: Prep (CP toggles freeze of CL setting)
 */
 
+// LW ISR mode definitions. Lower nibble reserved for sub-states
+#define LW_ISR_OFF    0 << 4
+#define LW_ISR_MANUAL 1 << 4
+#define LW_ISR_INDEX  2 << 4
+#define LW_ISR_SWEEP  3 << 4
+#define LW_ISR_ARREST 4 << 4
+#define LW_ISR_TRACK  5 << 4
+#define LW_ISR_LOS    6 << 4
+
 #define NUMCANMSGSLEVELWIND 1  // Number of CAN msgs levelwind sends
 
 struct LEVELWINDDBGBUF

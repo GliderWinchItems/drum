@@ -469,7 +469,7 @@ uint8_t levelwind_items_sweep_case(void)
 
    if (p->velaccum.s32 == 0)
    {
-      p->ocinc = p->lc.ocswp;  // speed up interrupt rate for test sweep
+      p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
    }
 
    if (p->sw[LIMITDBOUTSIDE].flag1)

@@ -84,27 +84,111 @@ extern CAN_HandleTypeDef hcan1;
 
 	for (;;)
 	{
-		/* Wait for notifications */
+		/* Wait for notifications */      
 		xTaskNotifyWait(0,noteuse, &noteval, portMAX_DELAY);
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
+
 		if ((noteval & LEVELWINDSWSNOTEBITISR) != 0)
 		{ // Here levelwind_items.c triggered the ETH_IRQHandler
 			noteuse |= LEVELWINDSWSNOTEBITISR;
-dbgEth += 1;
+         dbgEth += 1;
+
+      /* Code here to figure out which ISR initated the notification and any preliminary
+            processing. It  is possible that a switch statement for each ISR would be used.  */   
+              
+         switch (p->lw_state & 0xF0)   // deal with ISR notification based on lw_state
+         {
+            case (LW_OFF & 0xF0):
+            {
+               break;
+            }
+
+            case (LW_OVERRUN & 0xF0):
+            {  
+               break;
+            }         
+
+            case (LW_MANUAL & 0xF0):
+            { 
+               break;
+            }
+
+            case (LW_CENTER & 0xF0):
+            {
+               break;
+            }
+
+            case (LW_INDEX & 0xF0):
+            {
+               break;
+            }
+
+            case (LW_TRACK & 0xF0):
+            {
+               break;
+            }
+
+            case (LW_LOS & 0xF0):
+            {
+               break;
+            }
+         }               
 		}
+
+
 		if ((noteval & LEVELWINDSWSNOTEBITCAN1) != 0) 
 		{ // CAN:  CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
 		    // Received CAN msg with Control Lever position, direction and enable bits 
 			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
 			noteuse |= LEVELWINDSWSNOTEBITCAN1;
-		}	
+
+         /* Code here to figure out which CAN message came in and what to extract from 
+            payload(s)   */
+
+         switch (p->lw_state & 0xF0)   // deal with CAN notification based on lw_state
+         {
+            case (LW_OFF & 0xF0):
+            {
+               break;
+            }
+
+            case (LW_OVERRUN & 0xF0):
+            {  
+               break;
+            }         
+
+            case (LW_MANUAL & 0xF0):
+            {
+               break;
+            }
+
+            case (LW_CENTER & 0xF0):
+            {
+               break;
+            }
+
+            case (LW_INDEX & 0xF0):
+            {
+               break;
+            }
+
+            case (LW_TRACK & 0xF0):
+            {
+               break;
+            }
+
+            case (LW_LOS & 0xF0):
+            {
+               break;
+            }
+         }               
+      }
+
 		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
 		{ // Software timer #1: Send heartbeat
 			levelwind_items_CANsendHB();
 			noteuse |= LEVELWINDSWSNOTEBITSWT1;
 		}
-
-	/* =========== States go here ============ */
 
 	}
 }
