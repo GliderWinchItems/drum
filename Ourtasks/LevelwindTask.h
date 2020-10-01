@@ -42,14 +42,23 @@
 #define LMOUT_port GPIOE       // Limit switch outside
 #define LMOUT_pin  GPIO_PIN_10 // Limit switch outside
 
-// Super-state definitions. Lower nibble reserved for sub-states
+// LW state machine  definitions. Lower nibble reserved for sub-states
 #define LW_OFF    0 * 16
 #define LW_MANUAL 1 * 16
-#define LW_INDEX  2 * 16
-#define LW_SWEEP  3 * 16
-#define LW_ARREST 4 * 16
-#define LW_TRACK  5 * 16 
-#define LW_LOS    6 * 16 
+#define LW_CENTER 2 * 16
+#define LW_INDEX  3 * 16
+#define LW_TRACK  4 * 16 
+#define LW_LOS    5 * 16 
+
+// LW mode definitions. Lower nibble reserved for sub-states
+#define LW_ISR_OFF    0 * 16
+#define LW_ISR_MANUAL 1 * 16
+#define LW_ISR_INDEX  2 * 16
+#define LW_ISR_SWEEP  3 * 16
+#define LW_ISR_ARREST 4 * 16
+#define LW_ISR_TRACK  5 * 16 
+#define LW_ISR_LOS    6 * 16 
+
 
 #define NUMCANMSGSLEVELWIND 1  // Number of CAN msgs stepper sends
 enum cididx
@@ -93,12 +102,14 @@ struct LEVELWINDFUNCTION
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
 
-   uint8_t  lw_state;     // level-wind states. defined above
-   uint8_t  ocicbit;      //
-   uint8_t  ocicbit_prev; //
+   uint8_t  lw_state;   // level-wind states
+   uint8_t  lw_mode;    // levvel-wind ISR mode
+   uint8_t  lw_indexed; // indexed status     
+   uint8_t  ocicbit;       
+   uint8_t  ocicbit_prev;  
 
-   struct STEPPERSWCONTACT ctk[6]; // Measured switch contact open/close posaccum
-   struct EXTISWITCHSTATUS sw[6]; // Limit & overrun switches
+   struct STEPPERSWCONTACT ctk[6];  // Measured switch contact open/close posaccum
+   struct EXTISWITCHSTATUS sw[6];   // Limit & overrun switches
    uint16_t swbits;     // Port E switch bits (10:15)
 
    // debug and characterization, potentially removable for operational code

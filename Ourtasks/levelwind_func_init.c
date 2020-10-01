@@ -98,14 +98,13 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->drbit = p->drbit_prev = 0;    // Drum direction bit
    p->hbctr      = 0;
    
-   p->ocinc      = p->lc.ocidx;     // initialize to indexing increment
    p->dtwmin     = 0x7fffffff;
-   
-
+ 
    // for development;these will likely not be in operational code
-   p->ocfauxinc      = 8400000;   // Default 1/10 sec duration
+   p->ocfauxinc  = 8400000;   // Default 1/10 sec duration
    p->cltimectr  = 0;
-   p->lw_state = LW_INDEX;   // temporary until way to change states is implemented
+   p->ocinc      = p->lc.ocidx;     // initialize to indexing increment
+   p->lw_mode = LW_ISR_INDEX;  // temporary until way to change states is implemented
    /* Convert levelwind_idx_v_struct times to timer ticks. */
    p->keepalive_k = (p->lc.ka_levelwind_t); // keep-alive timeout (timeout delay ms)
 

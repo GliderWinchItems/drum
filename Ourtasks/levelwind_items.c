@@ -277,9 +277,9 @@ void levelwind_items_TIM2_IRQHandler(void)
 
       /* These encoder input capture or output compare interrupts do not drive the levelwind
          during indexing, sweeping, moving, and off states,  */
-      switch (p->lw_state & 0xF0)   // deal with interrupts based on lw_state msn
+      switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode msn
       {
-         case (LW_TRACK & 0xF0):
+         case (LW_ISR_TRACK & 0xF0):
          {
             /* code here to check if LOS has occured. if so, switch to LOS recovery
                state. */
@@ -288,7 +288,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             break;
          }
 
-         case (LW_LOS & 0xF0):
+         case (LW_ISR_LOS & 0xF0):
          {            
             // code here looking for limit switch clousure to re-index on
             // then switch back to tracking state 
@@ -307,22 +307,22 @@ void levelwind_items_TIM2_IRQHandler(void)
       // Duration increment computed from CL CAN msg (during development)
       pT2base->CCR1 += p->ocinc; // Schedule next indexing interrupt
      
-      switch (p->lw_state & 0xF0)   // deal with interrupts based on lw_state
+      switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode
       {
-         case (LW_MANUAL & 0xF0):
+         case (LW_ISR_MANUAL & 0xF0):
          {
             // code to manually move the mechanism based on CP CL and direction values
             // a variation may be employed to center the indexed LW to the drum center
             break;
          }
 
-         case (LW_INDEX & 0xF0):
+         case (LW_ISR_INDEX & 0xF0):
          {  
             emulation_run = levelwind_items_index_case();
             break;
          }         
 
-         case (LW_SWEEP & 0xF0):
+         case (LW_ISR_SWEEP & 0xF0):
          {  
             /* code here testing limit switches in operational code and characterizing  
             their behavior during development. If needed, this mode can be used for
@@ -331,7 +331,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             break;
          }
 
-         case (LW_ARREST & 0xF0):
+         case (LW_ISR_ARREST & 0xF0):
          {
             emulation_run = levelwind_items_arrest_case();
             break;
@@ -449,7 +449,7 @@ uint8_t levelwind_items_index_case(void)
    {
       p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000);
       p->posaccum_prev = p->posaccum.s16[1];
-      p->lw_state = LW_SWEEP; // move to sweep state
+      p->lw_mode = LW_ISR_SWEEP; // move to sweep state
 #if LEVELWINDDEBUG
       p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing
 #endif      
@@ -474,7 +474,7 @@ uint8_t levelwind_items_sweep_case(void)
 
    if (p->sw[LIMITDBOUTSIDE].flag1)
    {
-      p->lw_state = LW_ARREST;   
+      p->lw_mode = LW_ISR_ARREST;   
    }
    
    return(1);
@@ -493,7 +493,7 @@ uint8_t levelwind_items_arrest_case(void)
    // transition to off state on completion   
    if (p->velaccum.s32 == 0)
    {
-      p->lw_state = LW_TRACK;
+      p->lw_mode = LW_ISR_TRACK;
       return (0);
    }
    else
