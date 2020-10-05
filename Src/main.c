@@ -337,8 +337,7 @@ int main(void)
 
   /* Brake task */
   Thrdret = xBrakeTaskCreate(1); // (arg) = priority
-  if (Thrdret == NULL) morse_trap(2162); 
-
+  if (Thrdret == NULL) morse_trap(2163); 
 
 	/* Further initialization of mailboxes takes place when tasks start */
 

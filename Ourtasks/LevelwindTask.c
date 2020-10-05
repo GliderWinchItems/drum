@@ -135,15 +135,18 @@ extern CAN_HandleTypeDef hcan1;
          }               
 		}
 
+		if ((noteval & LEVELWINDSWSNOTEBITCAN2) != 0) 
+		{ // CAN:  'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
+			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
+			noteuse |= LEVELWINDSWSNOTEBITCAN2;
+
+		}
 
 		if ((noteval & LEVELWINDSWSNOTEBITCAN1) != 0) 
 		{ // CAN:  CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
 		    // Received CAN msg with Control Lever position, direction and enable bits 
 			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
 			noteuse |= LEVELWINDSWSNOTEBITCAN1;
-
-         /* Code here to figure out which CAN message came in and what to extract from 
-            payload(s)   */
 
          switch (p->lw_state & 0xF0)   // deal with CAN notification based on lw_state
          {
@@ -182,7 +185,7 @@ extern CAN_HandleTypeDef hcan1;
                break;
             }
          }               
-      }
+        }
 
 		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
 		{ // Software timer #1: Send heartbeat

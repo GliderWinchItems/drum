@@ -46,7 +46,6 @@
 #define LMOUT_pin  GPIO_PIN_10 // Limit switch outside
 
 /* CAN msg: cid_drum_tst_stepcmd: payload[0] bit definitions. */
-/* CAN msg: cid_drum_tst_stepcmd: payload[0] bit definitions. */
 #define DRBIT 0x01 // (1) Bit mask Direction output pin: 0 = low; 1 = high
 #define ENBIT 0x02 // (2) Bit mask Enable output pin: 0 = low; 1 = high
 #define LMBIT 0x04 // (3) Bit mask Limit switch simulation
@@ -74,8 +73,6 @@
 #define LW_ISR_ARREST 4 << 4
 #define LW_ISR_TRACK  5 << 4
 #define LW_ISR_LOS    6 << 4
-
-#define NUMCANMSGSLEVELWIND 1  // Number of CAN msgs levelwind sends
 
 struct LEVELWINDDBGBUF
 {

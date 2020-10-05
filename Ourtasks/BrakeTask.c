@@ -1,6 +1,6 @@
 /******************************************************************************
 * File Name          : BrakeTask.c
-* Date First Issued  : 09/15/2020
+* Date First Issued  : 10/02/2020
 * Description        : Brake function w STM32CubeMX w FreeRTOS
 *******************************************************************************/
 
@@ -16,16 +16,31 @@
 #include "drum_items.h"
 #include "BrakeTask.h"
 
+extern TIM_HandleTypeDef htim13;
 
+
+/* Struct with many things for the drum function. */
+struct BRAKEFUNCTION brakefunction;
 
 osThreadId BrakeTaskHandle;
 
+/* *************************************************************************
+ * static void brake_init(struct BRAKEFUNCTION* p);
+ *	@brief	: Some initialization before endless loop starts
+ * *************************************************************************/
+static void brake_init(void)
+{
+	HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);  
+	return;
+}
 /* *************************************************************************
  * void StartBrakeTask(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
 void StartBrakeTask(void const * argument)
 {
+	brake_init();
+
 	for (;;)
 	{
 		osDelay(10);

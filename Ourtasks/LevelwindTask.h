@@ -28,6 +28,7 @@
 #define LEVELWINDSWSNOTEBITISR       (1<<16)    // Stepper ISR
 #define LEVELWINDSWSNOTEBITCAN1      (1<<17)    // CAN msg: Pushbuttons & CL position
 #define LEVELWINDSWSNOTEBITSWT1      (1<<18)    // Software timer #1
+#define LEVELWINDSWSNOTEBITCAN2      (1<<19)    // CAN msg: Launch state
 
 
 /* Port and pin numbers for stepper controller. */
@@ -51,7 +52,7 @@
 #define LW_TRACK     5 << 4 
 #define LW_LOS       6 << 4 
 
-#define NUMCANMSGSLEVELWIND 1  // Number of CAN msgs stepper sends
+#define NUMCANMSGSLEVELWIND 2  // Number of CAN msgs levelwind sends
 enum cididx
 {
    CID_LEVELWIND_HB 
@@ -134,6 +135,7 @@ struct LEVELWINDFUNCTION
 	/* Pointers to incoming CAN msg mailboxes. */
 	struct MAILBOXCAN* pmbx_cid_gps_sync;        // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
 	struct MAILBOXCAN* pmbx_cid_drum_tst_stepcmd;// CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
+   struct MAILBOXCAN* pmbx_cid_mc_state; //'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
 
 	/* CAN msgs */
 	struct CANTXQMSG canmsg[NUMCANMSGSLEVELWIND];

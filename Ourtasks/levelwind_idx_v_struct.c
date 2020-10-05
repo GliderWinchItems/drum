@@ -7,6 +7,7 @@
 
 #include "levelwind_idx_v_struct.h"
 #include "SerialTaskReceive.h"
+#include "../../../GliderWinchCommons/embed/svn_common/trunk/db/gen_db.h"
 
 /* *************************************************************************
  * void levelwind_idx_v_struct_hardcode_params(truct LEVELWINDLC* p);
@@ -53,7 +54,8 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    	// We receive: Logger/gps 
 //	p->cid_gps_sync     = 0x00400000; // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
 	// We receive stepper repo: update100K sends
-	p->cid_drum_tst_stepcmd	=  0xE4600000; // CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position:
+	p->cid_drum_tst_stepcmd	=  CANID_TST_STEPCMD; //0xE4600000; // CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position:
+   p->cid_mc_state = CANID_MC_STATE; //'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
 
 	return;
 }

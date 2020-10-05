@@ -1,4 +1,4 @@
-/* File: encodercablebox.scad
+ /* File: encodercablebox.scad
  * Box to hold perfboard with encoder cable-to-6-pin Telco cable w perfboard pullups.
  * Author: deh
  * Latest edit: 202009192020
@@ -43,6 +43,10 @@
  
  frad = 4; // fillet radius
 phole = 2.9; // Post screw hole diameter 
+
+telwid = 7;    // Telco cable width
+telthk = 2.4;  // Telco cable thickness
+ 
 
  module post_fillet(r,zzz)
  {
@@ -140,11 +144,28 @@ edia = 4.6; // encoder cable dia
                 rotate([0,90,0])
                 cylinder(d=edia,h=20, center=true);
              translate([boxx-5,(boxy-boxwall)/2+edia/2,boxz+5-edia/2])
-                cube ([20,edia,10],center=true);
+                cube ([20,edia,10],center=true);    
+    
+            // Telco cable
+            translate([0,(boxy-boxwall)/2+telwid/2,boxz+2])
+            cube([10,telwid,10],center=true);
              
          }
      }
+     translate([boxx-.5,(boxy-boxwall)/2+edia/2,boxz-edia/2])
+      rotate([180,0,0])
+       ring(edia-1);
+     
+    p1=.5;
+    p2=.5;
+    translate([1.0,(boxy-boxwall)/2,boxz-3])
+     rotate([0,180,0])
+     rotate([-90,0,0])
+      linear_extrude(telwid)
+       polygon(points=[[0,0],[p1,0],[p1/2,p2]]);
  }
+   
+
  cvrz   = 4;      // Cover thickness
  cvrofx = 10 + boxwall*.25; // pushbutton window offset
  cvrofy = 25 + boxwall*.25; // pushbutton window offset
@@ -219,11 +240,18 @@ edia = 4.6; // encoder cable dia
      sc = 0.75;
      
      
-     translate([0,0,0])
-     rotate([0,90,0])
-     rotate_extrude(convexity = 10)
-        translate([wdia*.5, 0, 0])
-            polygon(points=[[0,0],[cos(60)*sc,0.5*sc],[cos(60)*sc,-0.5*sc]]);
+    translate([0,0,0])
+    rotate([180,0,0])
+     difference()
+     {
+        rotate([0,90,0])
+         rotate_extrude(convexity = 10)
+          translate([wdia*.5, 0, 0])
+           polygon(points=[[0,0],[cos(60)*sc,0.5*sc],[cos(60)*sc,-0.5*sc]]);
+         
+        translate([0,0,5])
+         cube([10,10,10],center = true);
+     }
  }
  //ring(edia);
  
@@ -249,12 +277,30 @@ edia = 4.6; // encoder cable dia
         }    
     }
  }
-module encodercablecvr()
-{
-   translate([0,0,0])
-    cube([boxwall,edia,4],center=true);
-} 
 
+module telcotab(a)
+ {
+     translate(a)
+     //difference()
+     {
+         union()
+         {
+            translate([0,0,0])
+            cube([3,telwid,2],center=true);
+p1=.5;
+p2=.5;
+             translate([-.5,-telwid*0.5,-1])
+             rotate([-90,0,0])
+             linear_extrude(telwid)
+             polygon(points=[[0,0],[p1,0],[p1/2,p2]]);
+         }
+         union()
+         {
+  //          translate([0,0,0])
+//            cube([3,7,10],center=true);
+         }
+     }
+ }
  
 chole = 3.2;
  module cover(a)
@@ -287,15 +333,14 @@ chole = 3.2;
              rotate([0,0,180]) 
                 postf([0,0,0],cvrz,chole);  
   
-cvrcabletab([0,0,0]);  
-cvrcabletabW([0,0,0]);
+             cvrcabletab([0,0,0]);  
+             cvrcabletabW([0,0,0]);
 
              translate([boxx-cvrdel*.5,boxy*.5,-edia1*.5])
              ring(edia-1);
-
-
-            
-                
+             
+             telcotab([cvrdel*.5,boxy*.5,0]);
+       
              }
              union()
              {
