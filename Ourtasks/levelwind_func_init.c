@@ -88,7 +88,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    // Position accumulator initial value. Reference paper for the value employed.
    // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
    p->posaccum.s32 = 0;   
-   p->posaccum_prev = p->posaccum.s32;
+   p->pos_prev = p->posaccum.s32;
    // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
    // p->Lminus32 = p->lc.Lminus << 16;
    p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;

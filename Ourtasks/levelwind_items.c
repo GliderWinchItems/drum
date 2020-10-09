@@ -387,9 +387,9 @@ void levelwind_items_TIM2_IRQHandler(void)
 #endif
          
       /* When accumulator upper 16b changes generate a levelwind pulse. */
-      if ((p->posaccum.s16[1]) != (p->posaccum_prev))
+      if ((p->posaccum.s16[1]) != (p->pos_prev))
       { // Here carry/borrow from low 16b to high 16b
-         p->posaccum_prev = p->posaccum.s16[1];
+         p->pos_prev = p->posaccum.s16[1];
 
         // set direction based on sign of Velocity integrator
          Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
@@ -448,7 +448,7 @@ uint8_t levelwind_items_index_case(void)
    if (p->sw[LIMITDBINSIDE].flag1) // limit switch has activated
    {
       p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000);
-      p->posaccum_prev = p->posaccum.s16[1];
+      p->pos_prev = p->posaccum.s16[1];
       p->lw_mode = LW_ISR_SWEEP; // move to sweep state
 #if LEVELWINDDEBUG
       p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing

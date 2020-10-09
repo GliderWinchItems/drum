@@ -93,8 +93,12 @@ extern CAN_HandleTypeDef hcan1;
 			noteuse |= LEVELWINDSWSNOTEBITISR;
          dbgEth += 1;
 
-      /* Code here to figure out which ISR initated the notification and any preliminary
-            processing. It  is possible that a switch statement for each ISR would be used.  */   
+         /* Code here to figure out which ISR initated the notification 
+            and accordingly do  any preliminary processing. It  is possible 
+            that a switch statement for each ISR would be used. Also, check
+            if an averrun switch has activated and do a state change to 
+            MANUAL instead of repeating that code everywhere. Similar check
+            may be appropriate for Off state */   
               
          switch (p->lw_state & 0xF0)   // deal with ISR notification based on lw_state
          {
@@ -136,56 +140,66 @@ extern CAN_HandleTypeDef hcan1;
 		}
 
 		if ((noteval & LEVELWINDSWSNOTEBITCAN2) != 0) 
-		{ // CAN:  'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
-			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
+		{  // CAN:  'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
+			// clupdate( ) should not be called. The MC state should be extracted from message
+         levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
 			noteuse |= LEVELWINDSWSNOTEBITCAN2;
 
 		}
 
 		if ((noteval & LEVELWINDSWSNOTEBITCAN1) != 0) 
-		{ // CAN:  CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
+		{   // CAN:  CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
 		    // Received CAN msg with Control Lever position, direction and enable bits 
 			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
 			noteuse |= LEVELWINDSWSNOTEBITCAN1;
 
          switch (p->lw_state & 0xF0)   // deal with CAN notification based on lw_state
          {
+            
+
             case (LW_OFF & 0xF0):
             {
+               // if Track or Center is selected on CP move to appropriate state
                break;
             }
 
             case (LW_OVERRUN & 0xF0):
             {  
+               // this handled by switch changes?
                break;
             }         
 
             case (LW_MANUAL & 0xF0):
             {
+               // this handled by switch changes alone?
                break;
             }
 
             case (LW_CENTER & 0xF0):
             {
+               // only allowed in Retrieve state
                break;
             }
 
             case (LW_INDEX & 0xF0):
             {
+               // code here sequences through indexing process
                break;
             }
 
             case (LW_TRACK & 0xF0):
             {
+               // code here monitors MC and CP state to move to appropriate state
                break;
             }
 
             case (LW_LOS & 0xF0):
             {
+               // exit from LOS handled by switches or Tim2 ISR?
                break;
             }
          }               
-        }
+      }
 
 		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
 		{ // Software timer #1: Send heartbeat

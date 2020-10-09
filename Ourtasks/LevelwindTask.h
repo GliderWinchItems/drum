@@ -44,13 +44,13 @@
 #define LMOUT_pin  GPIO_PIN_10 // Limit switch outside
 
 // LW state machine  definitions. Lower nibble reserved for sub-states
-#define LW_OFF       0 << 4
-#define LW_OVERRUN   1 << 4
-#define LW_MANUAL    2 << 4
-#define LW_CENTER    3 << 4
-#define LW_INDEX     4 << 4
-#define LW_TRACK     5 << 4 
-#define LW_LOS       6 << 4 
+#define LW_OFF       (0 << 4)
+#define LW_OVERRUN   (1 << 4)
+#define LW_MANUAL    (2 << 4)
+#define LW_CENTER    (3 << 4)
+#define LW_INDEX     (4 << 4)
+#define LW_TRACK     (5 << 4)
+#define LW_LOS       (6 << 4)
 
 #define NUMCANMSGSLEVELWIND 2  // Number of CAN msgs levelwind sends
 enum cididx
@@ -74,10 +74,11 @@ struct LEVELWINDFUNCTION
    union    PAYFLT   pf; // For extracting float from payload
    union    PAYFLT   posaccum;  // Stepper position accumulator
    union    PAYFLT   velaccum;  // Stepper velocity accumulator
+   int16_t  pos_prev;   // Previous posaccum integral portion 
    int32_t  Lplus32;    // 32-bit extended Lplus
    int32_t  Lminus32;   // 32-bit extended Lminus
    int32_t  Ks;         // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
-   int32_t  rvrsldx;     // Reversal Distance
+   int32_t  rvrsldx;    // Reversal Distance
    float    speedcmdf;  // Speed command (float)
    float    focdur;     // Temp for computer inverse of CL position
    float    clpos;      // CL position extracted from CAN msg
@@ -89,27 +90,28 @@ struct LEVELWINDFUNCTION
    uint32_t drflag;     // BSRR pin set/reset bit position: direction
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
    uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
-   int16_t  posaccum_prev;  // Previous posaccum
-   uint8_t  levelwindstatus;  // Reserved for CAN msg
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
 
+   uint8_t  levelwindstatus;  // Reserved for levelwind status CAN msg
    uint8_t  lw_state;   // level-wind states
-   uint8_t  lw_mode;    // levvel-wind ISR mode
-   uint8_t  lw_indexed; // indexed status     
+   uint8_t  lw_mode;    // level-wind ISR mode
+   uint8_t  lw_indexed; // indexed status 
+   uint8_t  lw_overrun; // overrun status
+   uint8_t  mc_state;   // master controller state    
    uint8_t  ocicbit;       
    uint8_t  ocicbit_prev;  
 
-   struct STEPPERSWCONTACT ctk[6];  // Measured switch contact open/close posaccum
-   struct EXTISWITCHSTATUS sw[6];   // Limit & overrun switches
+   struct   STEPPERSWCONTACT ctk[6];  // Measured switch contact open/close posaccum
+   struct   EXTISWITCHSTATUS sw[6];   // Limit & overrun switches
    uint16_t swbits;     // Port E switch bits (10:15)
 
    // debug and characterization, potentially removable for operational code
    uint32_t dtwentry;   // DTW timer upon ISR entry
-   int32_t dtwdiff;    // DTW timer minus entry upon ISR exit
-   int32_t dtwmax;     // DTW difference max
-   int32_t dtwmin;     // DTW difference min
+   int32_t  dtwdiff;    // DTW timer minus entry upon ISR exit
+   int32_t  dtwmax;     // DTW difference max
+   int32_t  dtwmin;     // DTW difference min
    uint32_t intcntr;    // interrupt counter
    uint32_t ocfauxinc;  // OC register increment for CL faux encoder  
 
@@ -132,20 +134,20 @@ struct LEVELWINDFUNCTION
    uint32_t tim5cnt_offset;
 #endif
 
-	/* Pointers to incoming CAN msg mailboxes. */
-	struct MAILBOXCAN* pmbx_cid_gps_sync;        // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
-	struct MAILBOXCAN* pmbx_cid_drum_tst_stepcmd;// CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
+   /* Pointers to incoming CAN msg mailboxes. */
+   struct MAILBOXCAN* pmbx_cid_gps_sync;        // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
+   struct MAILBOXCAN* pmbx_cid_drum_tst_stepcmd;// CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
    struct MAILBOXCAN* pmbx_cid_mc_state; //'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
 
-	/* CAN msgs */
-	struct CANTXQMSG canmsg[NUMCANMSGSLEVELWIND];
+   /* CAN msgs */
+   struct CANTXQMSG canmsg[NUMCANMSGSLEVELWIND];
 };
 
 /* *************************************************************************/
  osThreadId xLevelwindTaskCreate(uint32_t taskpriority);
-/* @brief	: Create task; task handle created is global for all to enjoy!
- * @param	: taskpriority = Task priority (just as it says!)
- * @return	: LevelwindTaskHandle
+/* @brief   : Create task; task handle created is global for all to enjoy!
+ * @param   : taskpriority = Task priority (just as it says!)
+ * @return  : LevelwindTaskHandle
  * *************************************************************************/
 
  extern osThreadId LevelwindTaskHandle;

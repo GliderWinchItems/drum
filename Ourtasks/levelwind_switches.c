@@ -326,7 +326,7 @@ void levelwind_switches_error_check(void)
 	if ((p->swbits & OVERRUNBRIDGE) == 0)
 		alert &= ~STEPPERSWALRT00; // Sw in operational position
 	else
-		alert |= STEPPERSWALRT00; // Sw in test (bridged power) position	
+		alert |= STEPPERSWALRT00; // Sw in MANUAL (bridged power) position	
 
 	/* 1: Inside overun switch is closed. */
 	if ((p->swbits & OVERRUNSWINSIDE) != 0)
