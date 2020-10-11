@@ -134,15 +134,15 @@
 #define STOPLED_MASK       0x01
 
 #define ARMPBLED_BYTE      6
-#define ARMPBLED_BIT       0
+#define ARMPBLED_BIT       2
 #define ARMPBLED_MASK      0x01
 
 #define PREPRCRYPBLED_BYTE 6
-#define PREPRCRYPBLED_BIT  1
+#define PREPRCRYPBLED_BIT  3
 #define PREPRCRYPBLED_MASK 0x01
 
 #define BEEPER_BYTE        6
-#define BEEPER_BIT         2 
+#define BEEPER_BIT         4 
 #define BEEPER_MASK        0x01
 
 
@@ -151,7 +151,7 @@ struct CONTROLPANELSTATE
    uint8_t init; // struct is initialized:1, updated:0 from CAN message   
 
    /* control lever  */
-   float    clpos;   // control lever position
+   float    clpos;   // control lever position (0.0 to 100.0 percent)
 
    /* input signals  */
    // general assumption is all are debounced by control panel function 
@@ -170,7 +170,7 @@ struct CONTROLPANELSTATE
    // provisions for future expansions
    uint8_t  rev_fwd;       // reverse:0, forward:1 control lever action
    uint8_t  rmt_lcl;       // remote:0, local:1 operator control
-   uint8_t  active_drum;   //  1-7
+   uint8_t  active_drum;   // 1-7, 0 might signify all if needed
    uint8_t  op_drums;      // operational drums, bit mapped
    
 
