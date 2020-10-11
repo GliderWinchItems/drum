@@ -15,6 +15,7 @@
 #include "levelwind_switches.h"
 #include "levelwind_idx_v_struct.h"
 #include "levelwind_items.h"
+#include "controlpanel_items.h"
 
 /* Stepper switch bit positions */
 #define LEVELWINDSWSNOTEBITLIMINDB   (1<<LIMITDBINSIDE)  
@@ -62,7 +63,7 @@ union PAYFLT
 {
    float f;
    uint8_t u8[4];
-   uint16_t u16[4];
+   uint16_t u16[2];
    uint32_t u32;
    int32_t  s32;
    int16_t  s16[2];
@@ -90,7 +91,6 @@ struct LEVELWINDFUNCTION
    uint32_t drflag;     // BSRR pin set/reset bit position: direction
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
    uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
-   uint8_t  pay0;       // canmsg.cd.uc[0] saved
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
 
@@ -114,6 +114,7 @@ struct LEVELWINDFUNCTION
    int32_t  dtwmin;     // DTW difference min
    uint32_t intcntr;    // interrupt counter
    uint32_t ocfauxinc;  // OC register increment for CL faux encoder  
+   uint8_t  pay0;       // canmsg.cd.uc[0] saved
 
    uint32_t keepalive_k;  // keep-alive timeout (timeout delay timer ticks) 
 
@@ -155,3 +156,15 @@ struct LEVELWINDFUNCTION
 
 #endif
 
+/* *************************************************************************/
+ void levelwind_task_cp_state_update();
+/* @brief   :  update the CP state struct from CP state CAN message
+ * @param   :  pcp = pointer to CP state struct
+ * *************************************************************************/
+
+ /* *************************************************************************/
+ void levelwind_task_cp_state_init();
+/* @brief   :  function to initialize the state struct before first CAN
+ *             message
+ * @param   :  pcp = pointer to CP state struct
+ * *************************************************************************/
