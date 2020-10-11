@@ -224,31 +224,31 @@ void levelwind_task_cp_state_init(void)
    
    struct CONTROLPANELSTATE* pcp = &cp_state;         // Convenience pointer
 
-   pcp->init = INITIALIZED;
+   pcp->init = 0;
 
    // initially assumed input states
    pcp->clpos = 0.0f;
-   pcp->safe_active = SAFE;
-   pcp->armed = 0;
-   pcp->retrieve_prep = 0;     
+   pcp->safe_active = 0;
+   pcp->arm = 0;
+   pcp->rtrv_prep = 0;     
    pcp->zero_tension = 0;  
    pcp->zero_odometer = 0;     
    pcp->brake = 0;  
    pcp->guillotine = 0;     
-   pcp->emergency = NORMAL;  
+   pcp->emergency = 0;  
    pcp->lw_mode = 0;     
    pcp->lw_index = 0;
-   pcp->reverse = FORWARD;     
-   pcp->local_remote = LOCAL;  
-   pcp->active_drum = 1;         // assumes single drum system     
-   pcp->operating_drums = 0x01;   // REVIST assumes bit 0 corresponds to drum #1
+   pcp->rev_fwd = 1;     
+   pcp->rmt_lcl = 1;  
+   pcp->active_drum = 1;   // assumes single drum system     
+   pcp->op_drums = 0x01;   // assumes bit 0 corresponds to drum #1
    
    
    // initially assumed output states
    pcp->safe_led = 0;
    pcp->prep_led = 0;
    pcp->armed_led = 0;
-   pcp->grndrllrtn_led = 0;
+   pcp->grndrtn_led = 0;
    pcp->ramp_led = 0;
    pcp->climb_led = 0;
    pcp->recovery_led = 0;
@@ -256,7 +256,7 @@ void levelwind_task_cp_state_init(void)
    pcp->abort_led= 0;
    pcp->stop_led = 0;
    pcp->arm_pb_led = 0;
-   pcp->prep_recovery_led = 0;
+   pcp->prep_rcvry_led = 0;
    pcp->beeper = 0;
 
    return;  
@@ -272,51 +272,122 @@ void levelwind_task_cp_state_update(struct CANRCVBUF* pcan)
 {
    struct CONTROLPANELSTATE* pcp = &cp_state;         // Convenience pointer
 
+   
+   #define  CL       1  // turn on control lever position updates
+   #define  INPUTS   1  // turn on input updates
+   #define  OUTPUTS  1  // turn on output updates
 
+   /* This does a full update of the control panel state struct. If speed is 
+      important, only the items used in the function could be extracted by 
+      simply commenting out unneeded updates. Order doesn't matter so unused
+      could be grouped in a #if 0 block to preserve option to restore.  */ 
+
+#if CL
    /* Extract and convert CL position from payload */
    pcp->clpos = pcan->cd.uc[SAFEACTIVE_BYTE] * CLPOS_SCL;
+#endif
 
+#if INPUTS
+   /* extract switch and pb called from StartLevelwindTask*/
+   // the below produces 0/1 logicals. a slight speed-up could be attained
+   // if 0/not-0 logicals were used eliminating right shifts for 
+   // the single bit items. most of the operations shown are acutally
+   // completed at compile time.   
 
+   pcp->safe_active = (pcan->cd.uc[SAFEACTIVE_BYTE] 
+      & (SAFEACTIVE_MASK << SAFEACTIVE_BIT)) >> SAFEACTIVE_BIT;
 
-   /* extract switch and pb StartLevelwindTask*/
-   pcp->safe_active = (pcan->cd.uc[SAFEACTIVE_BYTE] & SAFEACTIVE_MASK) 
-      ? ACTIVE:SAFE;
+   pcp->arm = (pcan->cd.uc[ARMED_BYTE] 
+      & (ARMED_MASK << ARMED_BIT)) >> ARMED_BIT;
 
-   pcp->armed = (pcan->cd.uc[ARMED_BYTE] & ARMED_MASK)
-      ? 1:0;
+   pcp->rtrv_prep = (pcan->cd.uc[RTRVPREP_BYTE] 
+      & (RTRVPREP_MASK << RTRVPREP_BIT)) >> RTRVPREP_BIT;
 
-   pcp->retrieve_prep = (pcan->cd.uc[RETRIEVEPREP_BYTE] & RETRIEVEPREP_MASK) 
-      ? 1:0;
+   pcp->zero_tension = (pcan->cd.uc[ZEROTEN_BYTE] 
+      & (ZEROTEN_MASK << ZEROTEN_BIT)) >> ZEROTEN_BIT;
 
-   pcp->zero_tension = (pcan->cd.uc[ZEROTEN_BYTE] & ZEROTEN_MASK) 
-      ? 1:0;
+   pcp->zero_odometer = (pcan->cd.uc[ZEROODOM_BYTE] 
+      & (ZEROODOM_MASK << ZEROODOM_BIT)) >> ZEROODOM_BIT;
 
-   pcp->zero_odometer = (pcan->cd.uc[ZEROODOM_BYTE] & ZEROODOM_MASK)
-      ? 1:0;
+   pcp->brake = (pcan->cd.uc[BRAKE_BYTE] 
+      & (BRAKE_MASK << BRAKE_BIT)) >> BRAKE_BIT;
 
-   pcp->brake = (pcan->cd.uc[BRAKE_BYTE] & BRAKE_MASK)
-      ? 1:0;
+   pcp->guillotine = (pcan->cd.uc[GUILLOTINE_BYTE] 
+      & (GUILLOTINE_MASK << GUILLOTINE_BIT)) >> GUILLOTINE_BIT;
 
-   pcp->guillotine = (pcan->cd.uc[GUILLOTINE_BYTE] & GUILLOTINE_MASK) 
-      ? 1:0;
+   pcp->emergency = (pcan->cd.uc[EMERGENCY_BYTE] 
+      & (EMERGENCY_MASK << EMERGENCY_BIT)) >> EMERGENCY_BIT;
 
-   pcp->emergency = (pcan->cd.uc[EMERGENCY_BYTE] & EMERGENCY_MASK) 
-      ? EMERGENCY:NORMAL;
+   pcp->lw_mode = (pcan->cd.uc[LWMODE_BYTE] 
+      & (LWMODE_MASK << LWMODE_BIT)) >> LWMODE_BIT;
 
-   pcp->lw_mode = pcan->cd.uc[LWMODE_BYTE] & LWMODE_MASK;
+   pcp->lw_index = (pcan->cd.uc[LWINDEX_BYTE] 
+      & (LWINDEX_MASK << LWINDEX_BIT)) >> LWINDEX_BIT;
 
-   pcp->lw_index = (pcan->cd.uc[LWINDEX_BYTE] & LWINDEX_MASK) 
-      ? 1:0;
-
-   pcp->reverse = (pcan->cd.uc[REVERSE_BYTE] & REVERSE_MASK) 
-      ? 1:0;
+   pcp->rev_fwd = (pcan->cd.uc[REVFWD_BYTE] 
+      & (REVFWD_MASK << REVFWD_BIT)) >> REVFWD_BIT;
    
-   pcp->local_remote = (pcan->cd.uc[LOCALREMOTE_BYTE] & LOCALREMOTE_MASK) 
-      ? REMOTE:LOCAL;
+   pcp->rmt_lcl = (pcan->cd.uc[RMTLCL_BYTE] 
+      & (RMTLCL_MASK << RMTLCL_BIT)) >> RMTLCL_BYTE;
 
-   pcp->active_drum = pcan->cd.uc[ACTIVEDRUM_BYTE] & ACTIVEDRUM_MASK;
+   pcp->active_drum = (pcan->cd.uc[ACTIVEDRUM_BYTE] 
+      & (ACTIVEDRUM_MASK << ACTIVEDRUM_BIT)) >> ACTIVEDRUM_BIT;
 
-   pcp->operating_drums = pcan->cd.uc[OPDRUMS_BYTE] & OPDRUMS_MASK;
+   pcp->op_drums = (pcan->cd.uc[OPDRUMS_BYTE] 
+      & (OPDRUMS_MASK << OPDRUMS_BIT)) >> OPDRUMS_BIT;
+#endif
+
+#if OUTPUTS
+   // output updates
+
+   pcp->safe_led = (pcan->cd.uc[SAFELED_BYTE] 
+      & (SAFELED_MASK << SAFELED_BIT)) >> SAFELED_BIT;
+
+   pcp->prep_led = (pcan->cd.uc[PREPLED_BYTE] 
+      & (PREPLED_MASK << PREPLED_BIT)) >> PREPLED_BIT;
+
+
+   pcp->armed_led = (pcan->cd.uc[ARMLED_BYTE] 
+      & (ARMLED_MASK << ARMLED_BIT)) >> ARMLED_BIT;
+   
+
+   pcp->grndrtn_led = (pcan->cd.uc[GRNDRTNLED_BYTE] 
+      & (GRNDRTNLED_MASK << GRNDRTNLED_BIT)) >> GRNDRTNLED_BIT;
+   
+
+   pcp->ramp_led = (pcan->cd.uc[RAMPLED_BYTE] 
+      & (RAMPLED_MASK << RAMPLED_BIT)) >> RAMPLED_BIT;
+   
+
+   pcp->climb_led = (pcan->cd.uc[CLIMBLED_BYTE] 
+      & (CLIMBLED_MASK << CLIMBLED_BIT)) >> CLIMBLED_BIT;
+   
+
+   pcp->recovery_led = (pcan->cd.uc[RECOVERYLED_BYTE] 
+      & (RECOVERYLED_MASK << RECOVERYLED_BIT)) >> RECOVERYLED_BIT;
+   
+
+   pcp->retrieve_led = (pcan->cd.uc[RETRIEVELED_BYTE] 
+      & (RETRIEVELED_MASK << RETRIEVELED_BIT)) >> RETRIEVELED_BIT;
+   
+
+   pcp->abort_led = (pcan->cd.uc[ABORTLED_BYTE] 
+      & (ABORTLED_MASK << ABORTLED_BIT)) >> ABORTLED_BIT;
+   
+
+   pcp->stop_led = (pcan->cd.uc[STOPLED_BYTE] 
+      & (STOPLED_MASK << STOPLED_BIT)) >> STOPLED_BIT;
+   
+
+   pcp->arm_pb_led = (pcan->cd.uc[ARMPBLED_BYTE] 
+      & (ARMPBLED_MASK << ARMPBLED_BIT)) >> ARMPBLED_BIT;
+   
+   pcp->prep_rcvry_led = (pcan->cd.uc[PREPRCRYPBLED_BYTE] 
+      & (PREPRCRYPBLED_MASK << PREPRCRYPBLED_BIT)) >> PREPRCRYPBLED_BIT;
+   
+   pcp->beeper = (pcan->cd.uc[BEEPER_BYTE] 
+      & (BEEPER_MASK << BEEPER_BIT)) >> BEEPER_BIT;
+#endif
 
    return;  
 }
