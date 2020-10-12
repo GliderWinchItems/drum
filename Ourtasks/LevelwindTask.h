@@ -71,7 +71,7 @@ union PAYFLT
 
 struct LEVELWINDFUNCTION
 {
-   struct   LEVELWINDLC lc; // Parameters for stepper
+   struct   LEVELWINDLC lc; // Parameters for level-wind function
    union    PAYFLT   pf; // For extracting float from payload
    union    PAYFLT   posaccum;  // Stepper position accumulator
    union    PAYFLT   velaccum;  // Stepper velocity accumulator
@@ -95,7 +95,7 @@ struct LEVELWINDFUNCTION
    uint8_t  drbit_prev; // Previous Direction bit
 
    uint8_t  levelwindstatus;  // Reserved for levelwind status CAN msg
-   uint8_t  lw_state;   // level-wind states
+   uint8_t  lw_state;   // level-wind present state
    uint8_t  lw_mode;    // level-wind ISR mode
    uint8_t  lw_indexed; // indexed status 
    uint8_t  lw_overrun; // overrun status

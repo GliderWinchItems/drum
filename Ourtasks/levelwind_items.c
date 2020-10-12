@@ -279,7 +279,7 @@ void levelwind_items_TIM2_IRQHandler(void)
          during indexing, sweeping, moving, and off states,  */
       switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode msn
       {
-         case (LW_ISR_TRACK & 0xF0):
+         case (LW_ISR_TRACK):
          {
             /* code here to check if LOS has occured. if so, switch to LOS recovery
                state. */
@@ -288,7 +288,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             break;
          }
 
-         case (LW_ISR_LOS & 0xF0):
+         case (LW_ISR_LOS):
          {            
             // code here looking for limit switch clousure to re-index on
             // then switch back to tracking state 
@@ -309,20 +309,20 @@ void levelwind_items_TIM2_IRQHandler(void)
      
       switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode
       {
-         case (LW_ISR_MANUAL & 0xF0):
+         case (LW_ISR_MANUAL):
          {
             // code to manually move the mechanism based on CP CL and direction values
             // a variation may be employed to center the indexed LW to the drum center
             break;
          }
 
-         case (LW_ISR_INDEX & 0xF0):
+         case (LW_ISR_INDEX):
          {  
             emulation_run = levelwind_items_index_case();
             break;
          }         
 
-         case (LW_ISR_SWEEP & 0xF0):
+         case (LW_ISR_SWEEP):
          {  
             /* code here testing limit switches in operational code and characterizing  
             their behavior during development. If needed, this mode can be used for
@@ -331,7 +331,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             break;
          }
 
-         case (LW_ISR_ARREST & 0xF0):
+         case (LW_ISR_ARREST):
          {
             emulation_run = levelwind_items_arrest_case();
             break;

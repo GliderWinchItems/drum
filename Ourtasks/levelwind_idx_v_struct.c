@@ -28,7 +28,12 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
  count = 4 -> 64/sec (if we want to approximate the logging rate)
  count = 64 -> 1/sec 
 */ 
-	p->hbct_t     = 500;   // Heartbeat ct: milliseconds between sending 
+	//    my drum should be associated with whole node and not just the
+   //    level-wind function. need to figure out where the parameters for 
+   //    the whole node should be placed       
+   p->mydrum     = 1;     
+
+   p->hbct_t      = 500;   // Heartbeat ct: milliseconds between sending 
    
    p->hbct        = 64;    // Number of swctr ticks between heartbeats
    p->Ka          = 8;     // Reversal rate

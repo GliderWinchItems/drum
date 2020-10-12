@@ -48,6 +48,7 @@ struct SWITCHPTR* psw_safeactivex; // Debugging
 void StartLevelwindTask(void const * argument)
 {
 	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+   struct CONTROLPANELSTATE* pcp = &cp_state;        // CP convienience pointer
 
 	/* A notification copies the internal notification word to this. */
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
@@ -107,37 +108,37 @@ extern CAN_HandleTypeDef hcan1;
               
          switch (p->lw_state & 0xF0)   // deal with ISR notification based on lw_state
          {
-            case (LW_OFF & 0xF0):
+            case (LW_OFF):
             {
                break;
             }
 
-            case (LW_OVERRUN & 0xF0):
+            case (LW_OVERRUN):
             {  
                break;
             }         
 
-            case (LW_MANUAL & 0xF0):
+            case (LW_MANUAL):
             { 
                break;
             }
 
-            case (LW_CENTER & 0xF0):
+            case (LW_CENTER):
             {
                break;
             }
 
-            case (LW_INDEX & 0xF0):
+            case (LW_INDEX):
             {
                break;
             }
 
-            case (LW_TRACK & 0xF0):
+            case (LW_TRACK):
             {
                break;
             }
 
-            case (LW_LOS & 0xF0):
+            case (LW_LOS):
             {
                break;
             }
@@ -147,64 +148,72 @@ extern CAN_HandleTypeDef hcan1;
 		if ((noteval & LEVELWINDSWSNOTEBITCAN2) != 0) 
 		{  // CAN:  'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
 			// clupdate( ) should not be called. The MC state should be extracted from message
-         levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
+         // levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
 			noteuse |= LEVELWINDSWSNOTEBITCAN2;
-
 		}
 
 		if ((noteval & LEVELWINDSWSNOTEBITCAN1) != 0) 
 		{   // CAN:  CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
 		    // Received CAN msg with Control Lever position, direction and enable bits 
 			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
+         // this will process the control panel state messages and above clupdate scraped
+         levelwind_task_cp_state_update(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
 			noteuse |= LEVELWINDSWSNOTEBITCAN1;
 
-         switch (p->lw_state & 0xF0)   // deal with CAN notification based on lw_state
-         {
-            
-
-            case (LW_OFF & 0xF0):
+         // check to see if this drum is enabled for operation on the control panel
+         if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
+         {  // this node is operational 
+            switch (p->lw_state & 0xF0)   // deal with CAN notification based on lw_state
             {
-               // if Track or Center is selected on CP move to appropriate state
-               break;
-            }
+               case (LW_OFF):
+               {
+                  // if Track or Center is selected on CP move to appropriate state
+                  break;
+               }
 
-            case (LW_OVERRUN & 0xF0):
-            {  
-               // this handled by switch changes?
-               break;
-            }         
+               case (LW_OVERRUN):
+               {  
+                  // this handled by switch changes?
+                  break;
+               }         
 
-            case (LW_MANUAL & 0xF0):
-            {
-               // this handled by switch changes alone?
-               break;
-            }
+               case (LW_MANUAL):
+               {
+                  // this handled by switch changes alone?
+                  break;
+               }
 
-            case (LW_CENTER & 0xF0):
-            {
-               // only allowed in Retrieve state
-               break;
-            }
+               case (LW_CENTER):
+               {
+                  // only allowed in Retrieve state
+                  break;
+               }
 
-            case (LW_INDEX & 0xF0):
-            {
-               // code here sequences through indexing process
-               break;
-            }
+               case (LW_INDEX):
+               {
+                  // code here sequences through indexing process
+                  break;
+               }
 
-            case (LW_TRACK & 0xF0):
-            {
-               // code here monitors MC and CP state to move to appropriate state
-               break;
-            }
+               case (LW_TRACK):
+               {
+                  // code here monitors MC and CP state to move to appropriate state
+                  break;
+               }
 
-            case (LW_LOS & 0xF0):
-            {
-               // exit from LOS handled by switches or Tim2 ISR?
-               break;
-            }
-         }               
-      }
+               case (LW_LOS):
+               {
+                  // exit from LOS handled by switches or Tim2 ISR?
+                  break;
+               }
+            }               
+         }
+         else 
+         {// drum not in operation. move to the OFF state
+            p->lw_state = LW_OFF;
+            p->lw_mode = LW_ISR_OFF;           
+         }   
+      }       
 
 		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
 		{ // Software timer #1: Send heartbeat
@@ -213,6 +222,9 @@ extern CAN_HandleTypeDef hcan1;
 		}
 	}
 }
+
+
+
 
 /* *************************************************************************
  * void levelwind_task_cp_sate_update(struct CANRCVBUF* pcan);
@@ -270,12 +282,11 @@ void levelwind_task_cp_state_init(void)
  * *************************************************************************/
 void levelwind_task_cp_state_update(struct CANRCVBUF* pcan)
 {
-   struct CONTROLPANELSTATE* pcp = &cp_state;         // Convenience pointer
-
+   struct CONTROLPANELSTATE* pcp = &cp_state;   // Convenience pointer
    
-   #define  CL       1  // turn on control lever position updates
-   #define  INPUTS   1  // turn on input updates
-   #define  OUTPUTS  1  // turn on output updates
+#define  CL       1  // turn on control lever position updates
+#define  INPUTS   1  // turn on input updates
+#define  OUTPUTS  1  // turn on output updates
 
    /* This does a full update of the control panel state struct. If speed is 
       important, only the items used in the function could be extracted by 

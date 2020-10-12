@@ -31,17 +31,21 @@ struct LEVELWINDLC
 
 	uint32_t size;
 	uint32_t crc;   // TBD
-   uint32_t version;   // 
+   uint32_t version;   //
+
+   // this belongs somewhere associated with the node, not the LW
+   uint8_t  mydrum;     // the drum number for this node 
 
 	/* Timings in milliseconds. Converted later to 'swtim1' ticks. */
 	uint32_t ka_levelwind_t; // keepalive from PC (ms) 
-	uint32_t hbct_t;      // Heartbeat ct: ms between sending 
-
-   int32_t  Lplus;      //
-   int32_t  Lminus;     //
+	uint32_t hbct_t;     // Heartbeat ct: ms between sending 
    uint32_t hbct;       // Number of ticks between hb msgs
+
+   int32_t  Lplus;      // start of positive reversal region 
+   int32_t  Lminus;     // start of negative reversal region
    int32_t  Ka;         // reversal rate
    int32_t  Nr;         // ratio of reversal rate to sweep rate
+   
 
    uint32_t ocidx;      // OC register increment for indexing 
    uint8_t  Nswp;       // sweep rate speed-up factor
