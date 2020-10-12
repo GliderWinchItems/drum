@@ -210,8 +210,8 @@ extern CAN_HandleTypeDef hcan1;
          }
          else 
          {// drum not in operation. move to the OFF state
-            p->lw_state = LW_OFF;
-            p->lw_mode = LW_ISR_OFF;           
+            //p->lw_state = LW_OFF;
+            //p->lw_mode = LW_ISR_OFF;           
          }   
       }       
 

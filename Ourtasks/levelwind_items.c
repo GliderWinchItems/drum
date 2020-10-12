@@ -311,8 +311,11 @@ void levelwind_items_TIM2_IRQHandler(void)
       {
          case (LW_ISR_MANUAL):
          {
-            // code to manually move the mechanism based on CP CL and direction values
-            // a variation may be employed to center the indexed LW to the drum center
+            
+            // set interrupt rate for manual
+            p->ocinc = p->lc.ocidx; // new parameter for manual operation rate needed 
+            emulation_run = 0;
+
             break;
          }
 
@@ -375,7 +378,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    /* p->dbg1 = p->velaccum.s32;
       p->dbg2 = p->posaccum.s16[1];
       p->dbg3 = p->posaccum.u16[0]; */
-
+#if 1
    // Store vars in buffer location. 
    p->pdbgadd->intcntr   = p->intcntr;
    p->pdbgadd->dbg1      = p->velaccum.s32;
@@ -383,6 +386,15 @@ void levelwind_items_TIM2_IRQHandler(void)
    p->pdbgadd->dbg3      = p->posaccum.u16[0];
    p->pdbgadd += 1;    // Advance add pointer
    if (p->pdbgadd >= p->pdbgend) p->pdbgadd = p->pdbgbegin;
+#else
+   // temporary for deguging state machine
+   p->pdbgadd->intcntr   = p->intcntr;
+   p->pdbgadd->dbg1      = p->velaccum.s32;
+   p->pdbgadd->dbg2      = p->lw_state;
+   p->pdbgadd->dbg3      = p->lw_mode;
+   p->pdbgadd += 1;    // Advance add pointer
+   if (p->pdbgadd >= p->pdbgend) p->pdbgadd = p->pdbgbegin;
+#endif
 
 #endif
          
