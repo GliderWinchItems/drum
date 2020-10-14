@@ -18,8 +18,7 @@
 #include "levelwind_func_init.h"
 #include "levelwind_switches.h"
 #include "MailboxTask.h"
-#include "levelwind_items.h"
-//#include "controlpanel_items.h"
+#include "controlpanel_items.h"
 
 
 osThreadId LevelwindTaskHandle;
@@ -48,7 +47,7 @@ struct SWITCHPTR* psw_safeactivex; // Debugging
 void StartLevelwindTask(void const * argument)
 {
 	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-   struct CONTROLPANELSTATE* pcp = &cp_state;        // CP convienience pointer
+   struct CONTROLPANELSTATE* pcp = &cp_state;   // Convenience pointer
 
 	/* A notification copies the internal notification word to this. */
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
@@ -63,8 +62,12 @@ void StartLevelwindTask(void const * argument)
 	/* Hardware filter CAN msgs. */
 	levelwind_func_init_canfilter(p);
 
+   /* TEMPORARY: set initial_states until real mechanism is established */
+   p->lw_mode = LW_ISR_INDEX; // temporary until way to change states is implemented
+   p->mc_state = MC_PREP;     // temporary until way to change states is implemented
+
 	/* Limit and overrun switches. */
-	levelwind_switches_init();
+	levelwind_switches_init();   
 
 	/* Notifications from levelwind_items ISR via intermediary vector. 
 	   with a priority within, but at the top of the FreeRTOS range. */
@@ -94,7 +97,7 @@ extern CAN_HandleTypeDef hcan1;
 		xTaskNotifyWait(0,noteuse, &noteval, portMAX_DELAY);
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
 
-		if ((noteval & LEVELWINDSWSNOTEBITISR) != 0)
+      if ((noteval & LEVELWINDSWSNOTEBITISR) != 0)
 		{ // Here levelwind_items.c triggered the ETH_IRQHandler
 			noteuse |= LEVELWINDSWSNOTEBITISR;
          dbgEth += 1;
@@ -104,45 +107,7 @@ extern CAN_HandleTypeDef hcan1;
             that a switch statement for each ISR would be used. Also, check
             if an averrun switch has activated and do a state change to 
             MANUAL instead of repeating that code everywhere. Similar check
-            may be appropriate for Off state */   
-              
-         switch (p->lw_state & 0xF0)   // deal with ISR notification based on lw_state
-         {
-            case (LW_OFF):
-            {
-               break;
-            }
-
-            case (LW_OVERRUN):
-            {  
-               break;
-            }         
-
-            case (LW_MANUAL):
-            { 
-               break;
-            }
-
-            case (LW_CENTER):
-            {
-               break;
-            }
-
-            case (LW_INDEX):
-            {
-               break;
-            }
-
-            case (LW_TRACK):
-            {
-               break;
-            }
-
-            case (LW_LOS):
-            {
-               break;
-            }
-         }               
+            may be appropriate for Off state */                  
 		}
 
 		if ((noteval & LEVELWINDSWSNOTEBITCAN2) != 0) 
@@ -158,61 +123,7 @@ extern CAN_HandleTypeDef hcan1;
 			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
          // this will process the control panel state messages and above clupdate scraped
          levelwind_task_cp_state_update(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
-			noteuse |= LEVELWINDSWSNOTEBITCAN1;
-
-         // check to see if this drum is enabled for operation on the control panel
-         if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
-         {  // this node is operational 
-            switch (p->lw_state & 0xF0)   // deal with CAN notification based on lw_state
-            {
-               case (LW_OFF):
-               {
-                  // if Track or Center is selected on CP move to appropriate state
-                  break;
-               }
-
-               case (LW_OVERRUN):
-               {  
-                  // this handled by switch changes?
-                  break;
-               }         
-
-               case (LW_MANUAL):
-               {
-                  // this handled by switch changes alone?
-                  break;
-               }
-
-               case (LW_CENTER):
-               {
-                  // only allowed in Retrieve state
-                  break;
-               }
-
-               case (LW_INDEX):
-               {
-                  // code here sequences through indexing process
-                  break;
-               }
-
-               case (LW_TRACK):
-               {
-                  // code here monitors MC and CP state to move to appropriate state
-                  break;
-               }
-
-               case (LW_LOS):
-               {
-                  // exit from LOS handled by switches or Tim2 ISR?
-                  break;
-               }
-            }               
-         }
-         else 
-         {// drum not in operation. move to the OFF state
-            //p->lw_state = LW_OFF;
-            //p->lw_mode = LW_ISR_OFF;           
-         }   
+			noteuse |= LEVELWINDSWSNOTEBITCAN1;   
       }       
 
 		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
@@ -220,6 +131,88 @@ extern CAN_HandleTypeDef hcan1;
 			levelwind_items_CANsendHB();
 			noteuse |= LEVELWINDSWSNOTEBITSWT1;
 		}
+
+      if (0)   // here test for Manual switch closure (no associated notification)
+      {  // Manual (bypass) switch is closed
+         p->lw_state = LW_MANUAL;
+         p->lw_indexed = 0;
+         p->lw_mode = LW_ISR_MANUAL;
+         // more may need to be done or some actions above placed in the case statements
+         // ISR will return the level-wind state to Off when Manual switch opens
+      }
+      // check to see if this drum is enabled for operation on the control panel
+      else if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
+      {  // this node is operational 
+         switch (p->lw_state & 0xF0)   // deal with CAN notification based on lw_state
+         {
+            case (LW_OFF):
+            {
+               // if Track or Center is selected on CP move to appropriate state
+               // if lw_mode == track, go to index
+               break;
+            }
+
+            case (LW_OVERRUN):
+            {  
+               // do nothing
+               // move to Manual state handled above
+               break;
+            }         
+
+            case (LW_MANUAL):
+            {
+               // do nothing
+               // Tim2 ISR deals with this
+               break;
+            }
+
+            case (LW_CENTER):
+            {
+               if(p->mc_state != MC_SAFE) 
+               {  // move to Off state
+                  p->lw_mode = LW_ISR_OFF;
+                  p->lw_state = LW_OFF;
+                  p->lw_indexed = 0;
+               }
+               break;
+            }
+
+            case (LW_INDEX):
+            {
+               if(p->mc_state == MC_SAFE) 
+               {  // move to Off state
+                  p->lw_mode = LW_ISR_OFF;
+                  p->lw_state = LW_OFF;
+                  p->lw_indexed = 0;
+               }
+               // Tim2 ISR moves LW state to Track when done
+               break;
+            }
+
+            case (LW_TRACK):
+            {
+               if(p->mc_state == MC_SAFE) 
+               {  // move to Off state
+                  p->lw_mode = LW_ISR_OFF;
+                  p->lw_state = LW_OFF;
+                  p->lw_indexed = 0;
+               }
+               break;
+            }
+
+            case (LW_LOS):
+            {
+               // exit from LOS handled by switches or Tim2 ISR?
+               break;
+            }
+         }               
+      }
+      else 
+      {// drum not in operational use. move it to the OFF state.
+         p->lw_mode = LW_ISR_OFF;
+         p->lw_state = LW_OFF;
+         p->lw_indexed = 0;           
+      }
 	}
 }
 
@@ -234,7 +227,7 @@ extern CAN_HandleTypeDef hcan1;
 void levelwind_task_cp_state_init(void)
 {
    
-   struct CONTROLPANELSTATE* pcp = &cp_state;         // Convenience pointer
+   struct CONTROLPANELSTATE* pcp = &cp_state;   // Convenience pointer
 
    pcp->init = 0;
 
@@ -253,7 +246,7 @@ void levelwind_task_cp_state_init(void)
    pcp->rev_fwd = 1;     
    pcp->rmt_lcl = 1;  
    pcp->active_drum = 1;   // assumes single drum system     
-   pcp->op_drums = 0x01;   // assumes bit 0 corresponds to drum #1
+   pcp->op_drums = 0x01;   // bit 0 corresponds to drum #1
    
    
    // initially assumed output states
@@ -265,8 +258,8 @@ void levelwind_task_cp_state_init(void)
    pcp->climb_led = 0;
    pcp->recovery_led = 0;
    pcp->retrieve_led = 0;
-   pcp->abort_led= 0;
-   pcp->stop_led = 0;
+   pcp->aborted_led= 0;
+   pcp->stopped_led = 0;
    pcp->arm_pb_led = 0;
    pcp->prep_rcvry_led = 0;
    pcp->beeper = 0;
@@ -287,6 +280,8 @@ void levelwind_task_cp_state_update(struct CANRCVBUF* pcan)
 #define  CL       1  // turn on control lever position updates
 #define  INPUTS   1  // turn on input updates
 #define  OUTPUTS  1  // turn on output updates
+
+return;  // DEBUG!!!!do nothing until real cp state CAN messages are present
 
    /* This does a full update of the control panel state struct. If speed is 
       important, only the items used in the function could be extracted by 
@@ -358,8 +353,8 @@ void levelwind_task_cp_state_update(struct CANRCVBUF* pcan)
       & (PREPLED_MASK << PREPLED_BIT)) >> PREPLED_BIT;
 
 
-   pcp->armed_led = (pcan->cd.uc[ARMLED_BYTE] 
-      & (ARMLED_MASK << ARMLED_BIT)) >> ARMLED_BIT;
+   pcp->armed_led = (pcan->cd.uc[ARMEDLED_BYTE] 
+      & (ARMEDLED_MASK << ARMEDLED_BIT)) >> ARMEDLED_BIT;
    
 
    pcp->grndrtn_led = (pcan->cd.uc[GRNDRTNLED_BYTE] 
@@ -382,12 +377,12 @@ void levelwind_task_cp_state_update(struct CANRCVBUF* pcan)
       & (RETRIEVELED_MASK << RETRIEVELED_BIT)) >> RETRIEVELED_BIT;
    
 
-   pcp->abort_led = (pcan->cd.uc[ABORTLED_BYTE] 
-      & (ABORTLED_MASK << ABORTLED_BIT)) >> ABORTLED_BIT;
+   pcp->aborted_led = (pcan->cd.uc[ABORTEDLED_BYTE] 
+      & (ABORTEDLED_MASK << ABORTEDLED_BIT)) >> ABORTEDLED_BIT;
    
 
-   pcp->stop_led = (pcan->cd.uc[STOPLED_BYTE] 
-      & (STOPLED_MASK << STOPLED_BIT)) >> STOPLED_BIT;
+   pcp->stopped_led = (pcan->cd.uc[STOPPEDLED_BYTE] 
+      & (STOPPEDLED_MASK << STOPPEDLED_BIT)) >> STOPPEDLED_BIT;
    
 
    pcp->arm_pb_led = (pcan->cd.uc[ARMPBLED_BYTE] 

@@ -16,6 +16,7 @@
 #include "levelwind_idx_v_struct.h"
 #include "levelwind_items.h"
 #include "controlpanel_items.h"
+#include "mastercontroller_states.h"
 
 /* Stepper switch bit positions */
 #define LEVELWINDSWSNOTEBITLIMINDB   (1<<LIMITDBINSIDE)  

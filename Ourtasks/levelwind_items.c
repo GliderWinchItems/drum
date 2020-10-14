@@ -212,7 +212,6 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
 void levelwind_items_TIM2_IRQHandler(void)
 {
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-
    /* This block for z channel (index) processing. It will be removed in operational
       code. */
 
@@ -279,6 +278,14 @@ void levelwind_items_TIM2_IRQHandler(void)
          during indexing, sweeping, moving, and off states,  */
       switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode msn
       {
+         case(LW_ISR_OFF):
+         {  // Set enable bit which turns FET on, which disables levelwind
+            // Error; this is not disabling steper
+            // REVISIT make sure it gets re-enabled when exiting state
+            p->enflag = (2 << 16); // Set bit with BSRR storing
+            Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+         }
+
          case (LW_ISR_TRACK):
          {
             /* code here to check if LOS has occured. if so, switch to LOS recovery
@@ -309,6 +316,14 @@ void levelwind_items_TIM2_IRQHandler(void)
      
       switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode
       {
+         case(LW_ISR_OFF):
+         {  // Set enable bit which turns FET on, which disables levelwind
+            // REVISIT make sure it gets re-enabled when exiting state
+            // Error; this is not disabling steper
+            p->enflag = (2 << 16); // Set bit with BSRR storing
+            Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+         }
+
          case (LW_ISR_MANUAL):
          {
             
@@ -378,7 +393,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    /* p->dbg1 = p->velaccum.s32;
       p->dbg2 = p->posaccum.s16[1];
       p->dbg3 = p->posaccum.u16[0]; */
-#if 1
+#if 0
    // Store vars in buffer location. 
    p->pdbgadd->intcntr   = p->intcntr;
    p->pdbgadd->dbg1      = p->velaccum.s32;
@@ -463,7 +478,7 @@ uint8_t levelwind_items_index_case(void)
       p->pos_prev = p->posaccum.s16[1];
       p->lw_mode = LW_ISR_SWEEP; // move to sweep state
 #if LEVELWINDDEBUG
-      p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing
+      p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
 #endif      
    }
    return(1);
@@ -499,6 +514,8 @@ uint8_t levelwind_items_sweep_case(void)
  * *************************************************************************/
 uint8_t levelwind_items_arrest_case(void)
 {  // code here dealing with stopping at specified location
+   // this code likely simple enough to move into case statement and
+   // eliminate function
    
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
