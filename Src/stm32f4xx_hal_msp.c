@@ -370,12 +370,12 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
     /**TIM13 GPIO Configuration
     PA6     ------> TIM13_CH1
     */
-    GPIO_InitStruct.Pin = solenoiddrive_Pin;
+    GPIO_InitStruct.Pin = fieldfetdrive_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_TIM13;
-    HAL_GPIO_Init(solenoiddrive_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(fieldfetdrive_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN TIM13_MspPostInit 1 */
 

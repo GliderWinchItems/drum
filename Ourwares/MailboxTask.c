@@ -40,6 +40,7 @@ static struct MAILBOXCAN* loadmbx(struct MAILBOXCANNUM* pmbxnum, struct CANRCVBU
 struct MAILBOXCANNUM* MailboxTask_add_CANlist(struct CAN_CTLBLOCK* pctl, uint16_t arraysize)
 {
 	struct MAILBOXCAN** ppmbxarray; // Pointer to array of pointers to mailboxes
+	int i;
 
 	if (pctl == NULL) morse_trap(21); // Oops
 
@@ -63,6 +64,17 @@ taskENTER_CRITICAL();
 	/* Get a circular buffer 'take' pointer for this CAN module. */
 	// The first three notification bits are reserved for CAN modules 
 	mbxcannum[pctl->canidx].ptake = can_iface_mbx_init(pctl, MailboxTaskHandle, (1 << pctl->canidx) );
+	
+	/* Allow task priorities to sort out. */
+	i = 0;
+	taskEXIT_CRITICAL();
+	while (mbxcannum[pctl->canidx].ptake == NULL)
+	{
+		osDelay(1);
+		i += 1;
+		if (i >= 10) morse_trap(231); // Real trouble!
+	}
+	taskENTER_CRITICAL();
 
 	/* Save pointer to array of pointers to mailboxes. */
 	mbxcannum[pctl->canidx].pmbxarray = ppmbxarray;

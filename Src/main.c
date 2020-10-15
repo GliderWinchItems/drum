@@ -833,19 +833,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Stepper__MF_not_enable_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : Manual_left_Pin Manual_right_Pin LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin
+                           LimitSw_outside_NO_Pin LimitSw_outside_NC_Pin OverrunSw_Inside_Pin OverrunSw_outside_Pin */
+  GPIO_InitStruct.Pin = Manual_left_Pin|Manual_right_Pin|LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin
+                          |LimitSw_outside_NO_Pin|LimitSw_outside_NC_Pin|OverrunSw_Inside_Pin|OverrunSw_outside_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
   /*Configure GPIO pin : StepperBridge_Pin */
   GPIO_InitStruct.Pin = StepperBridge_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(StepperBridge_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin LimitSw_outside_NO_Pin LimitSw_outside_NC_Pin
-                           OverrunSw_Inside_Pin OverrunSw_outside_Pin */
-  GPIO_InitStruct.Pin = LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin|LimitSw_outside_NO_Pin|LimitSw_outside_NC_Pin
-                          |OverrunSw_Inside_Pin|OverrunSw_outside_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_GREEN_Pin LED_ORANGE_Pin LED_RED_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = LED_GREEN_Pin|LED_ORANGE_Pin|LED_RED_Pin|LED_BLUE_Pin;
