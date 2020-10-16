@@ -68,7 +68,7 @@ union PAYFLT
    uint32_t u32;
    int32_t  s32;
    int16_t  s16[2];
-}pf;
+};
 
 struct LEVELWINDFUNCTION
 {

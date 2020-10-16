@@ -19,6 +19,9 @@ extern osThreadId GatewayTaskHandle;
 /* One struct for each CAN module, e.g. CAN 1, 2, 3, ... */
 struct MAILBOXCANNUM mbxcannum[STM32MAXCANNUM] = {0};
 
+/* Linked list head for task notification of cirular buffer ready. */
+struct MAILBOXCANBUFNOTE* pcir[STM32MAXCANNUM] = {NULL};
+
 #ifdef GATEWAYTASKINCLUDED
 #define GATEWAYBUFSIZE 16
 	struct MBXTOGATEBUF mbxgatebuf[STM32MAXCANNUM] = {0};
@@ -112,6 +115,98 @@ struct CANNOTIFYLIST* MailboxTask_disable_notifications(struct MAILBOXCAN* pmbx)
 struct CANNOTIFYLIST* MailboxTask_enable_notifications(struct MAILBOXCAN* pmbx)
 {
 	return noteskip(pmbx, 0);
+}
+/* *************************************************************************
+ * struct CANRCVBUFN* MailboxTask_get_bufmsg(struct MAILBOXCANBUFPTR* p);
+ * @brief	: Get CAN msg from circular buffer
+ * @param	: p = pointer struct with points for working in circular buffer
+ * @return	: NULL = no new msgs; pointer to msg
+ * *************************************************************************/
+struct CANRCVBUFN* MailboxTask_get_bufmsg(struct MAILBOXCANBUFPTR* p)
+{
+	struct CANRCVBUFN* ptmp = NULL;
+
+	/* Has our pointer caught up with pointing adding msgs? */
+	if (p->px->pwork == p->pwork) return ptmp; // No new msgs
+
+	ptmp = p->pwork; // Save for return
+
+	// Step to next circular buffer position
+	p->pwork += 1;
+	if (p->pwork >= p->px->pend) p->pwork = p->px->pbegin;
+
+	return ptmp; 
+}
+
+/* *************************************************************************
+ * struct MAILBOXCANBUFPTR* MailboxTask_add_bufaccess(struct CAN_CTLBLOCK* pctl,\
+       osThreadId tskhandle, uint32_t notebit);
+ * @brief	: Add access to the iface.c CAN msg circular buffer
+ * @param	: pctl = Pointer to CAN control block, i.e. CAN module/CAN bus
+ * @param	: canid = CAN ID
+ * @param	: tskhandle = Task handle; NULL to use current task; 
+ * @param	: notebit = notification bit; NULL = no notification
+ * @return	: Pointer to CAN msg circular buffer; NULL = failed
+ * *************************************************************************/
+struct MAILBOXCANBUFPTR* MailboxTask_add_bufaccess(struct CAN_CTLBLOCK* pctl,\
+       osThreadId tskhandle, uint32_t notebit)
+{
+	struct MAILBOXCANBUFPTR* p;
+	struct MAILBOXCANBUFNOTE* pcirtmp;
+	struct MAILBOXCANBUFNOTE* pnew;
+
+	/* "MailboxTask_add_CANlist" needs to be called before this routine. */
+	if (pctl  == NULL) morse_trap(2501); 
+	if (pctl->canidx >= STM32MAXCANNUM) morse_trap(2502);   
+	if (mbxcannum[pctl->canidx].pctl == NULL) morse_trap(2503); 
+
+taskENTER_CRITICAL();
+
+	/* Normally, we use the task handle for the task that called this routine. */
+	if (tskhandle == NULL)
+		tskhandle = xTaskGetCurrentTaskHandle();
+
+	/* Add entry to list. */
+
+	pcirtmp = pcir[pctl->canidx];
+	if (pcirtmp == NULL)
+	{ // Here, this will be the first entry in the list
+		pnew = (struct MAILBOXCANBUFNOTE*)calloc(1, sizeof(struct MAILBOXCANBUFNOTE));
+		if (pnew == NULL) morse_trap(2504);
+		pcirtmp  = pnew;
+//		pnew->pnext     = NULL;  calloc sets to zero
+		pnew->notebit   = notebit;
+		pnew->tskhandle = tskhandle;
+	}
+	else
+	{ /* One or more is on list, so search for end. */
+		while (pcirtmp->pnext != NULL)
+		{
+			pcirtmp = pcirtmp->pnext;
+		}
+		pnew = (struct MAILBOXCANBUFNOTE*)calloc(1, sizeof(struct MAILBOXCANBUFNOTE));
+		if (pnew == NULL) morse_trap(2504);
+		pcirtmp->pnext  = pnew;
+//		pnew->pnext     = NULL;  calloc sets to zero
+		pnew->notebit   = notebit;
+		pnew->tskhandle = tskhandle;		
+	}
+	
+	/* Get a set of pointers */
+	p = (struct MAILBOXCANBUFPTR*)calloc(1, sizeof(struct MAILBOXCANBUFPTR));
+	if (p == NULL)  morse_trap(2505);
+
+	/* Start the 'take' pointer at the position in the circular buffer where
+      CAN msgs are currently being added. */
+	p->px = &pctl->cirptrs; // Save iface circular buffer ptrs (for begin, end, work)
+	if (p->px->pbegin == NULL)  morse_trap(2506);
+	if (p->px->pend   == NULL)  morse_trap(2507);
+	if (p->px->pwork  == NULL)  morse_trap(2508);
+
+	p->pwork = p->px->pwork; // Start with where iface.c is adding msgs.
+
+taskEXIT_CRITICAL();
+	return p;
 }
 
 /* *************************************************************************
@@ -260,7 +355,7 @@ taskEXIT_CRITICAL();
 }
 /* *************************************************************************
  * struct CANRCVBUFN* Mailboxgetbuf(int i);
- * @brief	: Get NCAN buffer from Mailbox circular buffer
+ * @brief	: Get NCAN from Mailbox circular buffer
  * @param	: i = index for CAN unit (0, 1)\
  * @return  : NULL = none available; otherwise, points to NCAN msg
  * *************************************************************************/
@@ -361,11 +456,11 @@ void StartMailboxTask(void const * argument)
 	uint32_t noteused = 0;
 
   /* Infinite MailboxTask loop */
-  for(;;)
-  {
+    for(;;)
+    {
 		/* Wait for a CAN module to load its circular buffer. */
 		/* The notification bit identifies the CAN module. */
-		xTaskNotifyWait(noteused, 0, &noteval, portMAX_DELAY);
+		xTaskNotifyWait(0, noteused, &noteval, portMAX_DELAY);
 		noteused = 0;	// Accumulate bits in 'noteval' processed.
 
 		/* Step through possible notification bits */
@@ -418,9 +513,17 @@ if (pmbxnum == NULL) morse_trap(77); // Debug trap
 					xTaskNotify(GatewayTaskHandle, (1 << i), eSetBits);
 				}
   #endif
+				/* Check if circular buffer access has been subscribed. */
+				struct MAILBOXCANBUFNOTE* pcirtmp = pcir[i];
+
+				if (pcirtmp != NULL)
+				{ // One or more entries for access to this circular buffer
+					xTaskNotify(pcirtmp->tskhandle, pcirtmp->notebit, eSetBits);
+					pcirtmp = pcirtmp->pnext;
+				}
 			}
 		}
-  }
+    }
 }
 /* *************************************************************************
  * static struct MAILBOXCAN* lookup(struct MAILBOXCANNUM* pmbxnum, struct CANRCVBUFN* pncan);

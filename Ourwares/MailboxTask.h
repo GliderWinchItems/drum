@@ -72,6 +72,20 @@ struct MAILBOXCAN
 	uint8_t paytype;             // Code for payload type
 };
 
+/* Linked list item: Additional tasks accessing circular buffer */
+struct MAILBOXCANBUFNOTE
+{
+	struct MAILBOXCANBUFNOTE* pnext; // Points to next on list; NULL = this one is last
+	osThreadId tskhandle;           // Task to be notified
+	uint32_t notebit;               // Notification bit for task notify
+};
+
+struct MAILBOXCANBUFPTR
+{
+	struct CANRCVBUFN* pwork;  // Our working ptr into iface.c circular buffer
+	struct CANCIRBUFPTRS* px;  // Circular buf ptrs being used by iface.c
+};
+
 /* One of these for each CAN module. */
 struct MAILBOXCANNUM
 {
