@@ -15,8 +15,9 @@ PE10 - EXTI10 Inside  Limit switch: NO contacts (switch connects to gnd)
 PE11 - EXTI11 Inside  Limit switch: NC contacts (switch connects to gnd)
 PE12 - EXTI12 Outside Limit switch: NO contacts (switch connects to gnd)
 PE13 - EXTI13 Outside Limit switch: NC contacts (switch connects to gnd)
-PE14 - EXTI13 Inside Overrun switch: NC contacts (switch connects to gnd)
-PE15 - EXTI13 Outside Overrun switch: NC contacts (switch connects to gnd)
+PE14 - EXTI13 Inside Overrun switches: wire-Ored NO contacts 
+		 (switch connects to gnd)
+
 
 Switch closed, the i/o pin shows--
 Inside limit switch: 
@@ -26,11 +27,9 @@ Outside limit switch:
   PE12 = 0
   PE13 = 1
 
-Inside overrun switch:
+Overrun switches (wired-ORed):
   PE14 = 1
 
-Outside overrun switch:
-  PE15 = 1
 
 The following is held in abeyance for input capture timing of switches
 PC6 - PE10
@@ -154,8 +153,7 @@ LimitSw_inside_NO_Pin    GPIO_PIN_10
 LimitSw_inside_NC_Pin    GPIO_PIN_11
 LimitSw_outside_NO_Pin   GPIO_PIN_12
 LimitSw_outside_NC_Pin   GPIO_PIN_13
-OverrunSw_Inside_Pin     GPIO_PIN_14
-OverrunSw_outside_Pin    GPIO_PIN_15
+OverrunSwitches_Pin      GPIO_PIN_14
 */
 void Stepper_EXTI15_10_IRQHandler(void)
 {
@@ -253,17 +251,10 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
 	}
 
 	/* These are the NO contacts on overrun switches. */
-	if ((EXTI->PR & (OverrunSw_Inside_Pin)) != 0)
+	if ((EXTI->PR & (OverrunSwes_NO_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
-		EXTI->PR = OverrunSw_Inside_Pin; // Reset request
+		EXTI->PR = OverrunSwes_NO_Pin; // Reset request
 		/* Notification goes here. */
-		return;
-	}
-		if ((EXTI->PR & (OverrunSw_outside_Pin)) != 0)
-	{ // Here Pending Register shows this switch transitioned
-		EXTI->PR = OverrunSw_outside_Pin; // Reset request
-		/* Notification goes here. */
-		return;
 	}
 
 	return;
@@ -302,23 +293,17 @@ void levelwind_switches_error_check(void)
 	else
 		integrity &= ~STEPPERSWSTS04;
 
-	/* 5: Both overrun NC are open. */
-	if ((p->swbits & (OVERRUNSWINSIDE | OVERRUNSWOUTSIDE)) == 0)
-		integrity |= STEPPERSWSTS05; // Error
-	else
-		integrity &= ~STEPPERSWSTS05;
+	/*	Reconsider overrun switch integrity tests below	*/
+	/* 5: Both overrun NC are open. Removed when switches were
+			wire-Ored 	*/
 
-	/* 6: Outside overrun closed, outside limit sw open */
-	if ((p->swbits & (OVERRUNSWOUTSIDE | LIMITOUTSIDENO)) == 0)
-		integrity |= STEPPERSWSTS06; // Error
-	else
-		integrity &= ~STEPPERSWSTS06;
+	/* 6: Outside overrun closed, outside limit sw open.
+			Removed when overrun switches were wire-ORed. */
+	
 
-	/* 7: Inside overrun closed, outside limit sw open */
-	if ((p->swbits & (OVERRUNSWINSIDE | LIMITINSIDENO)) == 0)
-		integrity |= STEPPERSWSTS07; // Error
-	else
-		integrity &= ~STEPPERSWSTS07;
+	/* 7: Inside overrun closed, outside limit sw open 
+			Removed when overrun switches were wire-ORed. */
+	
 
 
 /* ===== Alerts ===== */
@@ -329,17 +314,10 @@ void levelwind_switches_error_check(void)
 		alert |= STEPPERSWALRT00; // Sw in MANUAL (bridged power) position	
 
 	/* 1: Inside overun switch is closed. */
-	if ((p->swbits & OVERRUNSWINSIDE) != 0)
+	if ((p->swbits & OVERRUNSWES) != 0)
 		alert |= STEPPERSWALRT01; // 
 	else
 		alert &= ~STEPPERSWALRT01; // 	
-
-	/* 2: Outside overun switch is closed. */
-	if ((p->swbits & OVERRUNSWOUTSIDE) != 0)
-		alert |= STEPPERSWALRT02; // 
-	else
-		alert &= ~STEPPERSWALRT02; // 	
-
 
 	return;
 }

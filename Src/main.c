@@ -814,38 +814,38 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, Stepper__DR__direction_Pin|Stepper__MF_not_enable_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, Stepper_DR_Pin|Stepper_MF_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin|LED_ORANGE_Pin|LED_RED_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Stepper__DR__direction_Pin */
-  GPIO_InitStruct.Pin = Stepper__DR__direction_Pin;
+  /*Configure GPIO pin : Stepper_DR_Pin */
+  GPIO_InitStruct.Pin = Stepper_DR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-  HAL_GPIO_Init(Stepper__DR__direction_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(Stepper_DR_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : Stepper__MF_not_enable_Pin */
-  GPIO_InitStruct.Pin = Stepper__MF_not_enable_Pin;
+  /*Configure GPIO pin : Stepper_MF_Pin */
+  GPIO_InitStruct.Pin = Stepper_MF_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(Stepper__MF_not_enable_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(Stepper_MF_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Manual_left_Pin Manual_right_Pin LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin
-                           LimitSw_outside_NO_Pin LimitSw_outside_NC_Pin OverrunSw_Inside_Pin OverrunSw_outside_Pin */
-  GPIO_InitStruct.Pin = Manual_left_Pin|Manual_right_Pin|LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin
-                          |LimitSw_outside_NO_Pin|LimitSw_outside_NC_Pin|OverrunSw_Inside_Pin|OverrunSw_outside_Pin;
+  /*Configure GPIO pins : ManualSw_left_Pin ManualSw_right_Pin LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin
+                           LimitSw_outside_NO_Pin LimitSw_outside_NC_Pin OverrunSwes_NO_Pin */
+  GPIO_InitStruct.Pin = ManualSw_left_Pin|ManualSw_right_Pin|LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin
+                          |LimitSw_outside_NO_Pin|LimitSw_outside_NC_Pin|OverrunSwes_NO_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : StepperBridge_Pin */
-  GPIO_InitStruct.Pin = StepperBridge_Pin;
+  /*Configure GPIO pin : ManualSw_Pin */
+  GPIO_InitStruct.Pin = ManualSw_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(StepperBridge_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(ManualSw_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_GREEN_Pin LED_ORANGE_Pin LED_RED_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = LED_GREEN_Pin|LED_ORANGE_Pin|LED_RED_Pin|LED_BLUE_Pin;

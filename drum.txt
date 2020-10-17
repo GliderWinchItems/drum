@@ -1,6 +1,6 @@
 Configuration	drum
 STM32CubeMX 	6.0.1
-Date	10/14/2020
+Date	10/17/2020
 MCU	STM32F407VGTx
 
 
@@ -43,17 +43,16 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 25	PA2	TIM2_CH3	encodertimeA
 26	PA3	TIM2_CH4	encodertimeB
 31	PA6	TIM13_CH1	fieldfetdrive
-35	PB0	GPIO_Output	Stepper: DR--direction
-36	PB1	GPIO_Output	Stepper: MF-not-enable
-38	PE7	GPIO_EXTI7	Manual_left
-39	PE8	GPIO_EXTI8	Manual_right
-40	PE9	GPIO_Input	StepperBridge
+35	PB0	GPIO_Output	Stepper_DR
+36	PB1	GPIO_Output	Stepper_MF
+38	PE7	GPIO_EXTI7	ManualSw_left
+39	PE8	GPIO_EXTI8	ManualSw_right
+40	PE9	GPIO_Input	ManualSw
 41	PE10	GPIO_EXTI10	LimitSw:inside:NO
 42	PE11	GPIO_EXTI11	LimitSw:inside:NC
 43	PE12	GPIO_EXTI12	LimitSw:outside:NO
 44	PE13	GPIO_EXTI13	LimitSw:outside:NC
-45	PE14	GPIO_EXTI14	OverrunSw:Inside
-46	PE15	GPIO_EXTI15	OverrunSw:outside
+45	PE14	GPIO_EXTI14	OverrunSwes_NO
 59	PD12	GPIO_Output	LED GREEN
 60	PD13	GPIO_Output	LED ORANGE
 61	PD14	GPIO_Output	LED RED
@@ -107,17 +106,16 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 25	PA2	TIM2_CH3	encodertimeA
 26	PA3	TIM2_CH4	encodertimeB
 31	PA6	TIM13_CH1	fieldfetdrive
-35	PB0	GPIO_Output	Stepper: DR--direction
-36	PB1	GPIO_Output	Stepper: MF-not-enable
-38	PE7	GPIO_EXTI7	Manual_left
-39	PE8	GPIO_EXTI8	Manual_right
-40	PE9	GPIO_Input	StepperBridge
+35	PB0	GPIO_Output	Stepper_DR
+36	PB1	GPIO_Output	Stepper_MF
+38	PE7	GPIO_EXTI7	ManualSw_left
+39	PE8	GPIO_EXTI8	ManualSw_right
+40	PE9	GPIO_Input	ManualSw
 41	PE10	GPIO_EXTI10	LimitSw:inside:NO
 42	PE11	GPIO_EXTI11	LimitSw:inside:NC
 43	PE12	GPIO_EXTI12	LimitSw:outside:NO
 44	PE13	GPIO_EXTI13	LimitSw:outside:NC
-45	PE14	GPIO_EXTI14	OverrunSw:Inside
-46	PE15	GPIO_EXTI15	OverrunSw:outside
+45	PE14	GPIO_EXTI14	OverrunSwes_NO
 59	PD12	GPIO_Output	LED GREEN
 60	PD13	GPIO_Output	LED ORANGE
 61	PD14	GPIO_Output	LED RED
@@ -140,7 +138,7 @@ SOFTWARE PROJECT
 
 Project Settings : 
 Project Name : drum
-Project Folder : /home/deh/GliderWinchItems/drum
+Project Folder : /home/gsm/GliderWinchItems/drum
 Toolchain / IDE : Makefile
 Firmware Package Name and Version : STM32Cube FW_F4 V1.25.0
 

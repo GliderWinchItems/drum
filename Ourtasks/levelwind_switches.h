@@ -23,8 +23,7 @@
 #define LIMITINSIDENC    (LimitSw_inside_NC_Pin)  // Inside  NO contact 0 = closed
 #define LIMITOUTSIDENO   (LimitSw_outside_NO_Pin) // Outside NC contact 0 = closed
 #define LIMITOUTSIDENC   (LimitSw_outside_NC_Pin) // Outside NO contact 0 = closed
-#define OVERRUNSWINSIDE  (OverrunSw_Inside_Pin)   // Inside  overrun closed = 0
-#define OVERRUNSWOUTSIDE (OverrunSw_outside_Pin)  // Outside overrun closed = 0
+#define OVERRUNSWES      (OverrunSwes_NO_Pin)            // Either  NO contact 0 = closed
 #define OVERRUNBRIDGE (1<<9) // Bridge sw for testing overrun. 0 = test position
 
 /* Integrity status bits. */
@@ -33,14 +32,16 @@
 #define STEPPERSWSTS02 (1<<02) // Inside-Outside limit sws both ON 
 #define STEPPERSWSTS03 (1<<03) // Inside NC and NO are both closed
 #define STEPPERSWSTS04 (1<<04) // Outside NC and NO are both closed
+
+/*  Reconsider with wire-ORed overrun levelwind_switches*/
 #define STEPPERSWSTS05 (1<<05) // Both overrun NC are open
 #define STEPPERSWSTS06 (1<<06) // Outside overrun closed, outside limit sw open
 #define STEPPERSWSTS07 (1<<07) // Inside overrun closed, outside limit sw open 
 
+
 /* Alert status bits */
 #define STEPPERSWALRT00 (1<<0) // Bridge switch in TEST position
-#define STEPPERSWALRT01 (1<<1) // Inside overun switch is closed
-#define STEPPERSWALRT02 (1<<2) // Outside overun switch is closed
+#define STEPPERSWALRT01 (1<<1) // An overun switch is closed
 
 struct SWITCHXITION
 {

@@ -283,7 +283,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             // Error; this is not disabling steper
             // REVISIT make sure it gets re-enabled when exiting state
             p->enflag = (2 << 16); // Set bit with BSRR storing
-            Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+            Stepper_DR_GPIO_Port->BSRR = p->enflag;
          }
 
          case (LW_ISR_TRACK):
@@ -321,7 +321,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             // REVISIT make sure it gets re-enabled when exiting state
             // Error; this is not disabling steper
             p->enflag = (2 << 16); // Set bit with BSRR storing
-            Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+            Stepper_DR_GPIO_Port->BSRR = p->enflag;
          }
 
          case (LW_ISR_MANUAL):
@@ -362,7 +362,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    {
 #if LEVELWINDDEBUG   // move this out of ISR at some point
    // Update enable i/o pin
-      Stepper__DR__direction_GPIO_Port->BSRR = p->enflag;
+      Stepper_DR_GPIO_Port->BSRR = p->enflag;
 #endif     
 
       // forward (levelwind) direction means position accumulator is increasing
@@ -419,7 +419,7 @@ void levelwind_items_TIM2_IRQHandler(void)
          p->pos_prev = p->posaccum.s16[1];
 
         // set direction based on sign of Velocity integrator
-         Stepper__DR__direction_GPIO_Port->BSRR = (p->velaccum.s16[1])
+         Stepper_DR_GPIO_Port->BSRR = (p->velaccum.s16[1])
             ? 1 : (1 << 16);
 
          // Start TIM9 to generate a delayed pulse.
