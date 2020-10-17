@@ -589,7 +589,8 @@ static struct MAILBOXCAN* loadmbx(struct MAILBOXCANNUM* pmbxnum, struct CANRCVBU
 	pnotetmp = pmbx->pnote; // Get ptr to head of linked list
 	if (pnotetmp == NULL) return pmbx; // CANID found, but no notifications
 
-	pmbx->ctr += 1; // Count updates
+	pmbx->ctr    += 1; // Count updates	
+	pmbx->newflag = 1; // Set flag; user resets if desired
 	
 	// Traverse linked list making notifications
 	do 

@@ -70,6 +70,7 @@ struct MAILBOXCAN
 	struct CANNOTIFYLIST* pnote; // Pointer to notification block; NULL = none 
 	uint32_t ctr;                // Update counter (increment each update)
 	uint8_t paytype;             // Code for payload type
+	uint8_t newflag;             // Set to 1 when new msg loaded; user resets if desired.
 };
 
 /* Linked list item: Additional tasks accessing circular buffer */
