@@ -90,8 +90,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define T9C1steppulse_Pin GPIO_PIN_5
-#define T9C1steppulse_GPIO_Port GPIOE
+#define Stepper_PU_Pin GPIO_PIN_5
+#define Stepper_PU_GPIO_Port GPIOE
 #define encodectrA_Pin GPIO_PIN_0
 #define encodectrA_GPIO_Port GPIOA
 #define encodectrB_Pin GPIO_PIN_1
