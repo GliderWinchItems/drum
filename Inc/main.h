@@ -110,8 +110,8 @@ void Error_Handler(void);
 #define ManualSw_left_GPIO_Port GPIOE
 #define ManualSw_right_Pin GPIO_PIN_8
 #define ManualSw_right_GPIO_Port GPIOE
-#define ManualSw_Pin GPIO_PIN_9
-#define ManualSw_GPIO_Port GPIOE
+#define ManualSw_NO_Pin GPIO_PIN_9
+#define ManualSw_NO_GPIO_Port GPIOE
 #define LimitSw_inside_NO_Pin GPIO_PIN_10
 #define LimitSw_inside_NO_GPIO_Port GPIOE
 #define LimitSw_inside_NO_EXTI_IRQn EXTI15_10_IRQn

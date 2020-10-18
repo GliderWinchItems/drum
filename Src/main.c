@@ -841,11 +841,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : ManualSw_Pin */
-  GPIO_InitStruct.Pin = ManualSw_Pin;
+  /*Configure GPIO pin : ManualSw_NO_Pin */
+  GPIO_InitStruct.Pin = ManualSw_NO_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(ManualSw_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(ManualSw_NO_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_GREEN_Pin LED_ORANGE_Pin LED_RED_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = LED_GREEN_Pin|LED_ORANGE_Pin|LED_RED_Pin|LED_BLUE_Pin;
