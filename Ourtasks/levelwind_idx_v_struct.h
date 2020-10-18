@@ -45,10 +45,11 @@ struct LEVELWINDLC
    int32_t  Lminus;     // start of negative reversal region
    int32_t  Ka;         // reversal rate
    int32_t  Nr;         // ratio of reversal rate to sweep rate
-   
+
 
    uint32_t ocidx;      // OC register increment for indexing 
    uint8_t  Nswp;       // sweep rate speed-up factor
+   int32_t  Nman;       // manual rate reduction factor
 
    // For development, these will likely not be needed in operational code
    float    clfactor;   // Constant to compute oc duration at CL = 100.0

@@ -183,6 +183,8 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
    if ((pT2base->CCMR2 & 0x1) == 0) // Which mode?
    { // Here TIM2CH3 mode is output compare. Use CAN payload bit
          // Output capture (no pin) is TIM2CH3 mode
+      // Magic number here based on knowing which GPIO pin position
+      // is being used. Making it more general is desirable
       if ((pcan->cd.uc[0] & DRBIT) == 0)  p->drflag = (1 << 16);  // Reset
       else  p->drflag = 1;                                        // Set
    }
@@ -197,6 +199,7 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
       p->enflag = 2; // Set
    }
 
+   /* iobits does not seem to be actually used anywhere  */
    /* Bits positioned for updating PB BSRR register. */
    p->iobits = p->drflag | p->enflag;
    return;  
@@ -282,8 +285,7 @@ void levelwind_items_TIM2_IRQHandler(void)
          {  // Set enable bit which turns FET on, which disables levelwind
             // Error; this is not disabling steper
             // REVISIT make sure it gets re-enabled when exiting state
-            p->enflag = (2 << 16); // Set bit with BSRR storing
-            Stepper_DR_GPIO_Port->BSRR = p->enflag;
+            p->enflag = 2; // Reset bit with BSRR storing (disables stepper)
          }
 
          case (LW_ISR_TRACK):
@@ -320,8 +322,7 @@ void levelwind_items_TIM2_IRQHandler(void)
          {  // Set enable bit which turns FET on, which disables levelwind
             // REVISIT make sure it gets re-enabled when exiting state
             // Error; this is not disabling steper
-            p->enflag = (2 << 16); // Set bit with BSRR storing
-            Stepper_DR_GPIO_Port->BSRR = p->enflag;
+            p->enflag = 2;  // Reset bit with BSRR storing (disables stepper)
          }
 
          case (LW_ISR_MANUAL):
@@ -357,13 +358,15 @@ void levelwind_items_TIM2_IRQHandler(void)
       }      
    }
 
+#if LEVELWINDDEBUG   // move this out of ISR at some point?
+   // Update enable i/o pin
+   Stepper_MF_GPIO_Port->BSRR = p->enflag;
+#endif     
+
    /* reversing screw emulation code */
    if (emulation_run)
    {
-#if LEVELWINDDEBUG   // move this out of ISR at some point
-   // Update enable i/o pin
-      Stepper_DR_GPIO_Port->BSRR = p->enflag;
-#endif     
+
 
       // forward (levelwind) direction means position accumulator is increasing
       // negative direction means position accumulator is decreasing
@@ -418,7 +421,10 @@ void levelwind_items_TIM2_IRQHandler(void)
       { // Here carry/borrow from low 16b to high 16b
          p->pos_prev = p->posaccum.s16[1];
 
-        // set direction based on sign of Velocity integrator
+         // set direction based on sign of Velocity integrator
+         // there are magic numbers here associated with knowing
+         // which pin the stepper DR bit is connected to.
+         // Poor practice, Should be made more general.
          Stepper_DR_GPIO_Port->BSRR = (p->velaccum.s16[1])
             ? 1 : (1 << 16);
 
@@ -441,7 +447,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    if (p->ledctr1 > p->ledctr2)        
    {
       p->ledctr1 = 0;
-      if ((GPIOA->IDR & (1<<0)) == 0)
+      if ((GPIOA->IDR & (1 << 0)) == 0)
       {
          HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_SET); // GREEN LED       
       }
@@ -519,10 +525,11 @@ uint8_t levelwind_items_arrest_case(void)
    
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
-   // transition to off state on completion   
+   // transition to Track state and mode on completion   
    if (p->velaccum.s32 == 0)
    {
       p->lw_mode = LW_ISR_TRACK;
+      p->lw_state = LW_TRACK;
       return (0);
    }
    else

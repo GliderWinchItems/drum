@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 // Master Controller state machine  definitions 
-// Lower nibble reserved for sub-states
+// Lower nibble reserved for sub-states if needed
 #define MC_SAFE      (0 << 4)
 #define MC_PREP      (1 << 4)
 #define MC_ARMED     (2 << 4)
@@ -19,7 +19,7 @@
 #define MC_CLIMB     (5 << 4)
 #define MC_RECOVERY  (6 << 4)
 #define MC_RETRIEV   (7 << 4)
-#define MC_ABORTED   (8 << 4)
-#define MC_STOPPED   (9 << 4)
+#define MC_ABORT     (8 << 4)
+#define MC_STOP      (9 << 4)
 
 #endif

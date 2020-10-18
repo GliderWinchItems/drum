@@ -99,12 +99,16 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->hbctr      = 0;
    
    p->dtwmin     = 0x7fffffff;
+
+   // TIM2 output compare increments
+   p->ocinc       = p->lc.ocidx;                // initialize to indexing increment
+   p->ocswp       = p->lc.ocidx/p->lc.Nswp;     // initalize sweep increment
+   p->ocman       = p->lc.ocidx * p->lc.Nman;   // initalize manual increment 
  
    // for development;these will likely not be in operational code
    p->ocfauxinc   = 8400000;   // Default 1/10 sec duration
    p->cltimectr   = 0;
-   p->ocinc       = p->lc.ocidx;             // initialize to indexing increment
-   p->ocswp       = p->lc.ocidx/p->lc.Nswp;  // initalize sweep increment 
+   
 
    /* Convert levelwind_idx_v_struct times to timer ticks. */
    p->keepalive_k = (p->lc.ka_levelwind_t); // keep-alive timeout (timeout delay ms)

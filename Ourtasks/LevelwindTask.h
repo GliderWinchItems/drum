@@ -86,12 +86,11 @@ struct LEVELWINDFUNCTION
    float    clpos;      // CL position extracted from CAN msg
    uint32_t cltimectr;  // Counter for loss of CL msgs
    uint32_t speedcmdi;  // Commanded speed (integer)
-   uint32_t ocinc;      // OC register increment for indexing and sweeping
-   uint32_t ocswp;      // OC register increment for sweep
+   uint32_t ocinc;      // OC register increment for indexing
+   uint32_t ocswp;      // OC register increment for sweeping
+   uint32_t ocman;      // OC register increment for manual motion
    uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
-   uint32_t drflag;     // BSRR pin set/reset bit position: direction
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
-   uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
 
@@ -109,6 +108,7 @@ struct LEVELWINDFUNCTION
    uint16_t swbits;     // Port E switch bits (10:15)
 
    // debug and characterization, potentially removable for operational code
+   uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
    uint32_t dtwentry;   // DTW timer upon ISR entry
    int32_t  dtwdiff;    // DTW timer minus entry upon ISR exit
    int32_t  dtwmax;     // DTW difference max
@@ -116,6 +116,7 @@ struct LEVELWINDFUNCTION
    uint32_t intcntr;    // interrupt counter
    uint32_t ocfauxinc;  // OC register increment for CL faux encoder  
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
+   uint32_t drflag;     // BSRR pin set/reset bit position: direction
 
    uint32_t keepalive_k;  // keep-alive timeout (timeout delay timer ticks) 
 

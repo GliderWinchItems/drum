@@ -43,6 +43,8 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
 
    p->ocidx       = 21000; // Indexing increment for 250 ms
    p->Nswp        = 5;     // Sweeping increment
+   p->Nman        = 5;     // Sweeping increment
+
 
 // For development; these will likely not be in operational code
    p->clfactor    = 168E3; // CL scaling: 100% = 50 us

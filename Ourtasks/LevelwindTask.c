@@ -168,7 +168,8 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_CENTER):
             {
-               if(p->mc_state != MC_SAFE) 
+               // need code to move to center and then turn off
+               if((p->mc_state == MC_SAFE))  
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;
@@ -258,8 +259,8 @@ void levelwind_task_cp_state_init(void)
    pcp->climb_led = 0;
    pcp->recovery_led = 0;
    pcp->retrieve_led = 0;
-   pcp->aborted_led= 0;
-   pcp->stopped_led = 0;
+   pcp->abort_led= 0;
+   pcp->stop_led = 0;
    pcp->arm_pb_led = 0;
    pcp->prep_rcvry_led = 0;
    pcp->beeper = 0;
@@ -377,12 +378,12 @@ return;  // DEBUG!!!!do nothing until real cp state CAN messages are present
       & (RETRIEVELED_MASK << RETRIEVELED_BIT)) >> RETRIEVELED_BIT;
    
 
-   pcp->aborted_led = (pcan->cd.uc[ABORTEDLED_BYTE] 
-      & (ABORTEDLED_MASK << ABORTEDLED_BIT)) >> ABORTEDLED_BIT;
+   pcp->abort_led = (pcan->cd.uc[ABORTLED_BYTE] 
+      & (ABORTLED_MASK << ABORTLED_BIT)) >> ABORTLED_BIT;
    
 
-   pcp->stopped_led = (pcan->cd.uc[STOPPEDLED_BYTE] 
-      & (STOPPEDLED_MASK << STOPPEDLED_BIT)) >> STOPPEDLED_BIT;
+   pcp->stop_led = (pcan->cd.uc[STOPLED_BYTE] 
+      & (STOPLED_MASK << STOPLED_BIT)) >> STOPLED_BIT;
    
 
    pcp->arm_pb_led = (pcan->cd.uc[ARMPBLED_BYTE] 

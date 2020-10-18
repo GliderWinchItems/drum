@@ -125,13 +125,13 @@
 
 // payload byte 6
 
-#define ABORTEDLED_BYTE    6
-#define ABORTEDLED_BIT     0
-#define ABORTEDLED_MASK    0x01
+#define ABORTLED_BYTE      6
+#define ABORTLED_BIT       0
+#define ABORTLED_MASK      0x01
 
-#define STOPPEDLED_BYTE    6
-#define STOPPEDLED_BIT     1
-#define STOPPEDLED_MASK    0x01
+#define STOPLED_BYTE       6
+#define STOPLED_BIT        1
+#define STOPLED_MASK       0x01
 
 #define ARMPBLED_BYTE      6
 #define ARMPBLED_BIT       2
@@ -184,8 +184,8 @@ struct CONTROLPANELSTATE
    uint8_t  climb_led;
    uint8_t  recovery_led;
    uint8_t  retrieve_led;
-   uint8_t  aborted_led;
-   uint8_t  stopped_led;
+   uint8_t  abort_led;
+   uint8_t  stop_led;
 
    // lighted push button leds
    uint8_t  arm_pb_led;
