@@ -45,8 +45,8 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 31	PA6	TIM13_CH1	fieldfetdrive
 35	PB0	GPIO_Output	Stepper_DR
 36	PB1	GPIO_Output	Stepper_MF
-38	PE7	GPIO_EXTI7	ManualSw_left
-39	PE8	GPIO_EXTI8	ManualSw_right
+38	PE7	GPIO_EXTI7	ManualSw_left_NO
+39	PE8	GPIO_EXTI8	ManualSw_right_NO
 40	PE9	GPIO_Input	ManualSw_NO
 41	PE10	GPIO_EXTI10	LimitSw_inside_NO
 42	PE11	GPIO_EXTI11	LimitSw_inside_NC
@@ -108,8 +108,8 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 31	PA6	TIM13_CH1	fieldfetdrive
 35	PB0	GPIO_Output	Stepper_DR
 36	PB1	GPIO_Output	Stepper_MF
-38	PE7	GPIO_EXTI7	ManualSw_left
-39	PE8	GPIO_EXTI8	ManualSw_right
+38	PE7	GPIO_EXTI7	ManualSw_left_NO
+39	PE8	GPIO_EXTI8	ManualSw_right_NO
 40	PE9	GPIO_Input	ManualSw_NO
 41	PE10	GPIO_EXTI10	LimitSw_inside_NO
 42	PE11	GPIO_EXTI11	LimitSw_inside_NC

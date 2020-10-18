@@ -106,10 +106,10 @@ void Error_Handler(void);
 #define Stepper_DR_GPIO_Port GPIOB
 #define Stepper_MF_Pin GPIO_PIN_1
 #define Stepper_MF_GPIO_Port GPIOB
-#define ManualSw_left_Pin GPIO_PIN_7
-#define ManualSw_left_GPIO_Port GPIOE
-#define ManualSw_right_Pin GPIO_PIN_8
-#define ManualSw_right_GPIO_Port GPIOE
+#define ManualSw_left_NO_Pin GPIO_PIN_7
+#define ManualSw_left_NO_GPIO_Port GPIOE
+#define ManualSw_right_NO_Pin GPIO_PIN_8
+#define ManualSw_right_NO_GPIO_Port GPIOE
 #define ManualSw_NO_Pin GPIO_PIN_9
 #define ManualSw_NO_GPIO_Port GPIOE
 #define LimitSw_inside_NO_Pin GPIO_PIN_10

@@ -833,9 +833,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Stepper_MF_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ManualSw_left_Pin ManualSw_right_Pin LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin
+  /*Configure GPIO pins : ManualSw_left_NO_Pin ManualSw_right_NO_Pin LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin
                            LimitSw_outside_NO_Pin LimitSw_outside_NC_Pin OverrunSwes_NO_Pin */
-  GPIO_InitStruct.Pin = ManualSw_left_Pin|ManualSw_right_Pin|LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin
+  GPIO_InitStruct.Pin = ManualSw_left_NO_Pin|ManualSw_right_NO_Pin|LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin
                           |LimitSw_outside_NO_Pin|LimitSw_outside_NC_Pin|OverrunSwes_NO_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
