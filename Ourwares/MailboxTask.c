@@ -19,7 +19,7 @@ extern osThreadId GatewayTaskHandle;
 /* One struct for each CAN module, e.g. CAN 1, 2, 3, ... */
 struct MAILBOXCANNUM mbxcannum[STM32MAXCANNUM] = {0};
 
-/* Linked list head for task notification of cirular buffer ready. */
+/* Linked list head for task notification of circular buffer ready. */
 struct MAILBOXCANBUFNOTE* pcir[STM32MAXCANNUM] = {NULL};
 
 #ifdef GATEWAYTASKINCLUDED
@@ -152,8 +152,8 @@ struct MAILBOXCANBUFPTR* MailboxTask_add_bufaccess(struct CAN_CTLBLOCK* pctl,\
        osThreadId tskhandle, uint32_t notebit)
 {
 	struct MAILBOXCANBUFPTR* p;
-	struct MAILBOXCANBUFNOTE* pcirtmp;
 	struct MAILBOXCANBUFNOTE* pnew;
+	struct MAILBOXCANBUFNOTE* pcirtmp;
 
 	/* "MailboxTask_add_CANlist" needs to be called before this routine. */
 	if (pctl  == NULL) morse_trap(2501); 
@@ -168,26 +168,27 @@ taskENTER_CRITICAL();
 
 	/* Add entry to list. */
 
-	pcirtmp = pcir[pctl->canidx];
-	if (pcirtmp == NULL)
+	if (pcir[pctl->canidx] == NULL)
 	{ // Here, this will be the first entry in the list
 		pnew = (struct MAILBOXCANBUFNOTE*)calloc(1, sizeof(struct MAILBOXCANBUFNOTE));
 		if (pnew == NULL) morse_trap(2504);
-		pcirtmp  = pnew;
-//		pnew->pnext     = NULL;  calloc sets to zero
+		pcir[pctl->canidx]  = pnew;
+//		pnew->pnext     = NULL;  // calloc sets to zero
 		pnew->notebit   = notebit;
 		pnew->tskhandle = tskhandle;
 	}
 	else
 	{ /* One or more is on list, so search for end. */
+		pcirtmp = pcir[pctl->canidx];
+		// Locate last entry on list
 		while (pcirtmp->pnext != NULL)
 		{
 			pcirtmp = pcirtmp->pnext;
 		}
 		pnew = (struct MAILBOXCANBUFNOTE*)calloc(1, sizeof(struct MAILBOXCANBUFNOTE));
 		if (pnew == NULL) morse_trap(2504);
-		pcirtmp->pnext  = pnew;
-//		pnew->pnext     = NULL;  calloc sets to zero
+		pcirtmp->pnext  = pnew; // Previous last entry points to new entry
+//		pnew->pnext     = NULL;  // calloc sets to zero
 		pnew->notebit   = notebit;
 		pnew->tskhandle = tskhandle;		
 	}
@@ -476,7 +477,7 @@ void StartMailboxTask(void const * argument)
 if (pmbxnum == NULL) morse_trap(77); // Debug trap
 				do
 				{
-					/* Get a pointer to the circular buffer w CAN msgs. */
+					/* Get a pointer to CAN msg in the circular buffer. */
 					pncan = can_iface_get_CANmsg(pmbxnum->ptake);
 
 					if (pncan != NULL)

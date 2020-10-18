@@ -54,7 +54,11 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 	/* Add CAN Mailboxes                               CAN     CAN ID             TaskHandle,Notify bit,Skip, Paytype */
 //	p->pmbx_cid_gps_sync          =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,          NULL,LEVELWINDBIT06,0,U8);
 	p->pmbx_cid_drum_tst_stepcmd = MailboxTask_add(pctl0,p->lc.cid_drum_tst_stepcmd,NULL,LEVELWINDSWSNOTEBITCAN1,0,U8_FF);
-   p->pmbx_cid_mc_state         = MailboxTask_add(pctl0,p->lc.cid_mc_state,        NULL,LEVELWINDSWSNOTEBITCAN2,0,U8_FF);   
+   p->pmbx_cid_mc_state         = MailboxTask_add(pctl0,p->lc.cid_mc_state,        NULL,LEVELWINDSWSNOTEBITCAN2,0,U8_FF); 
+
+   // Pointer into CAN receive circular buffer 
+   p->pmbx_buf = MailboxTask_add_bufaccess(pctl0, NULL, LEVELWINDSWSNOTEBITCANALL);
+
 	/* Pre-load fixed data in CAN msgs */
 	for (i = 0; i < NUMCANMSGSLEVELWIND; i++)
 	{

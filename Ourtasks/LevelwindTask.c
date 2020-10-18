@@ -48,6 +48,7 @@ void StartLevelwindTask(void const * argument)
 {
 	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
    struct CONTROLPANELSTATE* pcp = &cp_state;   // Convenience pointer
+   struct CANRCVBUFN* pcann;
 
 	/* A notification copies the internal notification word to this. */
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
@@ -94,8 +95,26 @@ extern CAN_HandleTypeDef hcan1;
 	for (;;)
 	{
 		/* Wait for notifications */      
-		xTaskNotifyWait(0,noteuse, &noteval, portMAX_DELAY);
+		xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
+
+      if ((noteval & LEVELWINDSWSNOTEBITCANALL) != 0)
+      { // CAN circular buffer has new data
+         while ( (pcann = MailboxTask_get_bufmsg(p->pmbx_buf)) != NULL) 
+         { // Select only desired CAN msgs from buffer
+            if (pcann->can.id == p->lc.cid_drum_tst_stepcmd)
+            { // Received CAN msg with Control Lever position, direction and enable bits 
+              levelwind_items_clupdate(&pcann->can);
+levelwind_task_cp_state_update(&pcann->can);
+
+            }
+            if (pcann->can.id == p->lc.cid_mc_state)
+            {  // this will process the control panel state messages and above clupdate scraped
+               levelwind_task_cp_state_update(&pcann->can);
+            }
+         }
+      }
+
 
       if ((noteval & LEVELWINDSWSNOTEBITISR) != 0)
 		{ // Here levelwind_items.c triggered the ETH_IRQHandler
@@ -120,9 +139,9 @@ extern CAN_HandleTypeDef hcan1;
 		if ((noteval & LEVELWINDSWSNOTEBITCAN1) != 0) 
 		{   // CAN:  CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
 		    // Received CAN msg with Control Lever position, direction and enable bits 
-			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
+//$			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
          // this will process the control panel state messages and above clupdate scraped
-         levelwind_task_cp_state_update(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
+//$         levelwind_task_cp_state_update(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
 			noteuse |= LEVELWINDSWSNOTEBITCAN1;   
       }       
 

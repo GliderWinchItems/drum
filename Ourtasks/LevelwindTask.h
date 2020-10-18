@@ -31,6 +31,7 @@
 #define LEVELWINDSWSNOTEBITCAN1      (1<<17)    // CAN msg: Pushbuttons & CL position
 #define LEVELWINDSWSNOTEBITSWT1      (1<<18)    // Software timer #1
 #define LEVELWINDSWSNOTEBITCAN2      (1<<19)    // CAN msg: Launch state
+#define LEVELWINDSWSNOTEBITCANALL    (1<<20)    // CAN circular buffer update
 
 
 /* Port and pin numbers for stepper controller. */
@@ -140,6 +141,8 @@ struct LEVELWINDFUNCTION
    struct MAILBOXCAN* pmbx_cid_gps_sync;        // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
    struct MAILBOXCAN* pmbx_cid_drum_tst_stepcmd;// CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
    struct MAILBOXCAN* pmbx_cid_mc_state; //'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
+
+   struct MAILBOXCANBUFPTR* pmbx_buf; // Pointer into circular CAN buffer
 
    /* CAN msgs */
    struct CANTXQMSG canmsg[NUMCANMSGSLEVELWIND];

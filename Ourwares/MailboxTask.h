@@ -73,7 +73,7 @@ struct MAILBOXCAN
 	uint8_t newflag;             // Set to 1 when new msg loaded; user resets if desired.
 };
 
-/* Linked list item: Additional tasks accessing circular buffer */
+/* Linked list item: Notification for additional tasks accessing circular buffer */
 struct MAILBOXCANBUFNOTE
 {
 	struct MAILBOXCANBUFNOTE* pnext; // Points to next on list; NULL = this one is last
@@ -139,6 +139,20 @@ struct CANRCVBUFN* Mailboxgetbuf(int i);
 /* @brief	: Get NCAN buffer from Mailbox circular buffer
  * @param	: i = index for CAN unit (0, 1)\
  * @return  : NULL = none available; otherwise, points to NCAN msg
+ * *************************************************************************/
+ struct CANRCVBUFN* MailboxTask_get_bufmsg(struct MAILBOXCANBUFPTR* p);
+/* @brief	: Get CAN msg from circular buffer
+ * @param	: p = pointer struct with points for working in circular buffer
+ * @return	: NULL = no new msgs; pointer to msg
+ * *************************************************************************/
+ struct MAILBOXCANBUFPTR* MailboxTask_add_bufaccess(struct CAN_CTLBLOCK* pctl,\
+       osThreadId tskhandle, uint32_t notebit);
+/* @brief	: Add access to the iface.c CAN msg circular buffer
+ * @param	: pctl = Pointer to CAN control block, i.e. CAN module/CAN bus
+ * @param	: canid = CAN ID
+ * @param	: tskhandle = Task handle; NULL to use current task; 
+ * @param	: notebit = notification bit; NULL = no notification
+ * @return	: Pointer to CAN msg circular buffer; NULL = failed
  * *************************************************************************/
 
 extern osThreadId MailboxTaskHandle;
