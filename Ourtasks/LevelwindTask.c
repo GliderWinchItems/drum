@@ -100,13 +100,12 @@ extern CAN_HandleTypeDef hcan1;
 
       if ((noteval & LEVELWINDSWSNOTEBITCANALL) != 0)
       { // CAN circular buffer has new data
+         // Fetch msgs until no unproccesed data
          while ( (pcann = MailboxTask_get_bufmsg(p->pmbx_buf)) != NULL) 
          { // Select only desired CAN msgs from buffer
             if (pcann->can.id == p->lc.cid_drum_tst_stepcmd)
             { // Received CAN msg with Control Lever position, direction and enable bits 
               levelwind_items_clupdate(&pcann->can);
-levelwind_task_cp_state_update(&pcann->can);
-
             }
             if (pcann->can.id == p->lc.cid_mc_state)
             {  // this will process the control panel state messages and above clupdate scraped
