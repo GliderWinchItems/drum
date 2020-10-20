@@ -90,7 +90,9 @@ void levelwind_items_timeout(void)
       p->cltimectr = p->lc.cltimemax;
 
       /* Set enable bit which turns FET on, which disables levelwind. */
-      p->enflag = (2 << 16); // Set bit with BSRR storing
+      // Possible Error. This seems to reset the enable which would enable 
+      // the stepper. This leaves stepper enabled
+      p->enflag = (Stepper_MF_Pin << 16); // Set bit with BSRR storing
 
       /* Bits positioned for updating PB BSRR register. */
       p->iobits = p->drflag | p->enflag;
@@ -156,19 +158,19 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
          pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
          if ((pT2base->CCMR2 & 0x1) != 0)
          { // Here, currently using encoder input capture
-            // Setup for output compare
-            pT2base->CCER  |=  (1<<11); // CC3NP: Configure as output
-            pT2base->CCER  &= ~(1<<8);  // CC3E = 0; Turn channel off
-            pT2base->CCMR2 &= ~(0xff << 0); // Change to Output compare, no pin
+            // Setup for output c ompare
+            pT2base->CCER  |=  (1 << 11);    // CC3NP: Configure as output
+            pT2base->CCER  &= ~(1 << 8);     // CC3E = 0; Turn channel off
+            pT2base->CCMR2 &= ~(0xff << 0);  // Change to Output compare, no pin
             pT2base->CCR3 = pT2base->CNT + p->ocfauxinc; // Schedule next faux encoder interrupt
          }
          else
          { // Here, currently using output compare
             // Setup for input capture
-            pT2base->CCER  &= ~((1<<8) || (1<<11)); // CC3E, CC3NP = input
-            pT2base->CCMR2 |= 0x01; // Input capture mapped to TI3
-            pT2base->SR = ~(1<<3);  // Reset CH3 flag if on
-            pT2base->CCER  |= (1<<8); // Capture enabled on pin.
+            pT2base->CCER  &= ~((1 << 8) || (1 << 11));  // CC3E, CC3NP = input
+            pT2base->CCMR2 |= 0x01;       // Input capture mapped to TI3
+            pT2base->SR = ~(1 << 3);      // Reset CH3 flag if on
+            pT2base->CCER  |= (1 << 8);   // Capture enabled on pin.
          }
          pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
       }
@@ -183,20 +185,20 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
    if ((pT2base->CCMR2 & 0x1) == 0) // Which mode?
    { // Here TIM2CH3 mode is output compare. Use CAN payload bit
          // Output capture (no pin) is TIM2CH3 mode
-      // Magic number here based on knowing which GPIO pin position
-      // is being used. Making it more general is desirable
-      if ((pcan->cd.uc[0] & DRBIT) == 0)  p->drflag = (1 << 16);  // Reset
-      else  p->drflag = 1;                                        // Set
+      if ((pcan->cd.uc[0] & DRBIT) == 0)  
+         p->drflag = (Stepper_DR_Pin << 16); // Reset
+      else  
+      p->drflag = Stepper_DR_Pin;            // Set
    }
 
    // Motor Enable bit
    if ((pcan->cd.uc[0] & ENBIT) != 0)
    {
-      p->enflag = (2 << 16); // Reset
+      p->enflag = (Stepper_MF_Pin << 16); // Reset
    }
    else
    {
-      p->enflag = 2; // Set
+      p->enflag = Stepper_MF_Pin; // Set
    }
 
    /* iobits does not seem to be actually used anywhere  */
@@ -220,11 +222,11 @@ void levelwind_items_TIM2_IRQHandler(void)
 
    // TIM2CH2 = encodertimeZ
 #if LEVELWINDDEBUG   
-   if ((pT2base->SR & (1<<2)) != 0) // CH2 Interrupt flag?
+   if ((pT2base->SR & (1 << 2)) != 0) // CH2 Interrupt flag?
    { // Yes, encoder channel Z transition
-      pT2base->SR = ~(1<<2);  // Reset CH2 flag
+      pT2base->SR = ~(1 << 2);  // Reset CH2 flag
 
-      if ((GPIOB->IDR & (1<<3)) == 0)
+      if ((GPIOB->IDR & (1 << 3)) == 0)
       {
          HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
       }
@@ -248,11 +250,11 @@ void levelwind_items_TIM2_IRQHandler(void)
    uint8_t  emulation_run = 0;   
 
    /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
-   if ((pT2base->SR & (1<<3)) != 0) // CH3 Interrupt flag?
+   if ((pT2base->SR & (1 << 3)) != 0)  // CH3 Interrupt flag?
    { // Yes, either encoder channel A, or output compare emulating an encoder edge
       uint8_t  ddir; // temporary drum direction 
 
-      pT2base->SR = ~(1<<3);  // Reset CH3 flag
+      pT2base->SR = ~(1 << 3);   // Reset CH3 flag
 
       /* Was this interrupt due to encoder input capture or output compare?. */
       if ((pT2base->CCMR2 & 0x1) == 0)
@@ -283,9 +285,9 @@ void levelwind_items_TIM2_IRQHandler(void)
       {
          case(LW_ISR_OFF):
          {  // Set enable bit which turns FET on, which disables levelwind
-            // Error; this is not disabling steper
+            // Error; this was not disabling steper.
             // REVISIT make sure it gets re-enabled when exiting state
-            p->enflag = 2; // Reset bit with BSRR storing (disables stepper)
+            p->enflag = Stepper_MF_Pin; // Set bit with BSRR storing (disables stepper)
          }
 
          case (LW_ISR_TRACK):
@@ -309,9 +311,9 @@ void levelwind_items_TIM2_IRQHandler(void)
    }
 
    // Indexing timer interrupt processing
-   if ((pT2base->SR & (1<<1)) != 0) // CH1 Interrupt flag
+   if ((pT2base->SR & (1 << 1)) != 0) // CH1 Interrupt flag
    { // Yes, OC drive 
-      pT2base->SR = ~(1<<1);  // Reset CH1 flag
+      pT2base->SR = ~(1 << 1);  // Reset CH1 flag
 
       // Duration increment computed from CL CAN msg (during development)
       pT2base->CCR1 += p->ocinc; // Schedule next indexing interrupt
@@ -321,8 +323,8 @@ void levelwind_items_TIM2_IRQHandler(void)
          case(LW_ISR_OFF):
          {  // Set enable bit which turns FET on, which disables levelwind
             // REVISIT make sure it gets re-enabled when exiting state
-            // Error; this is not disabling steper
-            p->enflag = 2;  // Reset bit with BSRR storing (disables stepper)
+            // Error; this was not disabling steper
+            p->enflag = Stepper_MF_Pin;  // Set bit with BSRR storing (disables stepper)
          }
 
          case (LW_ISR_MANUAL):
@@ -422,11 +424,8 @@ void levelwind_items_TIM2_IRQHandler(void)
          p->pos_prev = p->posaccum.s16[1];
 
          // set direction based on sign of Velocity integrator
-         // there are magic numbers here associated with knowing
-         // which pin the stepper DR bit is connected to.
-         // Poor practice, Should be made more general.
          Stepper_DR_GPIO_Port->BSRR = (p->velaccum.s16[1])
-            ? 1 : (1 << 16);
+            ? Stepper_DR_Pin : (Stepper_DR_Pin << 16);
 
          // Start TIM9 to generate a delayed pulse.
          pT9base->CR1 = 0x9;         

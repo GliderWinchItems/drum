@@ -62,9 +62,11 @@ void StartLevelwindTask(void const * argument)
 	/* Hardware filter CAN msgs. */
 	levelwind_func_init_canfilter(p);
 
+
    /* TEMPORARY: set initial_states until real mechanism is established */
    p->lw_mode = LW_ISR_INDEX; // temporary until way to change states is implemented
    p->mc_state = MC_PREP;     // temporary until way to change states is implemented
+
 
 	/* Limit and overrun switches. */
 	levelwind_switches_init();   
