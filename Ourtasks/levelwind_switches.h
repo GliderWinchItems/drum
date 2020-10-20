@@ -23,7 +23,7 @@
 #define LIMITINSIDENC    (LimitSw_inside_NC_Pin)  // Inside  NO contact 0 = closed
 #define LIMITOUTSIDENO   (LimitSw_outside_NO_Pin) // Outside NC contact 0 = closed
 #define LIMITOUTSIDENC   (LimitSw_outside_NC_Pin) // Outside NO contact 0 = closed
-#define OVERRUNSWES      (OverrunSwes_NO_Pin)            // Either  NO contact 0 = closed
+#define OVERRUNSWES      (OverrunSwes_NO_Pin)     // Either  NO contact 0 = closed
 #define OVERRUNBRIDGE (1<<9) // Bridge sw for testing overrun. 0 = test position
 
 /* Integrity status bits. */
