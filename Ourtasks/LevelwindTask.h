@@ -96,9 +96,9 @@ struct LEVELWINDFUNCTION
 
    uint8_t  levelwindstatus;  // Reserved for levelwind status CAN msg
    uint8_t  lw_state;   // level-wind present state
+   uint8_t  lw_status;  // level-wind status
    uint8_t  lw_mode;    // level-wind ISR mode
    uint8_t  lw_indexed; // indexed status 
-   uint8_t  lw_overrun; // overrun status
    uint8_t  mc_state;   // master controller state    
    uint8_t  ocicbit;       
    uint8_t  ocicbit_prev;  

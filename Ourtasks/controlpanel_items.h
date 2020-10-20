@@ -59,24 +59,24 @@
 
 // payload byte 2
 #define LWMODE_BYTE        2
-#define LWMODE_BIT         6
-#define LWMODE_MASK        0x03  // 2 bit field
+#define LWMODE_BIT         7
+#define LWMODE_MASK        0x01
 
 #define LWINDEX_BYTE       2
-#define LWINDEX_BIT        5
+#define LWINDEX_BIT        6
 #define LWINDEX_MASK       0x01
 
 #define REVFWD_BYTE        2
-#define REVFWD_BIT         4
+#define REVFWD_BIT         5
 #define REVFWD_MASK        0x01
 
 #define RMTLCL_BYTE        2
-#define RMTLCL_BIT         3
+#define RMTLCL_BIT         4
 #define RMTLCL_MASK        0x01
 
 /* provisions for muliple retrieve_drums*/
 #define ACTIVEDRUM_BYTE    2   
-#define ACTIVEDRUM_BIT     0   
+#define ACTIVEDRUM_BIT     1   
 #define ACTIVEDRUM_MASK    0x07  // 3 bit field
 
 
@@ -164,7 +164,7 @@ struct CONTROLPANELSTATE
    uint8_t  brake;
    uint8_t  guillotine;
    uint8_t  emergency;     // normal:0, emergency:1
-   uint8_t  lw_mode;       // off:0, track:1, center:2
+   uint8_t  lw_mode;       // track:1, center:0
    uint8_t  lw_index;      // index the level-wind   
 
    // provisions for future expansions

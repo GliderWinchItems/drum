@@ -63,10 +63,14 @@ void StartLevelwindTask(void const * argument)
 	levelwind_func_init_canfilter(p);
 
 
-   /* TEMPORARY: set initial_states until real mechanism is established */
-   p->lw_mode = LW_ISR_INDEX; // temporary until way to change states is implemented
-   p->mc_state = MC_PREP;     // temporary until way to change states is implemented
+   /* Set initial_state/mode until MC messages arrive. Initial conditions for
+      CP state are handled in ...cp_state_init above  */
+   p->lw_state = LW_OFF;
+   p->lw_mode = LW_ISR_OFF;
+   
 
+   /* TEMPORARY Unil message are actually present  */
+   p->mc_state = MC_PREP;     // temporary until way to change states is implemented
 
 	/* Limit and overrun switches. */
 	levelwind_switches_init();   
@@ -95,8 +99,10 @@ extern CAN_HandleTypeDef hcan1;
 
 	for (;;)
 	{
-		/* Wait for notifications */      
-		xTaskNotifyWait(0,noteuse, &noteval, portMAX_DELAY);
+		/* Wait for notifications 
+         250 ms timeout insures Manual switch gets polled at least 4 times
+         per second. */      
+		xTaskNotifyWait(0,noteuse, &noteval, pdMS_TO_TICKS(250));
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
 
       if ((noteval & LEVELWINDSWSNOTEBITISR) != 0)
@@ -107,9 +113,8 @@ extern CAN_HandleTypeDef hcan1;
          /* Code here to figure out which ISR initated the notification 
             and accordingly do  any preliminary processing. It  is possible 
             that a switch statement for each ISR would be used. Also, check
-            if an averrun switch has activated and do a state change to 
-            MANUAL instead of repeating that code everywhere. Similar check
-            may be appropriate for Off state */                  
+            if an overrun switch has activated and do a state change to 
+            MANUAL instead of repeating that code everywhere.  */                  
 		}
 
 		if ((noteval & LEVELWINDSWSNOTEBITCAN2) != 0) 
@@ -134,23 +139,34 @@ extern CAN_HandleTypeDef hcan1;
 			noteuse |= LEVELWINDSWSNOTEBITSWT1;
 		}
 
-      if (0)   // here test for Manual switch closure (no associated notification)
+      if (0)   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed
          p->lw_state = LW_MANUAL;
          p->lw_indexed = 0;
          p->lw_mode = LW_ISR_MANUAL;
          // more may need to be done or some actions above placed in the case statements
-         // ISR will return the level-wind state to Off when Manual switch opens
+         // ISR returns the level-wind state to Off when Manual switch opens
       }
       // check to see if this drum is enabled for operation on the control panel
       else if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
-      {  // this node is operational 
-         switch (p->lw_state & 0xF0)   // deal with CAN notification based on lw_state
+      {  // this node is operational
+
+      /* Will need code added to inititate automatic status messages and deal with
+         abnormal conditions  */
+
+         switch (p->lw_state & 0xF0)   // deal with CAN notification based on LW super-state
          {
             case (LW_OFF):
-            {
-               // if Track or Center is selected on CP move to appropriate state
-               // if lw_mode == track, go to index
+            {  
+               if (p->mc_state != MC_SAFE)
+               {  // if here we are in operational state on operational drum; index
+                  p->lw_mode = LW_ISR_INDEX;
+                  p->lw_state = LW_INDEX;
+                  p->lw_indexed = 0;
+                  // enable stepper by resetting output with BSRR storing
+                  p->enflag = Stepper_MF_Pin << 16;         // configure for reset
+                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+               }              
                break;
             }
 
@@ -170,35 +186,35 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_CENTER):
             {
-               // need code to move to center and then turn off
+               // need code to move to center and then turn off stepper
                if((p->mc_state == MC_SAFE))  
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;
-                  p->lw_indexed = 0;
                }
                break;
             }
 
             case (LW_INDEX):
-            {
+            {  // Tim2 ISR moves LW state to Track when done
                if(p->mc_state == MC_SAFE) 
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;
-                  p->lw_indexed = 0;
-               }
-               // Tim2 ISR moves LW state to Track when done
+               }               
                break;
             }
 
             case (LW_TRACK):
             {
-               if(p->mc_state == MC_SAFE) 
+               if ((p->mc_state == MC_RETRIEVE) && (p->lw_mode == LW_CENTER))
+               {
+                  p->lw_state = LW_CENTER;
+               }
+               else if(p->mc_state == MC_SAFE) 
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;
-                  p->lw_indexed = 0;
                }
                break;
             }
@@ -211,11 +227,14 @@ extern CAN_HandleTypeDef hcan1;
          }               
       }
       else 
-      {// drum not in operational use. move it to the OFF state.
+      {// drum not in operational use. move level-wind state to OFF.
          p->lw_mode = LW_ISR_OFF;
          p->lw_state = LW_OFF;
          p->lw_indexed = 0;           
       }
+
+
+      /* Need check for state-status chages to send automatic messages*/
 	}
 }
 

@@ -18,7 +18,7 @@
 #define MC_RAMP      (4 << 4)
 #define MC_CLIMB     (5 << 4)
 #define MC_RECOVERY  (6 << 4)
-#define MC_RETRIEV   (7 << 4)
+#define MC_RETRIEVE  (7 << 4)
 #define MC_ABORT     (8 << 4)
 #define MC_STOP      (9 << 4)
 
