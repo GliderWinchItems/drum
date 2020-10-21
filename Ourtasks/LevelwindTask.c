@@ -64,13 +64,21 @@ void StartLevelwindTask(void const * argument)
 
 
    /* Set initial_state/mode until MC messages arrive. Initial conditions for
-      CP state are handled in ...cp_state_init above  */
+      CP state are handled in ...cp_state_init above. Below should
+      be moved into levelwind_func_init_init( ) at some point but useful here
+      for development   */
    p->lw_state = LW_OFF;
    p->lw_mode = LW_ISR_OFF;
+   p->lw_error = 0;
+   p->lw_indexed = 0;
+   // disable stepper by resetting output with BSRR storing
+   p->enflag = Stepper_MF_Pin;         // configure for set
+   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
    
 
    /* TEMPORARY Unil message are actually present  */
-   p->mc_state = MC_PREP;     // temporary until way to change states is implemented
+   p->mc_prev_state = MC_SAFE;
+   p->mc_pres_state = MC_PREP;  
 
 	/* Limit and overrun switches. */
 	levelwind_switches_init();   
@@ -142,10 +150,14 @@ extern CAN_HandleTypeDef hcan1;
       if (0)   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed
          p->lw_state = LW_MANUAL;
-         p->lw_indexed = 0;
          p->lw_mode = LW_ISR_MANUAL;
-         // more may need to be done or some actions above placed in the case statements
-         // ISR returns the level-wind state to Off when Manual switch opens
+         p->lw_indexed = 0;         
+         p->lw_error = 1;  // indicate an Overrun switch has tripped
+         // enable stepper by resetting output with BSRR storing
+         p->enflag = Stepper_MF_Pin << 16;         // configure for reset
+         Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+
+         // ADD initiate LW status-state message
       }
       // check to see if this drum is enabled for operation on the control panel
       else if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
@@ -158,14 +170,16 @@ extern CAN_HandleTypeDef hcan1;
          {
             case (LW_OFF):
             {  
-               if (p->mc_state != MC_SAFE)
-               {  // if here we are in operational state on operational drum; index
-                  p->lw_mode = LW_ISR_INDEX;
+               if ((p->mc_pres_state == MC_PREP) && (p->mc_prev_state == MC_SAFE))
+               {  // if here we have moved into MC Prep state from Safe state
                   p->lw_state = LW_INDEX;
-                  p->lw_indexed = 0;
+                  p->lw_mode = LW_ISR_INDEX;
+                  p->lw_error = 0;  // clear error flag
                   // enable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+                  
+                  // ADD initiate LW status-state message
                }              
                break;
             }
@@ -179,25 +193,39 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_MANUAL):
             {
-               // do nothing
-               // Tim2 ISR deals with this
+               if (1)   // test if an Overrun switch is still closed
+               {
+                  p->lw_state = LW_OFF;
+                  p->lw_mode = LW_ISR_OFF;
+                  // disable stepper by resetting output with BSRR storing
+                  p->enflag = Stepper_MF_Pin;         // configure for set
+                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+
+                  // ADD initiate LW status-state message
+               }
                break;
             }
 
             case (LW_CENTER):
             {
                // need code to move to center and then turn off stepper
-               if((p->mc_state == MC_SAFE))  
-               {  // move to Off state
-                  p->lw_mode = LW_ISR_OFF;
-                  p->lw_state = LW_OFF;
+               // Not sure if this should be done here or on exit from Track
+               if((p->mc_pres_state == MC_PREP))  
+               {  // move to Index state
+                  p->lw_state = LW_INDEX;
+                  p->lw_mode = LW_ISR_INDEX;
+                  // enable stepper by resetting output with BSRR storing
+                  p->enflag = Stepper_MF_Pin << 16;         // configure for reset
+                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+
+                  // ADD initiate LW status-state message
                }
                break;
             }
 
             case (LW_INDEX):
             {  // Tim2 ISR moves LW state to Track when done
-               if(p->mc_state == MC_SAFE) 
+               if(p->mc_pres_state == MC_SAFE) 
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;
@@ -207,11 +235,11 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_TRACK):
             {
-               if ((p->mc_state == MC_RETRIEVE) && (p->lw_mode == LW_CENTER))
+               if ((p->mc_pres_state == MC_RETRIEVE) && (p->lw_mode == LW_CENTER))
                {
                   p->lw_state = LW_CENTER;
                }
-               else if(p->mc_state == MC_SAFE) 
+               else if(p->mc_pres_state == MC_SAFE) 
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;

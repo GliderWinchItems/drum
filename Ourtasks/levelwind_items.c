@@ -107,7 +107,7 @@ void levelwind_items_timeout(void)
  {
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
    /* Setup CAN msg */
-   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[0] = p->levelwindstatus;
+   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[0] = p->lw_status;
    p->canmsg[CID_LEVELWIND_HB].can.cd.uc[1] = p->posaccum.s32 >>  0;
    p->canmsg[CID_LEVELWIND_HB].can.cd.uc[2] = p->posaccum.s32 >>  8;
    p->canmsg[CID_LEVELWIND_HB].can.cd.uc[3] = p->posaccum.s32 >> 16;
@@ -273,14 +273,14 @@ void levelwind_items_TIM2_IRQHandler(void)
       }      
       else
       { // Here, encoder driven input capture. Save for odometer and speed
-         ddir = (pT5base->CR1 & 0x10) ? 1 : 0;     // Encoding DIR (direction) (0|1)
+         ddir = (pT5base->CR1 & 0x10) ? 1 : 0;  // Encoding DIR (direction) (0|1)
       }
 
       /* Here: either encoder channel A driven input capture interrupt, or 
          CL controlled timer output compare interrupt. */
 
       /* These encoder input capture or output compare interrupts do not drive the levelwind
-         during indexing, sweeping, moving, and off states,  */
+         during regular indexing, sweeping, arrest, and off states,  */
       switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode msn
       {
          case(LW_ISR_OFF):
@@ -310,7 +310,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       }
    }
 
-   // Indexing timer interrupt processing
+   // Tim2 OC interrupt processing
    if ((pT2base->SR & (1 << 1)) != 0) // CH1 Interrupt flag
    { // Yes, OC drive 
       pT2base->SR = ~(1 << 1);  // Reset CH1 flag
@@ -504,7 +504,8 @@ uint8_t levelwind_items_sweep_case(void)
       p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
    }
 
-   if (p->sw[LIMITDBOUTSIDE].flag1)
+   if (p->sw[LIMITDBOUTSIDE].flag1) // temporary until termination criteria 
+                                    // is established
    {
       p->lw_mode = LW_ISR_ARREST;   
    }
