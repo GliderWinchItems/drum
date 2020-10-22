@@ -85,9 +85,11 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 #endif   
 
    p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
+   
+   /* this initialization has been moved to the OFF case in LevelwindTask
    // Position accumulator initial value. Reference paper for the value employed.
    // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
-   p->posaccum.s32 = 0;   
+   p->posaccum.s32 = 0; // temporary to have it start at 0.
    p->pos_prev = p->posaccum.s32;
    // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
    // p->Lminus32 = p->lc.Lminus << 16;
@@ -96,6 +98,10 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
       + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
    p->velaccum.s32 = 0;             // Velocity accumulator initial value  
    p->drbit = p->drbit_prev = 0;    // Drum direction bit
+
+   */
+   
+
    p->hbctr      = 0;
    
    p->dtwmin     = 0x7fffffff;

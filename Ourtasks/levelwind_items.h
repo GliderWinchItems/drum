@@ -74,6 +74,12 @@
 #define LW_ISR_TRACK  (5 << 4)
 #define LW_ISR_LOS    (6 << 4)
 
+// Left/0/Right switch direction definitions 
+/* REVIST: Should these be tied to something else tthat deals with which
+   side the drum is mounted on   */ 
+#define L0R_LEFT  (Stepper_DR_Pin << 16)
+#define L0R_RIGHT Stepper_DR_Pin 
+
 struct LEVELWINDDBGBUF
 {
    uint32_t intcntr;    // interrupt counter

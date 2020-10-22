@@ -147,14 +147,27 @@ extern CAN_HandleTypeDef hcan1;
 			noteuse |= LEVELWINDSWSNOTEBITSWT1;
 		}
 
-      if (0)   // here test for Manual switch closure (no associated task notification)
+      if ((0) && (p->lw_state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed
          p->lw_state = LW_MANUAL;
          p->lw_mode = LW_ISR_MANUAL;
          p->lw_indexed = 0;         
          p->lw_error = 1;  // indicate an Overrun switch has tripped
+         p->ocinc = p->ocman;
          // enable stepper by resetting output with BSRR storing
          p->enflag = Stepper_MF_Pin << 16;         // configure for reset
+         Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+
+         // ADD initiate LW status-state message
+      }
+      else if ((0) && (p->lw_state != LW_OVERRUN)) // here test for Overrun switch activations
+      {
+         p->lw_state = LW_OVERRUN;
+         p->lw_mode = LW_ISR_OFF;
+         p->lw_indexed = 0;         
+         p->lw_error = 1;  // indicate an Overrun switch has tripped
+         // disable stepper by setting output with BSRR storing
+         p->enflag = Stepper_MF_Pin;         // configure for reset
          Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
 
          // ADD initiate LW status-state message
@@ -162,9 +175,6 @@ extern CAN_HandleTypeDef hcan1;
       // check to see if this drum is enabled for operation on the control panel
       else if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
       {  // this node is operational
-
-      /* Will need code added to inititate automatic status messages and deal with
-         abnormal conditions  */
 
          switch (p->lw_state & 0xF0)   // deal with CAN notification based on LW super-state
          {
@@ -178,6 +188,21 @@ extern CAN_HandleTypeDef hcan1;
                   // enable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+
+                  // initialize trajectory integrators and associated values
+                  // these values are set up temporarily for development to make leftost position 0
+                  // Need padding for to provide margin for initial sweep
+                  // Position accumulator initial value. Reference paper for the value employed.
+                  // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
+                  p->posaccum.s32 = 0; // temporary to have it start at 0.
+                  p->pos_prev = p->posaccum.s32;
+                  // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
+                  // p->Lminus32 = p->lc.Lminus << 16;
+                  p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
+                  p->Lplus32  = p->Lminus32 
+                     + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
+                  p->velaccum.s32 = 0;             // Velocity accumulator initial value  
+                  p->drbit = p->drbit_prev = 0;    // Drum direction bit
                   
                   // ADD initiate LW status-state message
                }              
@@ -186,17 +211,11 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_OVERRUN):
             {  
-               // do nothing
-               // move to Manual state handled above
-               break;
-            }         
-
-            case (LW_MANUAL):
-            {
-               if (1)   // test if an Overrun switch is still closed
-               {
+               if(1) // test overrun switch to see if it is still activated
+               {  // switch cleared: move to off with error set
                   p->lw_state = LW_OFF;
                   p->lw_mode = LW_ISR_OFF;
+                  p->lw_error = 1;  // set error flag
                   // disable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin;         // configure for set
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -204,45 +223,78 @@ extern CAN_HandleTypeDef hcan1;
                   // ADD initiate LW status-state message
                }
                break;
-            }
+            }         
 
-            case (LW_CENTER):
+            case (LW_MANUAL):
             {
-               // need code to move to center and then turn off stepper
-               // Not sure if this should be done here or on exit from Track
-               if((p->mc_pres_state == MC_PREP))  
-               {  // move to Index state
-                  p->lw_state = LW_INDEX;
-                  p->lw_mode = LW_ISR_INDEX;
-                  // enable stepper by resetting output with BSRR storing
-                  p->enflag = Stepper_MF_Pin << 16;         // configure for reset
+               if (1)   // test if an Manual switch is still activated
+               {  // switch cleared: move to Off with error set
+                  p->lw_state = LW_OFF;
+                  p->lw_mode = LW_ISR_OFF;
+                  p->lw_error = 1;  // set error flag
+                  // disable stepper by resetting output with BSRR storing
+                  p->enflag = Stepper_MF_Pin;         // configure for set
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
 
-                  // ADD initiate LW status-state message
+                  // ADD initiate LW status-state message                  
                }
                break;
             }
 
+
             case (LW_INDEX):
             {  // Tim2 ISR moves LW state to Track when done
+
+               // Here check if ISR has finished the indexing
+               // ADD initiate LW status-state message      
+
                if(p->mc_pres_state == MC_SAFE) 
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;
+
+                  // ADD initiate LW status-state message   
                }               
                break;
             }
 
             case (LW_TRACK):
             {
-               if ((p->mc_pres_state == MC_RETRIEVE) && (p->lw_mode == LW_CENTER))
+               if ((p->mc_pres_state == MC_RETRIEVE) && (p->lw_mode == LW_MODE_CENTER))
                {
                   p->lw_state = LW_CENTER;
+                  // may setp up centering and get it started here
                }
                else if(p->mc_pres_state == MC_SAFE) 
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;
+               }
+               break;
+            }
+
+            case (LW_CENTER):
+            {
+               /*
+                  I think when the Track state transition to Center, it will modify
+                  Lplus or Lminus and switch the mode to Arrest to move it to the 
+                  center   */
+
+               /* code here will see if centering is complete and sending a CAN
+                  status-state message once  */
+
+
+               /* This code deals with moving back to Index when the Retreive is 
+                  completed*/
+               if((p->mc_pres_state == MC_PREP))  
+               {  // move to Index state with stepper driver enabled
+                  p->lw_state = LW_INDEX;
+                  p->lw_mode = LW_ISR_INDEX;
+                  // enable stepper by resetting output with BSRR storing
+                  p->enflag = Stepper_MF_Pin << 16;         // configure for reset
+                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+                  
+                  // ADD initiate LW status-state message
                }
                break;
             }
@@ -256,9 +308,10 @@ extern CAN_HandleTypeDef hcan1;
       }
       else 
       {// drum not in operational use. move level-wind state to OFF.
-         p->lw_mode = LW_ISR_OFF;
          p->lw_state = LW_OFF;
-         p->lw_indexed = 0;           
+         p->lw_mode = LW_ISR_OFF;
+         p->lw_indexed = 0;
+         p->lw_error = 0;           
       }
 
 

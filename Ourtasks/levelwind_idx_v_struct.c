@@ -41,9 +41,9 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->Lplus       = 15000; // Calibrated start of positive reversal region
    p->Lminus      =    0;  // Calibrated start of negative reversal region
 
-   p->ocidx       = 21000; // Indexing increment for 250 ms
+   p->ocidx       = 21000; // Indexing increment for 250 ms (4 kHz)
    p->Nswp        = 5;     // Sweeping increment
-   p->Nman        = 5;     // Sweeping increment
+   p->Nman        = 6;     // Sweeping increment
 
 
 // For development; these will likely not be in operational code

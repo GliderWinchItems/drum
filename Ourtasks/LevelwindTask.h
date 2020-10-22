@@ -54,6 +54,10 @@
 #define LW_TRACK     (5 << 4)
 #define LW_LOS       (6 << 4)
 
+// LW Modes
+#define LW_MODE_TRACK   1  // track during all operational states
+#define LW_MODE_CENTER  0  // center during retrieve
+
 #define NUMCANMSGSLEVELWIND 2  // Number of CAN msgs levelwind sends
 enum cididx
 {
@@ -96,9 +100,9 @@ struct LEVELWINDFUNCTION
 
    uint8_t  lw_state; // level-wind present state
    uint8_t  lw_status;     // level-wind status
-   uint8_t  lw_mode;       // level-wind ISR mode
-   uint8_t  lw_indexed;    // indexed status
-   uint8_t  lw_error;      // level-wind error flag
+   uint8_t  lw_mode;       // level-wind ISR mode (Track or Center)
+   uint8_t  lw_indexed;    // indexed status MAY NOT BE NEEDED
+   uint8_t  lw_error;      // level-wind error flag MAY NOT BE NEEDED
    uint8_t  mc_pres_state;   // master controller present state 
    uint8_t  mc_prev_state;   // master controller previous state    
    

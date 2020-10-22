@@ -284,10 +284,11 @@ void levelwind_items_TIM2_IRQHandler(void)
       switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode msn
       {
          case(LW_ISR_OFF):
-         {  // Set enable bit which turns FET on, which disables levelwind
+         {  // REVISIT: the stepper should be enabled/disabled in LW task 
+            // Set enable bit which turns FET on, which disables levelwind
             // Error; this was not disabling steper.
             // REVISIT make sure it gets re-enabled when exiting state
-            p->enflag = Stepper_MF_Pin; // Set bit with BSRR storing (disables stepper)
+            //p->enflag = Stepper_MF_Pin; // Set bit with BSRR storing (disables stepper)
          }
 
          case (LW_ISR_TRACK):
@@ -321,19 +322,29 @@ void levelwind_items_TIM2_IRQHandler(void)
       switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode
       {
          case(LW_ISR_OFF):
-         {  // Set enable bit which turns FET on, which disables levelwind
+         {  // REVIST: This should be able to be a Null case
+            // Set enable bit which turns FET on, which disables levelwind
             // REVISIT make sure it gets re-enabled when exiting state
             // Error; this was not disabling steper
-            p->enflag = Stepper_MF_Pin;  // Set bit with BSRR storing (disables stepper)
+            // p->enflag = Stepper_MF_Pin;  // Set bit with BSRR storing (disables stepper)
+            break;
          }
 
          case (LW_ISR_MANUAL):
-         {
-            
-            // set interrupt rate for manual
-            p->ocinc = p->lc.ocidx; // new parameter for manual operation rate needed 
-            emulation_run = 0;
-
+         {            
+            if (0)   // REVIST: test the left/right switch for left
+            {  // switch is signaling left
+               Stepper_DR_GPIO_Port->BSRR = L0R_LEFT;  // set direction left
+               // Start TIM9 to generate a delayed pulse.
+               pT9base->CR1 = 0x9; 
+            }
+            if (0)   // REVIST: test the left/right switch for right
+            {  // switch is signaling left
+               Stepper_DR_GPIO_Port->BSRR = L0R_RIGHT;  // set direction right
+               // Start TIM9 to generate a delayed pulse.
+               pT9base->CR1 = 0x9; 
+            }
+            //  if neither is activated, do nothing
             break;
          }
 
@@ -345,8 +356,9 @@ void levelwind_items_TIM2_IRQHandler(void)
 
          case (LW_ISR_SWEEP):
          {  
-            /* code here testing limit switches in operational code and characterizing  
-            their behavior during development. If needed, this mode can be used for
+            /* code here, or in limit switch interrupt handler, for testing limit 
+            switches in operational code and characterizing their behavior 
+            during development. If needed, this mode can be used for
             calibrating limit switches for speed dependent corrections in LOS recovery. */
             emulation_run = levelwind_items_sweep_case();
             break;
@@ -360,7 +372,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       }      
    }
 
-#if LEVELWINDDEBUG   // move this out of ISR at some point?
+#if LEVELWINDDEBUG   // move this out of ISR at some point???
    // Update enable i/o pin
    Stepper_MF_GPIO_Port->BSRR = p->enflag;
 #endif     
@@ -482,11 +494,12 @@ uint8_t levelwind_items_index_case(void)
       p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000);
       p->pos_prev = p->posaccum.s16[1];
       p->lw_mode = LW_ISR_SWEEP; // move to sweep state
+
 #if LEVELWINDDEBUG
       p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
 #endif      
    }
-   return(1);
+   return(1);  // REVIST: should this be void return? always 1
 }
 
 /* *************************************************************************
@@ -499,7 +512,7 @@ uint8_t levelwind_items_sweep_case(void)
    
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
-   if (p->velaccum.s32 == 0)
+   if (p->velaccum.s32 == 0)  // when velocity == 0, speed up
    {
       p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
    }
@@ -510,7 +523,7 @@ uint8_t levelwind_items_sweep_case(void)
       p->lw_mode = LW_ISR_ARREST;   
    }
    
-   return(1);
+   return(1);  // REVIST: should this be void return? always 1
 }
 
 /* *************************************************************************
@@ -528,8 +541,10 @@ uint8_t levelwind_items_arrest_case(void)
    // transition to Track state and mode on completion   
    if (p->velaccum.s32 == 0)
    {
+      // This may end up in LW CENTER state
+      // REVIST: should this be handled in LW task?
       p->lw_mode = LW_ISR_TRACK;
-      p->lw_state = LW_TRACK;
+      p->lw_state = LW_TRACK; 
       return (0);
    }
    else
