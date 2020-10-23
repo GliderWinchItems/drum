@@ -980,8 +980,9 @@ osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
 //#define DISPLAYSTACKUSAGEFORTASKS
-#define ADCSHOW
-//#define STEPPERSHOW
+//#define ADCSHOW
+//#define SHOWADCCOMMONCOMPUTATIONS
+#define STEPPERSHOW
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1145,6 +1146,12 @@ default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); 
 t2_DSUFT = DTWTIME;
 yprintf(&pbuf2,"\n\rDTW DUR: %d",t2_DSUFT - t1_DSUFT);
 
+#endif
+
+#ifdef SHOWADCCOMMONCOMPUTATIONS
+      yprintf(&pbuf4,"\n\rADC: Vdd: %7.4f %8.4f   Temp: %6.1f %6.1f",adcommon.fvdd,adcommon.fvddfilt,adcommon.degC,adcommon.degCfilt);
+      yprintf(&pbuf3,"\n\rInternal ref:   %d %d",adc1.chan[ADC1IDX_INTERNALVREF].sum/ADC1DMANUMSEQ, adcommon.ivdd);
+      yprintf(&pbuf2,"\n\rCalibrated: vref: %6.4f",adc1.common.fvref);
 #endif
 
   			}
