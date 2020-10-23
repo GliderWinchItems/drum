@@ -205,11 +205,11 @@ void adcparams_cal(void)
 	/* First: Update Vref used in subsequent computations. */
 	internal(p);
 
-	absolute(p, ADC1IDX_CONTROL_LEVER); // Control lever
+	absolute(p, ADC1IDX_STEPPERV);  // Stepper controller voltage
   
-	absolute(p, ADC1IDX_5VSUPPLY);     // 5v supply to sensor
+	absolute(p, ADC1IDX_5VSUPPLY);  // 5v supply to sensors
   
-	absolute(p, ADC1IDX_12VSUPPLYRAW); // Raw CAN bus supply to board
+	absolute(p, ADC1IDX_SPARE);     // Spare input
 
 /* Note: 5v supply should be processed before ratiometrics.  Otherwise,
    old readings will be used which is not a big deal for a slowly 

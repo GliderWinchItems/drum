@@ -165,12 +165,12 @@ void adcparamsinit_init(struct ADCFUNCTION* p)
 	adcparamsinit_init_common(p);
 
 	/* Absolute measurements. */
-	abs_init(p, ADC1IDX_CONTROL_LEVER);
-	abs_init(p, ADC1IDX_12VSUPPLYRAW);
+	abs_init(p, ADC1IDX_STEPPERV);
+	abs_init(p, ADC1IDX_SPARE);
 	abs_init(p, ADC1IDX_5VSUPPLY);
 
 /* Ratiometric: spare current. */
-	ratio_init(p, ADC1IDX_SPARE);
+//	ratio_init(p, ADC1IDX_SPARE);
 
 	return;
 };

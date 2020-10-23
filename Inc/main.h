@@ -100,8 +100,14 @@ void Error_Handler(void);
 #define encodertimeA_GPIO_Port GPIOA
 #define encodertimeB_Pin GPIO_PIN_3
 #define encodertimeB_GPIO_Port GPIOA
+#define stepperV_Pin GPIO_PIN_4
+#define stepperV_GPIO_Port GPIOA
 #define fieldfetdrive_Pin GPIO_PIN_6
 #define fieldfetdrive_GPIO_Port GPIOA
+#define Reg5v_Pin GPIO_PIN_7
+#define Reg5v_GPIO_Port GPIOA
+#define SpareV_Pin GPIO_PIN_4
+#define SpareV_GPIO_Port GPIOC
 #define Stepper_DR_Pin GPIO_PIN_0
 #define Stepper_DR_GPIO_Port GPIOB
 #define Stepper_MF_Pin GPIO_PIN_1

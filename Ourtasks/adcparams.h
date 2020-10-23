@@ -34,18 +34,17 @@ Compute
 
 #define ADC1DMANUMSEQ        16 // Number of DMA scan sequences in 1/2 DMA buffer
 #define ADCEXTENDSUMCT     1024 // Sum of 1/2 DMA sums for additional averaging
-#define ADC1IDX_ADCSCANSIZE   6 // Number ADC channels read
+#define ADC1IDX_ADCSCANSIZE   5 // Number ADC channels read
 #define ZTOLERANCE         0.05 // +/- tolerance for re-adjustment of Hall_effect sensor zero
 #define ADCSCALEbits         15 // 2^x scale large
 
 /* ADC reading sequence/array indices                                           */
 /* These indices -=>MUST<= match the hardware ADC scan sequence in STM32CubeMX. */
-#define ADC1IDX_CONTROL_LEVER 0   // PC1 IN11 - CL reading
-#define ADC1IDX_12VSUPPLYRAW  1   // PC2 IN12 - +12 Raw
-#define ADC1IDX_5VSUPPLY      2   // PC4 IN14 - 5V #also CAN driver RS output:pushpull
-#define ADC1IDX_SPARE         3   // PC5 IN15 - 5V ratiometric spare
-#define ADC1IDX_INTERNALTEMP  4   // IN17     - Internal temperature sensor
-#define ADC1IDX_INTERNALVREF  5   // IN18     - Internal voltage reference
+#define ADC1IDX_STEPPERV      0   // PA4 IN4  - Stepper controller power voltage
+#define ADC1IDX_5VSUPPLY      1   // PA7 IN7  - 5V #also CAN driver RS output:pushpull
+#define ADC1IDX_SPARE         2   // PC4 IN10? - 5V Spare ADC input
+#define ADC1IDX_INTERNALTEMP  3   // IN17     - Internal temperature sensor
+#define ADC1IDX_INTERNALVREF  4   // IN18     - Internal voltage reference
 
 /* Calibrated ADC reading. */
 union ADCCALREADING

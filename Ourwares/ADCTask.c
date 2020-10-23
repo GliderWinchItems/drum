@@ -20,7 +20,7 @@
 #include "main.h"
 
 extern ADC_HandleTypeDef hadc1;
-extern osThreadId GevcuTaskHandle;
+extern osThreadId LevelwindTaskHandle;
 
 void StartADCTask(void const * argument);
 
@@ -60,7 +60,8 @@ void StartADCTask(void const * argument)
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
 
 	/* notification bits processed after a 'Wait. */
-	uint32_t noteused = 0;
+//	uint32_t noteused = 0;
+
 
 	/* Get buffers, "our" control block, and start ADC/DMA running. */
 	struct ADCDMATSKBLK* pblk = adctask_init(&hadc1,TSK02BIT02,TSK02BIT03,&noteval);
@@ -70,11 +71,11 @@ void StartADCTask(void const * argument)
   for(;;)
   {
 		/* Wait for DMA interrupt */
-		xTaskNotifyWait(noteused, 0, &noteval, portMAX_DELAY);
-		noteused = 0;	// Accumulate bits in 'noteval' processed.
+		xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
+//		noteused = 0;	// Accumulate bits in 'noteval' processed.
 
 		/* We handled one, or both, noteval bits */
-		noteused |= (pblk->notebit1 | pblk->notebit2);
+//		noteused |= (pblk->notebit1 | pblk->notebit2);
 
 		if (noteval & TSK02BIT02)
 		{
@@ -85,7 +86,7 @@ void StartADCTask(void const * argument)
 			pdma = adc1dmatskblk[0].pdma2;
 		}
 
-		xTaskNotify(GevcuTaskHandle, GEVCUBIT00, eSetBits);
+//		xTaskNotify(LevelwindTaskHandle, GEVCUBIT00, eSetBits);
 
 
 		/* Sum the readings 1/2 of DMA buffer to an array. */
@@ -111,10 +112,10 @@ void StartADCTask(void const * argument)
 		adcparams_cal();
 
 		/* Notify GEVCUr Task that new readings are ready. */
-		if( GevcuTaskHandle == NULL) morse_trap(51); // JIC task has not been created
+		if( LevelwindTaskHandle == NULL) morse_trap(51); // JIC task has not been created
 	
 // Do the work in this task and not GevcuTask.	
-//		xTaskNotify(GevcuTaskHandle, GEVCUBIT00, eSetBits);
+//		xTaskNotify(LevelwindTaskHandle, GEVCUBIT00, eSetBits);
 
 	/* Update Control Lever psosition with new ADC readings (or do initial calib). */
 //	fclpos = calib_control_lever();

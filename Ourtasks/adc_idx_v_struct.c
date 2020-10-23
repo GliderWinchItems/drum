@@ -96,17 +96,17 @@ struct ADCCALABS
    float    fvn;      // (float) measured vn (volts)
 };
 */
-	// PC1 IN11 - CL reading
-	p->cabs[ADC1IDX_CONTROL_LEVER].iir.k     = 5;    // Filter time constant
-	p->cabs[ADC1IDX_CONTROL_LEVER].iir.scale = 2;     // Filter integer scaling
-	p->cabs[ADC1IDX_CONTROL_LEVER].adcvn     = 64480; // (ADC reading) v5
-	p->cabs[ADC1IDX_CONTROL_LEVER].fvn       = 5.03;  // (float) measured v5 (volts)
+	/// PA4 IN4  - Stepper controller power voltage
+	p->cabs[ADC1IDX_STEPPERV].iir.k     = 5;    // Filter time constant
+	p->cabs[ADC1IDX_STEPPERV].iir.scale = 2;     // Filter integer scaling
+	p->cabs[ADC1IDX_STEPPERV].adcvn     = 64480; // (ADC reading) v5
+	p->cabs[ADC1IDX_STEPPERV].fvn       = 5.03;  // (float) measured v5 (volts)
 
 	// PC2 IN12 - +12 Raw
-	p->cabs[ADC1IDX_12VSUPPLYRAW].iir.k     = 10;    // Filter time constant
-	p->cabs[ADC1IDX_12VSUPPLYRAW].iir.scale = 2;     // Filter integer scaling
-	p->cabs[ADC1IDX_12VSUPPLYRAW].adcvn     = 32000; // (4095*1502); // (ADC reading) v12 
-	p->cabs[ADC1IDX_12VSUPPLYRAW].fvn       = 13.68; // (float) measured v12 (volts)
+	p->cabs[ADC1IDX_SPARE].iir.k     = 10;    // Filter time constant
+	p->cabs[ADC1IDX_SPARE].iir.scale = 2;     // Filter integer scaling
+	p->cabs[ADC1IDX_SPARE].adcvn     = 32000; // (4095*1502); // (ADC reading) v12 
+	p->cabs[ADC1IDX_SPARE].fvn       = 13.68; // (float) measured v12 (volts)
 
 	// PC4 IN14 - 5V #also CAN driver RS output:pushpull
 	p->cabs[ADC1IDX_5VSUPPLY].iir.k         = 10;    // Filter time constant
