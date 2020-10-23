@@ -76,6 +76,8 @@
 #include "DrumTask.h"
 #include "BrakeTask.h"
 #include "ADCTask.h"
+#include "adcparams.h"
+
 
 
 /* USER CODE END Includes */
@@ -472,6 +474,7 @@ static void MX_ADC1_Init(void)
   }
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
+  sConfig.Channel = ADC_CHANNEL_7;
   sConfig.Rank = 2;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
@@ -479,6 +482,7 @@ static void MX_ADC1_Init(void)
   }
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
+  sConfig.Channel = ADC_CHANNEL_14;
   sConfig.Rank = 3;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
@@ -486,6 +490,7 @@ static void MX_ADC1_Init(void)
   }
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
+  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
   sConfig.Rank = 4;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
@@ -493,6 +498,7 @@ static void MX_ADC1_Init(void)
   }
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
+  sConfig.Channel = ADC_CHANNEL_VREFINT;
   sConfig.Rank = 5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
@@ -974,7 +980,8 @@ osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
 //#define DISPLAYSTACKUSAGEFORTASKS
-#define STEPPERSHOW
+#define ADCSHOW
+//#define STEPPERSHOW
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1023,7 +1030,16 @@ uint8_t ratepace = 0;
 //osDelay(1);
 	xTimerChangePeriod( defaultTaskTimerHandle  ,pdMS_TO_TICKS(16),0);
 
+#ifdef ADCSHOW
+  extern uint32_t adcsumdb[6]; // debug
+  extern uint16_t* p16;
+  uint32_t ctr1_prev = 0;
+  uint32_t ct = 0;
+#endif  
+
+#ifdef STEPPERSHOW
   uint32_t stepctr = 1;
+#endif  
 // ===== BEGIN FOR LOOP ==============================
 
 	for ( ;; )
@@ -1040,6 +1056,7 @@ uint8_t ratepace = 0;
     if (ratepace > 0) // Slow down LCD output rate if desired
     {
       ratepace = 0; 
+
 
 	
 #ifdef STEPPERSHOW
@@ -1086,12 +1103,25 @@ if (levelwind_switches_defaultTaskcall(pbuf1) == 0)
 			{
 				slowtimectr = 0;
 
+#ifdef ADCSHOW
+
+  yprintf(&pbuf4,"\n\r%4i %9i %6i %6i %6i %6i %6i",ct, adc1.ctr-ctr1_prev, 
+    *(p16+0),*(p16+1),*(p16+2),*(p16+3),*(p16+4) );
+
+    yprintf(&pbuf4,"\n\r%4i %9i %6i %6i %6i %6i %6i",ct++, adc1.ctr-ctr1_prev, 
+    *(p16+5),*(p16+6),*(p16+7),*(p16+8),*(p16+9) );
+
+//    adcsumdb[0],adcsumdb[1],adcsumdb[2],adcsumdb[3],adcsumdb[4]);
+  ctr1_prev = adc1.ctr;
+#endif      
+
+
 #ifdef DISPLAYSTACKUSAGEFORTASKS
 			/* Display the amount of unused stack space for tasks. */
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 9; showctr++)
+for (showctr = 0; showctr < 10; showctr++)
 {
 				switch (showctr)
 				{
@@ -1104,9 +1134,10 @@ case  4: stackwatermark_show(SerialTaskReceiveHandle,&pbuf1,"SerialRcvTask");bre
 case  5: stackwatermark_show(LevelwindTaskHandle,&pbuf2,"LevelwindTask");break;
 case  6: stackwatermark_show(DrumTaskHandle,   &pbuf3,"DrumTask-----");break;
 case  7: stackwatermark_show(BrakeTaskHandle,  &pbuf3,"BrakeTask----");break;
+case  8: stackwatermark_show(ADCTaskHandle,    &pbuf4,"ADCTask------");break;
 
-case 8:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
-			yprintf(&pbuf4,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
+case 9:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
 				}

@@ -90,7 +90,7 @@ struct ADCCALCOMMON
 	float ts_caldiff; // CAL2-CAL1
 	float ts_80caldiff;
 	float v25;           // Vtemp: 25 deg C (0.76v typ)
-   float slope;         // Vtemp: mv/degC 
+    float slope;         // Vtemp: mv/degC 
 	float offset;        // Vtemp: offset
 	float degC;          // Temperature: degrees C
 	float degCfilt;      // Temperature: degrees C, filtered
@@ -165,7 +165,6 @@ struct ADCFUNCTION
 	uint32_t ctr; // Running count of updates.
 	uint32_t idx_xsum;
 };
-
 
 /* *************************************************************************/
 void adcparams_init(void);

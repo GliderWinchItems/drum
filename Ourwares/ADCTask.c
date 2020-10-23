@@ -3,6 +3,7 @@
 * Date First Issued  : 02/01/2019
 * Description        : Processing ADC readings after ADC/DMA issues interrupt
 *******************************************************************************/
+/* 10/23/2020: Revised for Levelwind */
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -39,7 +40,7 @@ float fclpos;
  * *************************************************************************/
 osThreadId xADCTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(ADCTask, StartADCTask, osPriorityNormal, 0, 256+64);
+ 	osThreadDef(ADCTask, StartADCTask, osPriorityNormal, 0, 128);
 	ADCTaskHandle = osThreadCreate(osThread(ADCTask), NULL);
 	vTaskPrioritySet( ADCTaskHandle, taskpriority );
 	return ADCTaskHandle;
@@ -49,6 +50,8 @@ osThreadId xADCTaskCreate(uint32_t taskpriority)
  * void StartADCTask(void const * argument);
  *	@brief	: Task startup
  * *************************************************************************/
+uint16_t* p16;
+
 void StartADCTask(void const * argument)
 {
 	#define TSK02BIT02	(1 << 0)  // Task notification bit for ADC dma 1st 1/2 (adctask.c)
@@ -59,10 +62,6 @@ void StartADCTask(void const * argument)
 	/* A notification copies the internal notification word to this. */
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
 
-	/* notification bits processed after a 'Wait. */
-//	uint32_t noteused = 0;
-
-
 	/* Get buffers, "our" control block, and start ADC/DMA running. */
 	struct ADCDMATSKBLK* pblk = adctask_init(&hadc1,TSK02BIT02,TSK02BIT03,&noteval);
 	if (pblk == NULL) {morse_trap(15);}
@@ -72,22 +71,16 @@ void StartADCTask(void const * argument)
   {
 		/* Wait for DMA interrupt */
 		xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
-//		noteused = 0;	// Accumulate bits in 'noteval' processed.
-
-		/* We handled one, or both, noteval bits */
-//		noteused |= (pblk->notebit1 | pblk->notebit2);
 
 		if (noteval & TSK02BIT02)
 		{
 			pdma = adc1dmatskblk[0].pdma1;
+p16 = pdma;			
 		}
 		else
 		{
 			pdma = adc1dmatskblk[0].pdma2;
 		}
-
-//		xTaskNotify(LevelwindTaskHandle, GEVCUBIT00, eSetBits);
-
 
 		/* Sum the readings 1/2 of DMA buffer to an array. */
 		adcfastsum16(&adc1.chan[0], pdma); // Fast in-line addition
@@ -101,7 +94,7 @@ void StartADCTask(void const * argument)
 		adcsumdb[2] = adc1.chan[2].sum;
 		adcsumdb[3] = adc1.chan[3].sum;
 		adcsumdb[4] = adc1.chan[4].sum;
-		adcsumdb[5] = adc1.chan[5].sum;
+//		adcsumdb[5] = adc1.chan[5].sum;
 		adcdbctr += 1;
 #endif
 
@@ -112,13 +105,9 @@ void StartADCTask(void const * argument)
 		adcparams_cal();
 
 		/* Notify GEVCUr Task that new readings are ready. */
-		if( LevelwindTaskHandle == NULL) morse_trap(51); // JIC task has not been created
-	
-// Do the work in this task and not GevcuTask.	
+//		if( LevelwindTaskHandle == NULL) morse_trap(51); // JIC task has not been created	
 //		xTaskNotify(LevelwindTaskHandle, GEVCUBIT00, eSetBits);
 
-	/* Update Control Lever psosition with new ADC readings (or do initial calib). */
-//	fclpos = calib_control_lever();
   }
 }
 

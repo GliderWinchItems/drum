@@ -4,6 +4,7 @@
 * Board              :
 * Description        : Load sram local copy of parameters
 *******************************************************************************/
+/* 10/23/2020: Revised for Levelwind */
 #include "adc_idx_v_struct.h"
 
 /*
@@ -35,10 +36,11 @@ int adc_idx_v_struct_hardcode_params(struct ADCGEVCULC* p)
 */
 	p->size     = 37; // Number of items in list (TODO update)
 	p->crc      = 0;  // TODO
-   p->version  = 1;
+    p->version  = 1;
 	p->hbct     = 1000;  // Time (ms) between HB msg
 
 /* Reproduced for convenience 
+  Internal sensor calibration. (Only applies to ADC1) 
 struct ADC1CALINTERNAL
 {
 	struct IIR_L_PARAM iiradcvref; // Filter: adc readings: Vref 
@@ -93,26 +95,27 @@ struct ADCCALABS
 {
 	struct IIR_L_PARAM iir; // Filter: Time constant, integer scaling
 	uint32_t adcvn;    // (ADC reading) vn 
-   float    fvn;      // (float) measured vn (volts)
+    float    fvn;      // (float) measured vn (volts)
 };
 */
 	/// PA4 IN4  - Stepper controller power voltage
-	p->cabs[ADC1IDX_STEPPERV].iir.k     = 5;    // Filter time constant
+// Note: computed calibration: 110K|2.7K resistor divider	
+	p->cabs[ADC1IDX_STEPPERV].iir.k     = 5;     // Filter time constant
 	p->cabs[ADC1IDX_STEPPERV].iir.scale = 2;     // Filter integer scaling
-	p->cabs[ADC1IDX_STEPPERV].adcvn     = 64480; // (ADC reading) v5
-	p->cabs[ADC1IDX_STEPPERV].fvn       = 5.03;  // (float) measured v5 (volts)
+	p->cabs[ADC1IDX_STEPPERV].adcvn     = 64668; // (ADC reading) at calibration volts
+	p->cabs[ADC1IDX_STEPPERV].fvn       = 110.0;  // (float) calibration volts
 
-	// PC2 IN12 - +12 Raw
+	// PA7 IN7 - Regulated 5V 
+	p->cabs[ADC1IDX_5VSUPPLY].iir.k      = 10;    // Filter time constant
+	p->cabs[ADC1IDX_5VSUPPLY].iir.scale  = 2;     // Filter integer scaling
+	p->cabs[ADC1IDX_5VSUPPLY].adcvn      = 64480; // (ADC reading) at calibration volts
+	p->cabs[ADC1IDX_5VSUPPLY].fvn        = 4.99;  // (float) calibration volts
+
+	// PC4 IN14 - Spare
 	p->cabs[ADC1IDX_SPARE].iir.k     = 10;    // Filter time constant
 	p->cabs[ADC1IDX_SPARE].iir.scale = 2;     // Filter integer scaling
-	p->cabs[ADC1IDX_SPARE].adcvn     = 32000; // (4095*1502); // (ADC reading) v12 
-	p->cabs[ADC1IDX_SPARE].fvn       = 13.68; // (float) measured v12 (volts)
-
-	// PC4 IN14 - 5V #also CAN driver RS output:pushpull
-	p->cabs[ADC1IDX_5VSUPPLY].iir.k         = 10;    // Filter time constant
-	p->cabs[ADC1IDX_5VSUPPLY].iir.scale     = 2;     // Filter integer scaling
-	p->cabs[ADC1IDX_5VSUPPLY].adcvn         = 64480; // (4095*1502); // (ADC reading) v12 
-	p->cabs[ADC1IDX_5VSUPPLY].fvn           = 4.99;  // (float) measured v12 (volts)
+	p->cabs[ADC1IDX_SPARE].adcvn     = 32000; // (ADC reading) at calibration volts
+	p->cabs[ADC1IDX_SPARE].fvn       = 13.68; // (float) calibration volts
 
 	return 0;	
 }

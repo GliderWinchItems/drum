@@ -31,7 +31,6 @@ Voltage at 25 °C 1.34 1.43 1.52
 /* Parameters for ADC reading */
 // Flointing pt params are converted to scaled integers during initialization
 
-
 /* Internal sensor calibration. (Only applies to ADC1) */
 struct ADC1CALINTERNAL
 {
@@ -56,7 +55,7 @@ struct ADCCALABS
 {
 	struct IIR_L_PARAM iir; // Filter: Time constant, integer scaling
 	uint32_t adcvn;    // (ADC reading) vn 
-   float    fvn;      // (float) measured vn (volts)
+    float    fvn;      // (float) measured vn (volts)
 };
 
 /* 5v supply ratiometric calibration, e.g. Hall effect sensors. */

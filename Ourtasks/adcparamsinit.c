@@ -111,7 +111,8 @@ static void ratiometric_cal(struct ADCRATIOMETRIC* p, struct ADCCALHE* plc);
  * @param	: p = points to struct with computed results
  * @param	: plc = points to parameter struct for this sensor
  * *************************************************************************/
-static void ratio_init(struct ADCFUNCTION* p, int16_t idx1)
+//static void ratio_init(struct ADCFUNCTION* p, int16_t idx1)
+void ratio_init(struct ADCFUNCTION* p, int16_t idx1)
 {
 /* Reproduced for convenience
 struct ADCRATIOMETRIC
@@ -155,7 +156,7 @@ void adcparamsinit_init(struct ADCFUNCTION* p)
 	/* Initialize floating pt iir values for all. (JIC) */
 	int i;
 	for (i = 0; i < ADC1IDX_ADCSCANSIZE; i++)
-	{ // Initialize all with default. Others can change it later
+	{ // Initialize all with default. ==> Others can change it later <==
 		p->chan[i].iir_f1.skipctr  = 8;    // Initial readings skip count
 		p->chan[i].iir_f1.coef     = 0.999;  // Filter coefficient (< 1.0)
 		p->chan[i].iir_f1.onemcoef = (1 - p->chan[i].iir_f1.coef); // Pre-computed
@@ -169,7 +170,7 @@ void adcparamsinit_init(struct ADCFUNCTION* p)
 	abs_init(p, ADC1IDX_SPARE);
 	abs_init(p, ADC1IDX_5VSUPPLY);
 
-/* Ratiometric: spare current. */
+/* Ratiometric: if spare is ratiometric type. */
 //	ratio_init(p, ADC1IDX_SPARE);
 
 	return;
