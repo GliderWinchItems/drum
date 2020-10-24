@@ -499,7 +499,7 @@ uint8_t levelwind_items_index_case(void)
       p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
 #endif      
    }
-   return(1);  // REVIST: should this be void return? always 1
+   return(1);  // REVIST: always 1, should this be void return? 
 }
 
 /* *************************************************************************
@@ -518,12 +518,11 @@ uint8_t levelwind_items_sweep_case(void)
    }
 
    if (p->sw[LIMITDBOUTSIDE].flag1) // temporary until termination criteria 
-                                    // is established
-   {
+   {                                // is established
       p->lw_mode = LW_ISR_ARREST;   
    }
    
-   return(1);  // REVIST: should this be void return? always 1
+   return(1);  // REVIST: always 1, should this be void return? 
 }
 
 /* *************************************************************************

@@ -77,8 +77,7 @@ void StartLevelwindTask(void const * argument)
    
 
    /* TEMPORARY Unil message are actually present  */
-   p->mc_prev_state = MC_SAFE;
-   p->mc_pres_state = MC_PREP;  
+   p->mc_state = MC_PREP;  
 
 	/* Limit and overrun switches. */
 	levelwind_switches_init();   
@@ -180,8 +179,15 @@ extern CAN_HandleTypeDef hcan1;
          {
             case (LW_OFF):
             {  
-               if ((p->mc_pres_state == MC_PREP) && (p->mc_prev_state == MC_SAFE))
-               {  // if here we have moved into MC Prep state from Safe state
+               // clear error flag is LW mode is set to Off
+               if (p->lw_mode == LW_MODE_OFF) p->lw_error = 0;  
+               
+               if ((p->mc_state == MC_PREP) && (p->lw_error == 0)) 
+                  //   && (p->sw[LIMITDBOUTSIDE].flag2)) // last condition temporary for early development
+               {  // if here we have moved into MC Prep state with error flag clear
+                  
+                  // p->sw[LIMITDBOUTSIDE].flag2 = 0; // temporary, clear LS outside latching flag
+
                   p->lw_state = LW_INDEX;
                   p->lw_mode = LW_ISR_INDEX;
                   p->lw_error = 0;  // clear error flag
@@ -248,7 +254,7 @@ extern CAN_HandleTypeDef hcan1;
                // Here check if ISR has finished the indexing
                // ADD initiate LW status-state message      
 
-               if(p->mc_pres_state == MC_SAFE) 
+               if(p->mc_state == MC_SAFE) 
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;
@@ -260,12 +266,12 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_TRACK):
             {
-               if ((p->mc_pres_state == MC_RETRIEVE) && (p->lw_mode == LW_MODE_CENTER))
+               if ((p->mc_state == MC_RETRIEVE) && (p->lw_mode == LW_MODE_CENTER))
                {
                   p->lw_state = LW_CENTER;
                   // may setp up centering and get it started here
                }
-               else if(p->mc_pres_state == MC_SAFE) 
+               else if(p->mc_state == MC_SAFE) 
                {  // move to Off state
                   p->lw_mode = LW_ISR_OFF;
                   p->lw_state = LW_OFF;
@@ -286,7 +292,7 @@ extern CAN_HandleTypeDef hcan1;
 
                /* This code deals with moving back to Index when the Retreive is 
                   completed*/
-               if((p->mc_pres_state == MC_PREP))  
+               if((p->mc_state == MC_PREP))  
                {  // move to Index state with stepper driver enabled
                   p->lw_state = LW_INDEX;
                   p->lw_mode = LW_ISR_INDEX;
@@ -365,7 +371,8 @@ void levelwind_task_cp_state_init(void)
    pcp->stop_led = 0;
    pcp->arm_pb_led = 0;
    pcp->prep_rcvry_led = 0;
-   pcp->beeper = 0;
+   // pcp->beeper = 0;  // beeper will likely be getting its own CAN message
+                        // until what is involved is established don't handle
 
    return;  
 }
@@ -493,9 +500,10 @@ return;  // DEBUG!!!!do nothing until real cp state CAN messages are present
    
    pcp->prep_rcvry_led = (pcan->cd.uc[PREPRCRYPBLED_BYTE] 
       & (PREPRCRYPBLED_MASK << PREPRCRYPBLED_BIT)) >> PREPRCRYPBLED_BIT;
-   
+
+   /* beeper will likely get its own CAN messages
    pcp->beeper = (pcan->cd.uc[BEEPER_BYTE] 
-      & (BEEPER_MASK << BEEPER_BIT)) >> BEEPER_BIT;
+      & (BEEPER_MASK << BEEPER_BIT)) >> BEEPER_BIT; */
 #endif
 
    return;  

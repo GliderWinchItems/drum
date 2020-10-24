@@ -25,65 +25,68 @@
 // ...BIT is the lsb in the ...BYTE
 
 // payload byte 1
-#define SAFEACTIVE_BYTE    1
+#define SAFEACTIVE_BYTE    1  // Safe/Active switch
 #define SAFEACTIVE_BIT     7
 #define SAFEACTIVE_MASK    0x01
 
-#define ARMED_BYTE         1
+#define ARMED_BYTE         1  // Arm PB
 #define ARMED_BIT          6
 #define ARMED_MASK         0x01
 
-#define RTRVPREP_BYTE      1
+#define RTRVPREP_BYTE      1  // Prep/Retrieve PB
 #define RTRVPREP_BIT       5
 #define RTRVPREP_MASK      0x01
 
-#define ZEROTEN_BYTE       1
+#define ZEROTEN_BYTE       1  // Zero Tension PB
 #define ZEROTEN_BIT        4
 #define ZEROTEN_MASK       0x01
 
-#define ZEROODOM_BYTE      1
+#define ZEROODOM_BYTE      1  // Zero Odometer PB
 #define ZEROODOM_BIT       3
 #define ZEROODOM_MASK      0x01
 
-#define BRAKE_BYTE         1
+#define BRAKE_BYTE         1  // Brake (guarded) switch
 #define BRAKE_BIT          2
 #define BRAKE_MASK         0x01
 
-#define GUILLOTINE_BYTE    1
+#define GUILLOTINE_BYTE    1  // Guillotine (guarded) switch
 #define GUILLOTINE_BIT     1
 #define GUILLOTINE_MASK    0x01
 
-#define EMERGENCY_BYTE     1
+#define EMERGENCY_BYTE     1  // Emergency (latching) PB   aka BIG RED BUTTON
 #define EMERGENCY_BIT      0
 #define EMERGENCY_MASK     0x01
 
 // payload byte 2
-#define LWMODE_BYTE        2
-#define LWMODE_BIT         7
-#define LWMODE_MASK        0x01
+#define LWMODE_BYTE        2  // Level-Wind Mode switch (3 position) 
+#define LWMODE_BIT         6
+#define LWMODE_MASK        0x03  // 2 bit field
 
-#define LWINDEX_BYTE       2
-#define LWINDEX_BIT        6
+#define LWINDEX_BYTE       2  // optional Level-wind Index 
+#define LWINDEX_BIT        5
 #define LWINDEX_MASK       0x01
 
-#define REVFWD_BYTE        2
-#define REVFWD_BIT         5
+#define REVFWD_BYTE        2  // optional drum direction PB
+#define REVFWD_BIT         4
 #define REVFWD_MASK        0x01
 
-#define RMTLCL_BYTE        2
-#define RMTLCL_BIT         4
+#define RMTLCL_BYTE        2  // Remote/Local switch
+#define RMTLCL_BIT         3
 #define RMTLCL_MASK        0x01
 
-/* provisions for muliple retrieve_drums*/
-#define ACTIVEDRUM_BYTE    2   
-#define ACTIVEDRUM_BIT     1   
+/* provision for muliple retrieve_drums  */
+#define ACTIVEDRUM_BYTE    2  // active drum rotary switch  
+#define ACTIVEDRUM_BIT     0   
 #define ACTIVEDRUM_MASK    0x07  // 3 bit field
 
 
+
 // payload byte 3
-#define OPDRUMS_BYTE       3     
-#define OPDRUMS_BIT        1    
+#define OPDRUMS_BYTE       3  // array of spst switches, one for each drum         
+#define OPDRUMS_BIT        0    
 #define OPDRUMS_MASK       0x7F  // 7 bit field
+
+// bit 0 is spare
 
 
 /* outputs  */
@@ -141,9 +144,11 @@
 #define PREPRCRYPBLED_BIT  3
 #define PREPRCRYPBLED_MASK 0x01
 
+/* Beeper likely to get its own CAN message
 #define BEEPER_BYTE        6
 #define BEEPER_BIT         4 
-#define BEEPER_MASK        0x01
+#define BEEPER_MASK        0x01  */
+
 
 
 struct CONTROLPANELSTATE
@@ -191,7 +196,7 @@ struct CONTROLPANELSTATE
    uint8_t  arm_pb_led;
    uint8_t  prep_rcvry_led;
 
-   uint8_t  beeper;  
+   // uint8_t  beeper;  // likely getting its own message
 };
 
 #endif

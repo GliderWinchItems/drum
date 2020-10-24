@@ -54,9 +54,17 @@
 #define LW_TRACK     (5 << 4)
 #define LW_LOS       (6 << 4)
 
-// LW Modes
-#define LW_MODE_TRACK   1  // track during all operational states
-#define LW_MODE_CENTER  0  // center during retrieve
+/* LW Modes */
+#define LW_MODE_OFF     0x03  // Level-wind off. Also cycled through to reset error
+#define LW_MODE_TRACK   0x01  // track during all operational states
+#define LW_MODE_CENTER  0x02  // center during retrieve
+
+/* Level-Wind Status Definitions */
+// these will be expanded to capture reasons for non-good status as
+// development continues
+#define  LW_GOOD      0 // Green
+#define  LW_BAD      -1 // Red
+#define  LW_Caution  +1 // Yellow
 
 #define NUMCANMSGSLEVELWIND 2  // Number of CAN msgs levelwind sends
 enum cididx
@@ -98,13 +106,14 @@ struct LEVELWINDFUNCTION
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
 
-   uint8_t  lw_state; // level-wind present state
+   uint8_t  lw_state;      // level-wind state
    uint8_t  lw_status;     // level-wind status
-   uint8_t  lw_mode;       // level-wind ISR mode (Track or Center)
+   uint8_t  lw_ISR_state;  // level-wind status
+   uint8_t  lw_mode;       // level-wind mode (Off, Track, or Center)
    uint8_t  lw_indexed;    // indexed status MAY NOT BE NEEDED
-   uint8_t  lw_error;      // level-wind error flag MAY NOT BE NEEDED
-   uint8_t  mc_pres_state;   // master controller present state 
-   uint8_t  mc_prev_state;   // master controller previous state    
+   uint8_t  lw_error;      // level-wind error flag
+   uint8_t  mc_state;      // master controller state 
+   
    
    uint8_t  ocicbit;       
    uint8_t  ocicbit_prev;  
