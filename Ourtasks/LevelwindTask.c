@@ -165,6 +165,7 @@ extern CAN_HandleTypeDef hcan1;
          p->isr_state = LW_ISR_OFF;
          p->indexed = 0;         
          p->error = 1;  // indicate an Overrun switch has tripped
+
          // disable stepper by setting output with BSRR storing
          p->enflag = Stepper_MF_Pin;         // configure for reset
          Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -187,7 +188,6 @@ extern CAN_HandleTypeDef hcan1;
                {  // if here we have moved into MC Prep state with error flag clear
                   
                   // p->sw[LIMITDBOUTSIDE].flag2 = 0; // temporary, clear LS outside latching flag
-
                   p->state = LW_INDEX;
                   p->isr_state = LW_ISR_INDEX;
                   p->error = 0;  // clear error flag

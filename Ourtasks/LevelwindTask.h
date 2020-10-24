@@ -105,7 +105,6 @@ struct LEVELWINDFUNCTION
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
-
    uint8_t  state;      // level-wind state
    uint8_t  status;     // level-wind status
    uint8_t  isr_state;  // level-wind status
