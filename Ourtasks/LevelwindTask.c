@@ -319,7 +319,7 @@ extern CAN_HandleTypeDef hcan1;
          p->indexed = 0;
          p->error = 0;           
       }
-
+      
 
       /* Need check for state-status chages to send automatic messages*/
 	}
