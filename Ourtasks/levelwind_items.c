@@ -281,7 +281,7 @@ void levelwind_items_TIM2_IRQHandler(void)
 
       /* These encoder input capture or output compare interrupts do not drive the levelwind
          during regular indexing, sweeping, arrest, and off states,  */
-      switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode msn
+      switch (p->lw_isr_state & 0xF0)   // deal with interrupts based on lw_isr_state msn
       {
          case(LW_ISR_OFF):
          {  // REVISIT: the stepper should be enabled/disabled in LW task 
@@ -319,7 +319,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       // Duration increment computed from CL CAN msg (during development)
       pT2base->CCR1 += p->ocinc; // Schedule next indexing interrupt
      
-      switch (p->lw_mode & 0xF0)   // deal with interrupts based on lw_mode
+      switch (p->lw_isr_state & 0xF0)   // deal with interrupts based on lw_isr_state
       {
          case(LW_ISR_OFF):
          {  // REVIST: This should be able to be a Null case
@@ -423,7 +423,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    p->pdbgadd->intcntr   = p->intcntr;
    p->pdbgadd->dbg1      = p->velaccum.s32;
    p->pdbgadd->dbg2      = p->lw_state;
-   p->pdbgadd->dbg3      = p->lw_mode;
+   p->pdbgadd->dbg3      = p->lw_isr_state;
    p->pdbgadd += 1;    // Advance add pointer
    if (p->pdbgadd >= p->pdbgend) p->pdbgadd = p->pdbgbegin;
 #endif
@@ -493,7 +493,7 @@ uint8_t levelwind_items_index_case(void)
    {
       p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000);
       p->pos_prev = p->posaccum.s16[1];
-      p->lw_mode = LW_ISR_SWEEP; // move to sweep state
+      p->lw_isr_state = LW_ISR_SWEEP; // move to sweep state
 
 #if LEVELWINDDEBUG
       p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
@@ -519,7 +519,7 @@ uint8_t levelwind_items_sweep_case(void)
 
    if (p->sw[LIMITDBOUTSIDE].flag1) // temporary until termination criteria 
    {                                // is established
-      p->lw_mode = LW_ISR_ARREST;   
+      p->lw_isr_state = LW_ISR_ARREST;   
    }
    
    return(1);  // REVIST: always 1, should this be void return? 
@@ -542,7 +542,7 @@ uint8_t levelwind_items_arrest_case(void)
    {
       // This may end up in LW CENTER state
       // REVIST: should this be handled in LW task?
-      p->lw_mode = LW_ISR_TRACK;
+      p->lw_isr_state = LW_ISR_TRACK;
       p->lw_state = LW_TRACK; 
       return (0);
    }

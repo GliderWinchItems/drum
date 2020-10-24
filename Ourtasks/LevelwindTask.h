@@ -108,7 +108,7 @@ struct LEVELWINDFUNCTION
 
    uint8_t  lw_state;      // level-wind state
    uint8_t  lw_status;     // level-wind status
-   uint8_t  lw_ISR_state;  // level-wind status
+   uint8_t  lw_isr_state;  // level-wind status
    uint8_t  lw_mode;       // level-wind mode (Off, Track, or Center)
    uint8_t  lw_indexed;    // indexed status MAY NOT BE NEEDED
    uint8_t  lw_error;      // level-wind error flag
