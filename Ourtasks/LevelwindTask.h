@@ -106,12 +106,12 @@ struct LEVELWINDFUNCTION
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
 
-   uint8_t  lw_state;      // level-wind state
-   uint8_t  lw_status;     // level-wind status
-   uint8_t  lw_ISR_state;  // level-wind status
-   uint8_t  lw_mode;       // level-wind mode (Off, Track, or Center)
-   uint8_t  lw_indexed;    // indexed status MAY NOT BE NEEDED
-   uint8_t  lw_error;      // level-wind error flag
+   uint8_t  state;      // level-wind state
+   uint8_t  status;     // level-wind status
+   uint8_t  isr_state;  // level-wind status
+   uint8_t  mode;       // level-wind mode (Off, Track, or Center)
+   uint8_t  indexed;    // indexed status MAY NOT BE NEEDED
+   uint8_t  error;      // level-wind error flag
    uint8_t  mc_state;      // master controller state 
    
    

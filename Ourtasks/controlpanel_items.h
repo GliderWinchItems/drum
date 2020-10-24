@@ -168,9 +168,9 @@ struct CONTROLPANELSTATE
    uint8_t  zero_odometer;
    uint8_t  brake;
    uint8_t  guillotine;
-   uint8_t  emergency;     // normal:0, emergency:1
-   uint8_t  lw_mode;       // track:1, center:0
-   uint8_t  lw_index;      // index the level-wind   
+   uint8_t  emergency;  // normal:0, emergency:1
+   uint8_t  mode;       // off, track center
+   uint8_t  index;      // index the level-wind   
 
    // provisions for future expansions
    uint8_t  rev_fwd;       // reverse:0, forward:1 control lever action

@@ -67,10 +67,10 @@ void StartLevelwindTask(void const * argument)
       CP state are handled in ...cp_state_init above. Below should
       be moved into levelwind_func_init_init( ) at some point but useful here
       for development   */
-   p->lw_state = LW_OFF;
-   p->lw_mode = LW_ISR_OFF;
-   p->lw_error = 0;
-   p->lw_indexed = 0;
+   p->state = LW_OFF;
+   p->isr_state = LW_ISR_OFF;
+   p->error = 0;
+   p->indexed = 0;
    // disable stepper by resetting output with BSRR storing
    p->enflag = Stepper_MF_Pin;         // configure for set
    Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -146,12 +146,12 @@ extern CAN_HandleTypeDef hcan1;
 			noteuse |= LEVELWINDSWSNOTEBITSWT1;
 		}
 
-      if ((0) && (p->lw_state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
+      if ((0) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed
-         p->lw_state = LW_MANUAL;
-         p->lw_mode = LW_ISR_MANUAL;
-         p->lw_indexed = 0;         
-         p->lw_error = 1;  // indicate an Overrun switch has tripped
+         p->state = LW_MANUAL;
+         p->isr_state = LW_ISR_MANUAL;
+         p->indexed = 0;         
+         p->error = 1;  // indicate an Overrun switch has tripped
          p->ocinc = p->ocman;
          // enable stepper by resetting output with BSRR storing
          p->enflag = Stepper_MF_Pin << 16;         // configure for reset
@@ -159,12 +159,12 @@ extern CAN_HandleTypeDef hcan1;
 
          // ADD initiate LW status-state message
       }
-      else if ((0) && (p->lw_state != LW_OVERRUN)) // here test for Overrun switch activations
+      else if ((0) && (p->state != LW_OVERRUN)) // here test for Overrun switch activations
       {
-         p->lw_state = LW_OVERRUN;
-         p->lw_mode = LW_ISR_OFF;
-         p->lw_indexed = 0;         
-         p->lw_error = 1;  // indicate an Overrun switch has tripped
+         p->state = LW_OVERRUN;
+         p->isr_state = LW_ISR_OFF;
+         p->indexed = 0;         
+         p->error = 1;  // indicate an Overrun switch has tripped
          // disable stepper by setting output with BSRR storing
          p->enflag = Stepper_MF_Pin;         // configure for reset
          Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -175,22 +175,22 @@ extern CAN_HandleTypeDef hcan1;
       else if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
       {  // this node is operational
 
-         switch (p->lw_state & 0xF0)   // deal with CAN notification based on LW super-state
+         switch (p->state & 0xF0)   // deal with CAN notification based on LW super-state
          {
             case (LW_OFF):
             {  
                // clear error flag is LW mode is set to Off
-               if (p->lw_mode == LW_MODE_OFF) p->lw_error = 0;  
-               
-               if ((p->mc_state == MC_PREP) && (p->lw_error == 0)) 
+               if (p->mode == LW_MODE_OFF) p->error = 0;  
+
+               if ((p->mc_state == MC_PREP) && (p->error == 0)) 
                   //   && (p->sw[LIMITDBOUTSIDE].flag2)) // last condition temporary for early development
                {  // if here we have moved into MC Prep state with error flag clear
                   
                   // p->sw[LIMITDBOUTSIDE].flag2 = 0; // temporary, clear LS outside latching flag
 
-                  p->lw_state = LW_INDEX;
-                  p->lw_mode = LW_ISR_INDEX;
-                  p->lw_error = 0;  // clear error flag
+                  p->state = LW_INDEX;
+                  p->isr_state = LW_ISR_INDEX;
+                  p->error = 0;  // clear error flag
                   // enable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -219,9 +219,9 @@ extern CAN_HandleTypeDef hcan1;
             {  
                if(1) // test overrun switch to see if it is still activated
                {  // switch cleared: move to off with error set
-                  p->lw_state = LW_OFF;
-                  p->lw_mode = LW_ISR_OFF;
-                  p->lw_error = 1;  // set error flag
+                  p->state = LW_OFF;
+                  p->isr_state = LW_ISR_OFF;
+                  p->error = 1;  // set error flag
                   // disable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin;         // configure for set
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -235,9 +235,9 @@ extern CAN_HandleTypeDef hcan1;
             {
                if (1)   // test if an Manual switch is still activated
                {  // switch cleared: move to Off with error set
-                  p->lw_state = LW_OFF;
-                  p->lw_mode = LW_ISR_OFF;
-                  p->lw_error = 1;  // set error flag
+                  p->state = LW_OFF;
+                  p->isr_state = LW_ISR_OFF;
+                  p->error = 1;  // set error flag
                   // disable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin;         // configure for set
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -256,8 +256,8 @@ extern CAN_HandleTypeDef hcan1;
 
                if(p->mc_state == MC_SAFE) 
                {  // move to Off state
-                  p->lw_mode = LW_ISR_OFF;
-                  p->lw_state = LW_OFF;
+                  p->isr_state = LW_ISR_OFF;
+                  p->state = LW_OFF;
 
                   // ADD initiate LW status-state message   
                }               
@@ -266,15 +266,15 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_TRACK):
             {
-               if ((p->mc_state == MC_RETRIEVE) && (p->lw_mode == LW_MODE_CENTER))
+               if ((p->mc_state == MC_RETRIEVE) && (p->mode == LW_MODE_CENTER))
                {
-                  p->lw_state = LW_CENTER;
+                  p->state = LW_CENTER;
                   // may setp up centering and get it started here
                }
                else if(p->mc_state == MC_SAFE) 
                {  // move to Off state
-                  p->lw_mode = LW_ISR_OFF;
-                  p->lw_state = LW_OFF;
+                  p->isr_state = LW_ISR_OFF;
+                  p->state = LW_OFF;
                }
                break;
             }
@@ -294,8 +294,8 @@ extern CAN_HandleTypeDef hcan1;
                   completed*/
                if((p->mc_state == MC_PREP))  
                {  // move to Index state with stepper driver enabled
-                  p->lw_state = LW_INDEX;
-                  p->lw_mode = LW_ISR_INDEX;
+                  p->state = LW_INDEX;
+                  p->isr_state = LW_ISR_INDEX;
                   // enable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -314,10 +314,10 @@ extern CAN_HandleTypeDef hcan1;
       }
       else 
       {// drum not in operational use. move level-wind state to OFF.
-         p->lw_state = LW_OFF;
-         p->lw_mode = LW_ISR_OFF;
-         p->lw_indexed = 0;
-         p->lw_error = 0;           
+         p->state = LW_OFF;
+         p->isr_state = LW_ISR_OFF;
+         p->indexed = 0;
+         p->error = 0;           
       }
 
 
@@ -350,8 +350,8 @@ void levelwind_task_cp_state_init(void)
    pcp->brake = 0;  
    pcp->guillotine = 0;     
    pcp->emergency = 0;  
-   pcp->lw_mode = 0;     
-   pcp->lw_index = 0;
+   pcp->mode = LW_MODE_OFF;     
+   pcp->index = 0;
    pcp->rev_fwd = 1;     
    pcp->rmt_lcl = 1;  
    pcp->active_drum = 1;   // assumes single drum system     
@@ -372,7 +372,7 @@ void levelwind_task_cp_state_init(void)
    pcp->arm_pb_led = 0;
    pcp->prep_rcvry_led = 0;
    // pcp->beeper = 0;  // beeper will likely be getting its own CAN message
-                        // until what is involved is established don't handle
+                        // until that is agreed to don't handle
 
    return;  
 }
@@ -434,10 +434,10 @@ return;  // DEBUG!!!!do nothing until real cp state CAN messages are present
    pcp->emergency = (pcan->cd.uc[EMERGENCY_BYTE] 
       & (EMERGENCY_MASK << EMERGENCY_BIT)) >> EMERGENCY_BIT;
 
-   pcp->lw_mode = (pcan->cd.uc[LWMODE_BYTE] 
+   pcp->mode = (pcan->cd.uc[LWMODE_BYTE] 
       & (LWMODE_MASK << LWMODE_BIT)) >> LWMODE_BIT;
 
-   pcp->lw_index = (pcan->cd.uc[LWINDEX_BYTE] 
+   pcp->index = (pcan->cd.uc[LWINDEX_BYTE] 
       & (LWINDEX_MASK << LWINDEX_BIT)) >> LWINDEX_BIT;
 
    pcp->rev_fwd = (pcan->cd.uc[REVFWD_BYTE] 
