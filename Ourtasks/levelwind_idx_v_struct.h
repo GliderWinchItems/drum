@@ -37,7 +37,6 @@ struct LEVELWINDLC
    uint8_t  mydrum;     // the drum number for this node 
 
 	/* Timings in milliseconds. Converted later to 'swtim1' ticks. */
-	uint32_t ka_levelwind_t; // keepalive from PC (ms) 
 	uint32_t hbct_t;     // Heartbeat ct: ms between sending 
    uint32_t hbct;       // Number of ticks between hb msgs
 
@@ -53,7 +52,8 @@ struct LEVELWINDLC
 
    // For development, these will likely not be needed in operational code
    float    clfactor;   // Constant to compute oc duration at CL = 100.0
-   uint32_t cltimemax;  // Max timer count for shutdown     
+   uint32_t cltimemax;  // Max timer count for shutdown 
+   uint32_t ka_levelwind_t; // keepalive from PC (ms)     
 
  // CAN ids ...........................................................................
    //                                  CANID_NAME             CAN_MSG_FMT     DESCRIPTION

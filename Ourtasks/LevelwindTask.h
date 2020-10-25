@@ -75,7 +75,7 @@ enum cididx
 union PAYFLT
 {
    float f;
-   uint8_t u8[4];
+   uint8_t  u8[4];
    uint16_t u16[2];
    uint32_t u32;
    int32_t  s32;
@@ -88,16 +88,14 @@ struct LEVELWINDFUNCTION
    union    PAYFLT   pf; // For extracting float from payload
    union    PAYFLT   posaccum;  // Stepper position accumulator
    union    PAYFLT   velaccum;  // Stepper velocity accumulator
+
    int16_t  pos_prev;   // Previous posaccum integral portion 
    int32_t  Lplus32;    // 32-bit extended Lplus
    int32_t  Lminus32;   // 32-bit extended Lminus
    int32_t  Ks;         // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
    int32_t  rvrsldx;    // Reversal Distance
-   float    speedcmdf;  // Speed command (float)
-   float    focdur;     // Temp for computer inverse of CL position
-   float    clpos;      // CL position extracted from CAN msg
-   uint32_t cltimectr;  // Counter for loss of CL msgs
-   uint32_t speedcmdi;  // Commanded speed (integer)
+   
+   
    uint32_t ocinc;      // OC register increment for indexing
    uint32_t ocswp;      // OC register increment for sweeping
    uint32_t ocman;      // OC register increment for manual motion
@@ -105,15 +103,15 @@ struct LEVELWINDFUNCTION
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
+   
    uint8_t  state;      // level-wind state
    uint8_t  status;     // level-wind status
-   uint8_t  isr_state;  // level-wind status
+   uint8_t  isr_state;  // level-wind ISR state
    uint8_t  mode;       // level-wind mode (Off, Track, or Center)
    uint8_t  indexed;    // indexed status MAY NOT BE NEEDED
    uint8_t  error;      // level-wind error flag
-   uint8_t  mc_state;      // master controller state 
-   
-   
+   uint8_t  mc_state;   // master controller state 
+
    uint8_t  ocicbit;       
    uint8_t  ocicbit_prev;  
 
@@ -122,6 +120,11 @@ struct LEVELWINDFUNCTION
    uint16_t swbits;     // Port E switch bits (10:15)
 
    // debug and characterization, potentially removable for operational code
+   uint32_t cltimectr;  // Counter for loss of CL msgs
+   uint32_t speedcmdi;  // Commanded speed (integer)
+   float    speedcmdf;  // Speed command (float)
+   float    clpos;      // CL position extracted from CAN msg
+   float    focdur;     // Temp for computer inverse of CL position
    uint32_t iobits;     // Bits from CL CAN msg positioned for PB0
    uint32_t dtwentry;   // DTW timer upon ISR entry
    int32_t  dtwdiff;    // DTW timer minus entry upon ISR exit
@@ -175,12 +178,15 @@ struct LEVELWINDFUNCTION
 /* *************************************************************************/
  void levelwind_task_cp_state_update();
 /* @brief   :  update the CP state struct from CP state CAN message
- * @param   :  pcp = pointer to CP state struct
  * *************************************************************************/
 
  /* *************************************************************************/
  void levelwind_task_cp_state_init();
 /* @brief   :  function to initialize the state struct before first CAN
  *             message
- * @param   :  pcp = pointer to CP state struct
+ * *************************************************************************/
+
+ /* ************************************************************************/
+ void levelwind_task_move_to_off(void);
+/* @brief   : move to level-wind off state
  * *************************************************************************/

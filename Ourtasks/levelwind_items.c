@@ -92,7 +92,7 @@ void levelwind_items_timeout(void)
       /* Set enable bit which turns FET on, which disables levelwind. */
       // Possible Error. This seems to reset the enable which would enable 
       // the stepper. This leaves stepper enabled
-      p->enflag = (Stepper_MF_Pin << 16); // Set bit with BSRR storing
+      //p->enflag = (Stepper_MF_Pin << 16); // Set bit with BSRR storing
 
       /* Bits positioned for updating PB BSRR register. */
       p->iobits = p->drflag | p->enflag;
@@ -193,7 +193,7 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
 
    // Motor Enable bit
    if ((pcan->cd.uc[0] & ENBIT) != 0)
-   {
+   {  // enable stepper
       p->enflag = (Stepper_MF_Pin << 16); // Reset
    }
    else
@@ -495,7 +495,9 @@ uint8_t levelwind_items_index_case(void)
       p->pos_prev = p->posaccum.s16[1];
       p->isr_state = LW_ISR_SWEEP; // move to sweep state
 
+
 #if LEVELWINDDEBUG
+      p->sw[LIMITDBOUTSIDE].flag1 = 0; // REVISIT: for development only
       p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
 #endif      
    }
@@ -543,7 +545,8 @@ uint8_t levelwind_items_arrest_case(void)
       // This may end up in LW CENTER state
       // REVIST: should this be handled in LW task?
       p->isr_state = LW_ISR_TRACK;
-      p->state = LW_TRACK; 
+      p->state = LW_TRACK;
+      p->ocinc = p->ocman; // reduce output compare interrupt rate 
       return (0);
    }
    else

@@ -167,7 +167,7 @@ void Stepper_EXTI15_10_IRQHandler(void)
 	padd->sws = p->swbits;		// Save all switch contact bits
 	padd->tim = pT2base->CNT;   // 32b timer time
 	padd->cnt = pT5base->CNT;   // Encoder counter
-    ptmp = padd;  // Save in case R-S change
+   ptmp = padd;  // Save in case R-S change
 	padd += 1;    // Advance in circular buffer
 	if (padd >= pend) padd = pbegin; // Wrap-around
 
