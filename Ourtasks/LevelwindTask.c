@@ -13,14 +13,13 @@
 #include "main.h"
 #include "morse.h"
 
-#include "levelwind_items.h"
 #include "drum_items.h"
 #include "LevelwindTask.h"
 #include "levelwind_func_init.h"
 #include "levelwind_switches.h"
 #include "MailboxTask.h"
 #include "controlpanel_items.h"
-
+#include "levelwind_items.h"
 
 osThreadId LevelwindTaskHandle;
 
@@ -101,8 +100,8 @@ extern CAN_HandleTypeDef hcan1;
 	for (;;)
 	{
 		/* Wait for notifications 
-         250 ms timeout insures Manual switch gets polled at least 4 times
-         per second. */      
+         250 ms timeout insures Manual and Overrun switches gets polled at least 
+         4 times per second. */      
 		xTaskNotifyWait(0,noteuse, &noteval, pdMS_TO_TICKS(250));
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
 
@@ -144,22 +143,22 @@ extern CAN_HandleTypeDef hcan1;
       {  // Manual (bypass) switch is closed
          p->state = LW_MANUAL;
          p->isr_state = LW_ISR_MANUAL;
-         p->indexed = 0;         
-         p->error = 1;  // indicate an Overrun switch has tripped
-         p->ocinc = p->ocman;
+         
          // enable stepper by resetting output with BSRR storing
          p->enflag = Stepper_MF_Pin << 16;         // configure for reset
          Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
-
-         // ADD initiate LW status-state message
+      }
+      else if ((0) && (p->state = LW_MANUAL)) // test if maunal switch has opened when in MANUAL
+      {
+         levelwind_task_move_to_off(0);
+         p->state = LW_OVERRUN;
       }
       else if ((0) && (p->state != LW_OVERRUN)) // here test for Overrun switch activations
       {
-         levelwind_task_move_to_off(0);   
+         levelwind_task_move_to_off(1);   //move to Off with error asserted   
          p->state = LW_OVERRUN;
          p->isr_state = LW_ISR_OFF;
          p->indexed = 0;         
-         p->error = 1;  // indicate an Overrun switch has tripped
 
          // disable stepper by setting output with BSRR storing
          p->enflag = Stepper_MF_Pin;         // configure for reset
@@ -176,16 +175,15 @@ extern CAN_HandleTypeDef hcan1;
             case (LW_OFF):
             {  
                // clear error flag if LW mode is set to Off
-               if (p->mode == LW_MODE_OFF) p->error = 0;  
-
-               if ((p->mc_state == MC_PREP) && (p->error == 0) && (p->mode != LW_MODE_OFF)
+               if (p->mode == LW_MODE_OFF) p->error = 0; 
+               else if ((p->mc_state == MC_PREP) && (p->error == 0) 
                   && (p->sw[LIMITDBOUTSIDE].flag2)) // last condition temporary for early development
-               {  // we are in MC Prep state with error flag clear  
-                  p->sw[LIMITDBOUTSIDE].flag2 = 0; // temporary, clear LS outside latching flag
+               {  // we are in MC Prep state on an operational drum with error flag clear  
+                  p->sw[LIMITDBOUTSIDE].flag2 = 0; // TEMPORARY: clear LS outside latching flag
                   
                   p->state = LW_INDEX;
                   p->isr_state = LW_ISR_INDEX;
-                  p->ocinc = p->lc.ocidx;
+                  p->ocinc = p->lc.ocidx; // set oc  interrupt rate for indexing
                   // enable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -203,7 +201,6 @@ extern CAN_HandleTypeDef hcan1;
                   p->Lplus32  = p->Lminus32 
                      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
                   p->velaccum.s32 = 0;             // Velocity accumulator initial value  
-                  p->drbit = p->drbit_prev = 0;    // Drum direction bit
                }              
                break;
             }
@@ -226,13 +223,11 @@ extern CAN_HandleTypeDef hcan1;
                break;
             }
 
-
             case (LW_INDEX):
             {  // Tim2 ISR moves LW state to Track when done
 
                // Here check if ISR has finished the indexing
-               // ADD initiate LW status-state message      
-
+               
                if(p->mc_state == MC_SAFE) 
                {  // move level-wind state machine to off with error flag not set
                   levelwind_task_move_to_off(0);    
@@ -253,7 +248,6 @@ extern CAN_HandleTypeDef hcan1;
                   distance = p->posaccum.s32 - center;   // signed distance to center
                   if (distance > (2 * p->rvrsldx))          
                   {  // move to increase posaccum  from 0 to distance
-                     p->drbit = p->drbit_prev = 0; // Drum direction bit for increase
                      
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST*/
@@ -273,8 +267,7 @@ extern CAN_HandleTypeDef hcan1;
                   }
                   else if (distance < -(2 * p->rvrsldx))
                   {  // move to decrease posaccum from 0 to -distance
-                     p->drbit = p->drbit_prev = 1; // Drum direction bit for decrease
-                     
+                                          
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST*/
                      p->posaccum.s32 = -p->lc.Ka;        
@@ -305,10 +298,7 @@ extern CAN_HandleTypeDef hcan1;
             }
 
             case (LW_CENTER):
-            {
-               
-
-               /* This code initiates  indexing when the Retreive is completed*/
+            {  /* This code initiates  indexing when the Retreive is completed*/
                if((p->mc_state == MC_PREP))  
                {  // move to Index state with stepper driver enabled
                   /* This code is essentially the same as is used in the  Off state
@@ -333,8 +323,7 @@ extern CAN_HandleTypeDef hcan1;
                   p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
                   p->Lplus32  = p->Lminus32 
                      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
-                  p->velaccum.s32 = 0;             // Velocity accumulator initial value  
-                  p->drbit = p->drbit_prev = 0;    // Drum direction bit                  
+                  p->velaccum.s32 = 0;          // Velocity accumulator initial value      
                }
                break;
             }
@@ -367,11 +356,30 @@ extern CAN_HandleTypeDef hcan1;
 	}
 }
 
+/* *************************************************************************
+ * void levelwind_task_move_to_off (void);
+ * @brief   : move to level-wind off state
+ * @param   : err; 1 error, 0 no error
+ * *************************************************************************/
+void levelwind_task_move_to_off(uint8_t err)
+{   
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
+   p->state = LW_OFF;
+   p->isr_state = LW_ISR_OFF;
+   p->indexed = 0;
+   p->error = err;
+   p->ocinc = p->ocman;    // slow down output compare interrupt rate
+   
+   // disable stepper by resetting output with BSRR storing
+   p->enflag = Stepper_MF_Pin;         // configure for set
+   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
 
+   return;  
+}
 
 /* *************************************************************************
- * void levelwind_task_cp_sate_update(struct CANRCVBUF* pcan);
+ * void levelwind_task_cp_state_update(struct CANRCVBUF* pcan);
  * @param   : pcan = pointer to CAN msg struct
  * @brief   : update of control panel state structure
  * *************************************************************************/
@@ -545,28 +553,6 @@ return;  // DEBUG!!!!do nothing until real cp state CAN messages are present
    pcp->beeper = (pcan->cd.uc[BEEPER_BYTE] 
       & (BEEPER_MASK << BEEPER_BIT)) >> BEEPER_BIT; */
 #endif
-
-   return;  
-}
-
-/* *************************************************************************
- * void levelwind_task_move_to_off (void);
- * @brief   : move to level-wind off state
- * @param   : err; 1 error, 0 no error
- * *************************************************************************/
-void levelwind_task_move_to_off(uint8_t err)
-{   
-   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-
-   p->state = LW_OFF;
-   p->isr_state = LW_ISR_OFF;
-   p->indexed = 0;
-   p->error = err;
-   p->ocinc = p->ocman;    // slow down output compare interrupt rate
-   
-   // disable stepper by resetting output with BSRR storing
-   p->enflag = Stepper_MF_Pin;         // configure for set
-   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
 
    return;  
 }

@@ -100,19 +100,7 @@ struct LEVELWINDDBGBUF
  void levelwind_items_CANsendHB(void);
 /* @brief   : Send CAN heartbeat for levelwind
  * *************************************************************************/
-  uint8_t levelwind_items_index_case(void); 
-/* @brief   : Handle INDEX case
- * @param   : p    = pointer to levelwind function parameters
- * *************************************************************************/
- uint8_t levelwind_items_sweep_case(void);
- /*@brief   : Handle SWEEP case
- * @param   : p    = pointer to levelwind function parameters
- * *************************************************************************/
- uint8_t levelwind_items_arrest_case(void);
- /*@brief   : Handle ARREST case
- * @param   : p    = pointer to levelwind function parameters
- * *************************************************************************/
- struct LEVELWINDDBGBUF* levelwind_items_getdbg(void);
+  struct LEVELWINDDBGBUF* levelwind_items_getdbg(void);
 /* @brief   : Get pointer to debug buffer
  * @return  : NULL = no new data; otherwise ptr struct with data
  * *************************************************************************/

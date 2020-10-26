@@ -97,14 +97,16 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->Lplus32  = p->Lminus32 
       + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
    p->velaccum.s32 = 0;             // Velocity accumulator initial value  
-   p->drbit = p->drbit_prev = 0;    // Drum direction bit
-
-   */
    
+   */
+
+   p->drbit = p->drbit_prev = 0;    // Drum direction bit REVIST: Needed???   
 
    p->hbctr      = xTaskGetTickCount();
    
    p->dtwmin     = 0x7fffffff;
+
+
 
    // TIM2 output compare increments
    p->ocswp       = p->lc.ocidx/p->lc.Nswp;     // initalize sweep increment

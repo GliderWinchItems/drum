@@ -64,8 +64,7 @@ TIM13 (84 MHz) Solenoid FET drive (no interrupt)
 #include "drum_items.h"
 #include "levelwind_switches.h"
 
-
-#define DTW    1  // True to keep DTW timing Code
+#define DTW 1  // True to keep DTW timing Code
 
 struct LEVELWINDDBGBUF levelwinddbgbuf[LEVELWINDDBGBUFSIZE];
 
@@ -175,7 +174,6 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
          pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
       }
    }
-
    /* Payload byte bits for direction and enable. */
 
    /* Direction bit of output compare (CL control) comes from
@@ -252,7 +250,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
    if ((pT2base->SR & (1 << 3)) != 0)  // CH3 Interrupt flag?
    { // Yes, either encoder channel A, or output compare emulating an encoder edge
-      uint8_t  ddir; // temporary drum direction 
+      uint8_t  ddir; // REVIST: temporary drum direction while we are using faux interrupts 
 
       pT2base->SR = ~(1 << 3);   // Reset CH3 flag
 
@@ -261,19 +259,12 @@ void levelwind_items_TIM2_IRQHandler(void)
       { // Here we are using TIM2CH3 as OC compare instead of input capture. */
          // Duration increment computed from CL CAN msg
          pT2base->CCR3 += p->ocfauxinc; // Schedule next faux encoder interrupt
-         // Make faux encoder counter 
-         if (p->drflag == 1)
-         {  
-            ddir = 1;   //drum direction reverse
-         }         
-         else
-         {
-            ddir = 0;   // drum direction forward
-         } 
+         // direction for faux encoder
+         ddir = (p->drflag == 1) ? 1 : 0; // set drum direction from CP
       }      
       else
       { // Here, encoder driven input capture. Save for odometer and speed
-         ddir = (pT5base->CR1 & 0x10) ? 1 : 0;  // Encoding DIR (direction) (0|1)
+         ddir = (pT5base->CR1 & 0x10) ? 1 : 0;  // Encoder direction(0|1)
       }
 
       /* Here: either encoder channel A driven input capture interrupt, or 
@@ -315,7 +306,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       {
          case (LW_ISR_MANUAL):
          {            
-            if (0)   // REVIST: test the left/right switch for left
+            if (0)   // REVISIT: test the left/right switch for left
             {  // switch is signaling left
                Stepper_DR_GPIO_Port->BSRR = L0R_LEFT;  // set direction left
                // Start TIM9 to generate a delayed pulse.
@@ -332,24 +323,58 @@ void levelwind_items_TIM2_IRQHandler(void)
          }
 
          case (LW_ISR_INDEX):
-         {  
-            emulation_run = levelwind_items_index_case();
+         {  // on indexing, switch to sweep state for limit switch testing
+            if (p->sw[LIMITDBINSIDE].flag1) // limit switch has activated
+            {
+               p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000); //  REVISIT: Parameter for 1000 magic number
+               p->pos_prev = p->posaccum.s16[1];
+               p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state
+#if LEVELWINDDEBUG //   for development only
+               p->sw[LIMITDBOUTSIDE].flag1 = 0; 
+               p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
+#endif      
+            } 
+            emulation_run = 1;
             break;
          }         
 
          case (LW_ISR_SWEEP):
          {  
-            /* code here, or in limit switch interrupt handler, for testing limit 
+            
+            /* REVIST: code here, or in limit switch interrupt handler, for testing limit 
             switches in operational code and characterizing their behavior 
             during development. If needed, this mode can be used for
             calibrating limit switches for speed dependent corrections in LOS recovery. */
-            emulation_run = levelwind_items_sweep_case();
+
+            // exit to arrest when velocity goes through 0
+            if (p->velaccum.s32 == 0)  // when velocity == 0, speed up
+            {
+               p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
+            }
+
+            if (p->sw[LIMITDBOUTSIDE].flag1) // temporary until termination criteria 
+            {                                // is established
+               p->isr_state_nxt = LW_ISR_TRACK;
+               p->isr_state = LW_ISR_ARREST;   
+            }            
+            emulation_run = 1;
             break;
          }
 
          case (LW_ISR_ARREST):
-         {
-            emulation_run = levelwind_items_arrest_case();
+         {  // code here dealing with stopping next time velocity reaches 0
+
+            /* Transition to isr_state_nxt (Track or Center) when done. This state 
+               can be reached from LW_ISR_SWEEP state or when LW task
+               tells the LW to center. isr_state_nxt tells it where to go based
+               on who initated the transition into this state, i.e., it is 
+               essentially a sub-state indicator   */  
+            if (p->velaccum.s32 == 0)
+            {
+               p->isr_state = p->isr_state_nxt;
+               p->ocinc = p->ocman; // reduce output compare interrupt rate
+            }
+            else  emulation_run = 1;
             break;
          }
       }      
@@ -362,10 +387,7 @@ void levelwind_items_TIM2_IRQHandler(void)
 
    /* reversing screw emulation code */
    if (emulation_run)
-   {
-
-
-      // forward (levelwind) direction means position accumulator is increasing
+   {  // forward (levelwind) direction means position accumulator is increasing
       // negative direction means position accumulator is decreasing
       // drbit = 0 means positive drum direction
 
@@ -459,80 +481,6 @@ void levelwind_items_TIM2_IRQHandler(void)
 #endif
 
    return;
-}
-
-/* *************************************************************************
- * uint8_t levelwind_items_index_case(void);
- * @brief   : Handle INDEX case
- * @param   : p    = pointer to levelwind function parameters
- * *************************************************************************/
-uint8_t levelwind_items_index_case(void)
-{  // function to handle INDEX case
-   
-   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-
-   // on indexing, switch to sweep state for limit switch testing
-   if (p->sw[LIMITDBINSIDE].flag1) // limit switch has activated
-   {
-      p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000);
-      p->pos_prev = p->posaccum.s16[1];
-      p->isr_state = LW_ISR_SWEEP; // move to sweep state
-
-#if LEVELWINDDEBUG
-      p->sw[LIMITDBOUTSIDE].flag1 = 0; // REVISIT: for development only
-      p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
-#endif      
-   }
-   return(1);  // REVIST: always 1, should this be void return? 
-}
-
-/* *************************************************************************
- * uint8_t levelwind_items_sweep_case(void);
- * @brief   : Handle SWEEP case
- * @param   : p    = pointer to levelwind function parameters
- * *************************************************************************/
-uint8_t levelwind_items_sweep_case(void)
-{  // function to handle SWEEP case
-   
-   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-
-   if (p->velaccum.s32 == 0)  // when velocity == 0, speed up
-   {
-      p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
-   }
-
-   if (p->sw[LIMITDBOUTSIDE].flag1) // temporary until termination criteria 
-   {                                // is established
-      p->isr_state_nxt = LW_ISR_TRACK;
-      p->isr_state = LW_ISR_ARREST;   
-   }
-   
-   return(1);  // REVIST: always 1, should this be void return? 
-}
-
-/* *************************************************************************
- * uint8_t levelwind_items_sweep_case(void);
- * @brief   : Handle ARREST case
- * @param   : p    = pointer to levelwind function parameters
- * *************************************************************************/
-uint8_t levelwind_items_arrest_case(void)
-{  // code here dealing with stopping at specified location
-   // this code likely simple enough to move into case statement and
-   // eliminate function
-   
-   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-
-   // transition to Track state and mode on completion   
-   if (p->velaccum.s32 == 0)
-   {
-      // This may end up in LW CENTER state
-      // REVIST: should this be handled in LW task?
-      p->isr_state = p->isr_state_nxt;
-      p->ocinc = p->ocman; // reduce output compare interrupt rate 
-      return (0);
-   }
-   else
-      return (1);
 }
 
 /* *************************************************************************
