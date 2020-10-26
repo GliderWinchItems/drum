@@ -4,6 +4,7 @@
 * Description        : Levelwind function w STM32CubeMX w FreeRTOS
 *******************************************************************************/
 
+#include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
@@ -62,23 +63,14 @@ void StartLevelwindTask(void const * argument)
 	/* Hardware filter CAN msgs. */
 	levelwind_func_init_canfilter(p);
 
+   // move level-wind state machine to off with no error flag set
+   levelwind_task_move_to_off(0);   
 
    /* Set initial_state/mode until MC messages arrive. Initial conditions for
       CP state are handled in ...cp_state_init above. Below may should
       be moved into levelwind_func_init_init( ) at some point but useful here
       for development   */
-   p->state = LW_OFF;
-   p->isr_state = LW_ISR_OFF;
    p->mode = LW_MODE_TRACK;
-   p->error = 0;
-   p->indexed = 0;
-
-   // disable stepper by resetting output with BSRR storing
-   p->enflag = Stepper_MF_Pin;         // configure for set
-   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
-   
-
-   /* TEMPORARY Unil message are actually present  */
    p->mc_state = MC_PREP;  
 
 	/* Limit and overrun switches. */
@@ -163,6 +155,7 @@ extern CAN_HandleTypeDef hcan1;
       }
       else if ((0) && (p->state != LW_OVERRUN)) // here test for Overrun switch activations
       {
+         levelwind_task_move_to_off(0);   
          p->state = LW_OVERRUN;
          p->isr_state = LW_ISR_OFF;
          p->indexed = 0;         
@@ -192,7 +185,7 @@ extern CAN_HandleTypeDef hcan1;
                   
                   p->state = LW_INDEX;
                   p->isr_state = LW_ISR_INDEX;
-                  p->error = 0;  // clear error flag
+                  p->ocinc = p->lc.ocidx;
                   // enable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
@@ -211,40 +204,24 @@ extern CAN_HandleTypeDef hcan1;
                      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
                   p->velaccum.s32 = 0;             // Velocity accumulator initial value  
                   p->drbit = p->drbit_prev = 0;    // Drum direction bit
-                  
-                  // ADD initiate LW status-state message
                }              
                break;
             }
 
             case (LW_OVERRUN):
             {  
-               if(1) // test overrun switch to see if it is still activated
-               {  // switch cleared: move to off with error set
-                  p->state = LW_OFF;
-                  p->isr_state = LW_ISR_OFF;
-                  p->error = 1;  // set error flag
-                  // disable stepper by resetting output with BSRR storing
-                  p->enflag = Stepper_MF_Pin;         // configure for set
-                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
-
-                  // ADD initiate LW status-state message
+               if(1) // poll overrun switch to see if it is still activated
+               {  // move level-wind state machine to off with error flag set
+                  levelwind_task_move_to_off(1);  
                }
                break;
             }         
 
             case (LW_MANUAL):
             {
-               if (1)   // test if an Manual switch is still activated
-               {  // switch cleared: move to Off with error set
-                  p->state = LW_OFF;
-                  p->isr_state = LW_ISR_OFF;
-                  p->error = 1;  // set error flag
-                  // disable stepper by resetting output with BSRR storing
-                  p->enflag = Stepper_MF_Pin;         // configure for set
-                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
-
-                  // ADD initiate LW status-state message                  
+               if (1)   // poll if an Manual switch is still activated
+               {  // move level-wind state machine to off with error flag set
+                  levelwind_task_move_to_off(1);                   
                }
                break;
             }
@@ -257,81 +234,107 @@ extern CAN_HandleTypeDef hcan1;
                // ADD initiate LW status-state message      
 
                if(p->mc_state == MC_SAFE) 
-               {  // move to Off state
-                  p->state = LW_OFF;
-                  p->isr_state = LW_ISR_OFF;
-                  // disable stepper by resetting output with BSRR storing
-                  p->enflag = Stepper_MF_Pin;               // configure for set
-                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port                  
-
-                  // ADD initiate LW status-state message   
+               {  // move level-wind state machine to off with error flag not set
+                  levelwind_task_move_to_off(0);    
                }               
                break;
             }
-
             case (LW_TRACK):
             {
-               if ((p->mc_state == MC_RETRIEVE) && (p->mode == LW_MODE_CENTER))                  
+               if (p->mc_state == MC_SAFE) 
+               {  // move level-wind state machine to off with error flag not set
+                  levelwind_task_move_to_off(0);    
+               }
+               else if ((p->mc_state == MC_RETRIEVE) && (p->mode == LW_MODE_CENTER))                  
                {  /* setup to center for retrieve  */
-                  int32_t distance;
                   int32_t center;
+                  int32_t distance;
                   center = (p->lc.Lplus + p->lc.Lminus) << 15; // calculate center position
                   distance = p->posaccum.s32 - center;   // signed distance to center
-                  if ((distance > (2 * p->rvrsldx)) || (-distance > (2 * p->rvrsldx)))
-                  {  // setup to move to center at sweep rate
-                     if (distance > 0)
-                     {  // move to increase posaccum
+                  if (distance > (2 * p->rvrsldx))          
+                  {  // move to increase posaccum  from 0 to distance
+                     p->drbit = p->drbit_prev = 0; // Drum direction bit for increase
+                     
+                     /* start 1 iteration in to avoid immediate zero velocity termination 
+                        in LW_ISR_ARREST*/
+                     p->posaccum.s32 = p->lc.Ka;        
+                     p->velaccum.s32 = p->lc.Ka;
 
-                     }
-                     else
-                     {  // move to decrease posaccum
+                     p->Lminus32 = p->rvrsldx;
+                     p->Lplus32  = p->rvrsldx 
+                        + (((distance - 2 * p->rvrsldx) << 16) / p->Ks) * p->Ks;
+                     
+                     /* consider to be in Center with Arresting sub-state
+                        but set previous state to avoid a message until arrest
+                        completes */
+                     p->state = p->state_prev = LW_CENTER | 0x01;
+                     p->isr_state_nxt = LW_ISR_OFF;   // exit Arrest into Off
+                     p->isr_state = LW_ISR_ARREST;                             
+                  }
+                  else if (distance < -(2 * p->rvrsldx))
+                  {  // move to decrease posaccum from 0 to -distance
+                     p->drbit = p->drbit_prev = 1; // Drum direction bit for decrease
+                     
+                     /* start 1 iteration in to avoid immediate zero velocity termination 
+                        in LW_ISR_ARREST*/
+                     p->posaccum.s32 = -p->lc.Ka;        
+                     p->velaccum.s32 = -p->lc.Ka;
 
-                     }   
-                     p->ocinc = p->ocswp;
-                     p->isr_state = LW_ISR_CENTER;
+                     p->Lplus32  = -p->rvrsldx;
+                     p->Lminus32 = -p->rvrsldx  
+                        - (((distance - 2 * p->rvrsldx) << 16) / p->Ks) * p->Ks; 
+                     
+                     /* consider to be in Center with Arresting sub-state
+                        but set previous state to avoid a message until arrest
+                        completes */
+                     p->state = p->state_prev = LW_CENTER | 0x01;
+                     p->isr_state_nxt = LW_ISR_OFF;   // exit Arrest into Off
+                     p->isr_state = LW_ISR_ARREST;        
                   }
                   else
-                  {  // absolute distance close enough
-                     // disable stepper by resetting output with BSRR storing
-                     p->enflag = Stepper_MF_Pin;         // configure for set
-                     Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
-
+                  {  // absolute distance close enough, don't bother to move
                      p->state = LW_CENTER;
+                     p->isr_state = LW_ISR_OFF;
+
+                     // disable stepper by resetting output with BSRR storing
+                     p->enflag = Stepper_MF_Pin;               // configure for set
+                     Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
                   }                  
-               }
-               else if (p->mc_state == MC_SAFE) 
-               {  // move to Off state
-                  p->state = LW_OFF;
-                  p->isr_state = LW_ISR_OFF;
-                  // disable stepper by resetting output with BSRR storing
-                  p->enflag = Stepper_MF_Pin;               // configure for set
-                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port      
                }
                break;
             }
 
             case (LW_CENTER):
             {
-               /*
-                  I think when the Track state transition to Center, it will modify
-                  Lplus or Lminus and switch the mode to Arrest to move it to the 
-                  center   */
+               
 
-               /* code here will see if centering is complete and sending a CAN
-                  status-state message once  */
-
-
-               /* This code deals with moving back to Index when the Retreive is 
-                  completed*/
+               /* This code initiates  indexing when the Retreive is completed*/
                if((p->mc_state == MC_PREP))  
                {  // move to Index state with stepper driver enabled
+                  /* This code is essentially the same as is used in the  Off state
+                     to start indexing. We could just move to Off but then that would 
+                     generate two status-state messages. */                  
                   p->state = LW_INDEX;
                   p->isr_state = LW_ISR_INDEX;
+                  p->ocinc = p->lc.ocidx;
                   // enable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
-                  
-                  // ADD initiate LW status-state message
+
+                  // initialize trajectory integrators and associated values
+                  // these values are set up temporarily for development to make leftost position 0
+                  // Need padding for to provide margin for initial sweep
+                  // Position accumulator initial value. Reference paper for the value employed.
+                  // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
+                  p->posaccum.s32 = 0; // temporary to have it start at 0.
+                  p->pos_prev = p->posaccum.s32;
+                  // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
+                  // p->Lminus32 = p->lc.Lminus << 16;
+                  p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
+                  p->Lplus32  = p->Lminus32 
+                     + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
+                  p->velaccum.s32 = 0;             // Velocity accumulator initial value  
+                  p->drbit = p->drbit_prev = 0;    // Drum direction bit                  
                }
                break;
             }
@@ -344,14 +347,23 @@ extern CAN_HandleTypeDef hcan1;
          }               
       }
       else 
-      {// drum not in operational use. move level-wind state to OFF.
-         p->state = LW_OFF;
-         p->isr_state = LW_ISR_OFF;
-         p->indexed = 0;
-         p->error = 0;           
+      {  // move level-wind state machine to off with error flag set
+         levelwind_task_move_to_off(1);           
       }
 
-      /* Need check for state-status chages to send automatic messages*/
+
+      /* see if status or super-state have changed or HB timer has expired
+         and send appropriate status-state message */
+      if (((p->state & 0xF0) != (p->state_prev & 0xF0)) || (p->status != p->status_prev))
+      {  
+         p->state_prev = p->state;
+         p->status_prev = p->status;
+         // need  to initate an automonous status-state message
+      }
+      else if (0 && (p->hbctr >= xTaskGetTickCount()))
+      {
+         // need  to initate a HB status-state message
+      }    
 	}
 }
 
@@ -540,18 +552,20 @@ return;  // DEBUG!!!!do nothing until real cp state CAN messages are present
 /* *************************************************************************
  * void levelwind_task_move_to_off (void);
  * @brief   : move to level-wind off state
+ * @param   : err; 1 error, 0 no error
  * *************************************************************************/
-void levelwind_task_move_to_off(void)
+void levelwind_task_move_to_off(uint8_t err)
 {   
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
    p->state = LW_OFF;
    p->isr_state = LW_ISR_OFF;
    p->indexed = 0;
-   p->error = 0;
+   p->error = err;
    p->ocinc = p->ocman;    // slow down output compare interrupt rate
+   
    // disable stepper by resetting output with BSRR storing
-   p->enflag = Stepper_MF_Pin;               // configure for set
+   p->enflag = Stepper_MF_Pin;         // configure for set
    Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
 
    return;  

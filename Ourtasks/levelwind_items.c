@@ -283,14 +283,6 @@ void levelwind_items_TIM2_IRQHandler(void)
          during regular indexing, sweeping, arrest, and off states,  */
       switch (p->isr_state & 0xF0)   // deal with interrupts based on lw isr_state msn
       {
-         case(LW_ISR_OFF):
-         {  // REVISIT: the stepper should be enabled/disabled in LW task 
-            // Set enable bit which turns FET on, which disables levelwind
-            // Error; this was not disabling steper.
-            // REVISIT make sure it gets re-enabled when exiting state
-            //p->enflag = Stepper_MF_Pin; // Set bit with BSRR storing (disables stepper)
-         }
-
          case (LW_ISR_TRACK):
          {
             /* code here to check if LOS has occured. if so, switch to LOS recovery
@@ -321,15 +313,6 @@ void levelwind_items_TIM2_IRQHandler(void)
      
       switch (p->isr_state & 0xF0)   // deal with interrupts based on lw isr_state
       {
-         case(LW_ISR_OFF):
-         {  // REVIST: This should be able to be a Null case
-            // Set enable bit which turns FET on, which disables levelwind
-            // REVISIT make sure it gets re-enabled when exiting state
-            // Error; this was not disabling steper
-            // p->enflag = Stepper_MF_Pin;  // Set bit with BSRR storing (disables stepper)
-            break;
-         }
-
          case (LW_ISR_MANUAL):
          {            
             if (0)   // REVIST: test the left/right switch for left
@@ -495,7 +478,6 @@ uint8_t levelwind_items_index_case(void)
       p->pos_prev = p->posaccum.s16[1];
       p->isr_state = LW_ISR_SWEEP; // move to sweep state
 
-
 #if LEVELWINDDEBUG
       p->sw[LIMITDBOUTSIDE].flag1 = 0; // REVISIT: for development only
       p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
@@ -521,6 +503,7 @@ uint8_t levelwind_items_sweep_case(void)
 
    if (p->sw[LIMITDBOUTSIDE].flag1) // temporary until termination criteria 
    {                                // is established
+      p->isr_state_nxt = LW_ISR_TRACK;
       p->isr_state = LW_ISR_ARREST;   
    }
    
@@ -544,8 +527,7 @@ uint8_t levelwind_items_arrest_case(void)
    {
       // This may end up in LW CENTER state
       // REVIST: should this be handled in LW task?
-      p->isr_state = LW_ISR_TRACK;
-      p->state = LW_TRACK;
+      p->isr_state = p->isr_state_nxt;
       p->ocinc = p->ocman; // reduce output compare interrupt rate 
       return (0);
    }

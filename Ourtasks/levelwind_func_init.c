@@ -102,12 +102,11 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    */
    
 
-   p->hbctr      = 0;
+   p->hbctr      = xTaskGetTickCount();
    
    p->dtwmin     = 0x7fffffff;
 
    // TIM2 output compare increments
-   p->ocinc       = p->lc.ocidx;                // initialize to indexing increment
    p->ocswp       = p->lc.ocidx/p->lc.Nswp;     // initalize sweep increment
    p->ocman       = p->lc.ocidx * p->lc.Nman;   // initalize manual increment 
  
