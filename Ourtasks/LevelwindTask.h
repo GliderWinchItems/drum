@@ -96,7 +96,7 @@ struct LEVELWINDFUNCTION
    int32_t  rvrsldx;    // Reversal Distance
    
    
-   uint32_t ocinc;      // OC register increment for indexing
+   uint32_t ocinc;      // OC register increment for current level-wind state
    uint32_t ocswp;      // OC register increment for sweeping
    uint32_t ocman;      // OC register increment for manual motion
    uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg

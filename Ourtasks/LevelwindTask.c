@@ -79,7 +79,7 @@ void StartLevelwindTask(void const * argument)
    p->isr_state = LW_ISR_OFF;
    p->mode = LW_MODE_CENTER;
    
-
+#if 0 // intial conditions for testing centering operation
    p->mc_state = MC_RETRIEVE;
    p->state = LW_TRACK;
    p->isr_state = LW_ISR_TRACK;
@@ -87,11 +87,11 @@ void StartLevelwindTask(void const * argument)
    // enable stepper by resetting output with BSRR storing
    p->enflag = Stepper_MF_Pin << 16;         // configure for reset
    Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
-   vTaskDelay(pdMS_TO_TICKS(1000));           // delay to make sure stepper driver is enabled
+   
 
-   p->posaccum.s32 = 1000 << 16;
+   p->posaccum.s32 = 3500 << 16;
    p->velaccum.s32 = 0;
-
+#endif
 
 	/* Limit and overrun switches. */
 	levelwind_switches_init();   
@@ -208,8 +208,12 @@ extern CAN_HandleTypeDef hcan1;
                   // enable stepper by resetting output with BSRR storing
                   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
                   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+                  
+                  /* Delay to make sure stepper driver is operational before staring indexing.
+                     Change to a parameter once characterized. May not be needed. */
+                  vTaskDelay(pdMS_TO_TICKS(500));          
 
-                  // initialize trajectory integrators and associated values
+
                   // these values are set up temporarily for development to make leftost position 0
                   // Need padding for to provide margin for initial sweep
                   // Position accumulator initial value. Reference paper for the value employed.
@@ -278,7 +282,6 @@ extern CAN_HandleTypeDef hcan1;
                      p->Lminus32 = p->rvrsldx;
                      p->Lplus32  = p->rvrsldx
                         + ((distance - (2 * p->rvrsldx)) / p->Ks) * p->Ks;
-                     //   + (((distance - (2 * p->rvrsldx)) << 16) / p->Ks) * p->Ks;
                      
                      /* consider to be immediately in Center with Arresting sub-state
                         but set previous state to avoid a status-state 
@@ -288,7 +291,7 @@ extern CAN_HandleTypeDef hcan1;
                      p->isr_state_nxt = LW_ISR_OFF;   // exit Arrest into Off
                      p->isr_state = LW_ISR_ARREST;                             
                   }
-                  else if (distance < -(2 * p->rvrsldx))
+                  else if (-distance > (2 * p->rvrsldx))
                   {  // move to decrease posaccum from 0 to -distance
                                           
                      /* start 1 iteration in to avoid immediate zero velocity termination 
@@ -298,7 +301,7 @@ extern CAN_HandleTypeDef hcan1;
 
                      p->Lplus32  = -p->rvrsldx;
                      p->Lminus32 = -p->rvrsldx  
-                        - (((distance - (2 * p->rvrsldx)) << 16) / p->Ks) * p->Ks; 
+                        + ((distance + (2 * p->rvrsldx)) / p->Ks) * p->Ks; 
                      
                      /* consider to be immediately in Center with Arresting sub-state
                         but set previous state to avoid a status-state message
