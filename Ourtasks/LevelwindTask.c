@@ -21,6 +21,14 @@
 #include "controlpanel_items.h"
 #include "levelwind_items.h"
 
+/* Private functions to the file */
+
+/* ************************************************************************/
+ void levelwind_task_move_to_off(uint8_t);
+/* @brief   : move to level-wind off state
+ * @param   : erroor flag; 1 error, 0 no error
+ * *************************************************************************/
+
 osThreadId LevelwindTaskHandle;
 
 uint32_t dbgEth;
@@ -65,12 +73,25 @@ void StartLevelwindTask(void const * argument)
    // move level-wind state machine to off with no error flag set
    levelwind_task_move_to_off(0);   
 
-   /* Set initial_state/mode until MC messages arrive. Initial conditions for
-      CP state are handled in ...cp_state_init above. Below may should
-      be moved into levelwind_func_init_init( ) at some point but useful here
-      for development   */
-   p->mode = LW_MODE_TRACK;
-   p->mc_state = MC_PREP;  
+   
+   
+   p->mc_state = MC_PREP;
+   p->isr_state = LW_ISR_OFF;
+   p->mode = LW_MODE_CENTER;
+   
+
+   p->mc_state = MC_RETRIEVE;
+   p->state = LW_TRACK;
+   p->isr_state = LW_ISR_TRACK;
+   
+   // enable stepper by resetting output with BSRR storing
+   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
+   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+   vTaskDelay(pdMS_TO_TICKS(1000));           // delay to make sure stepper driver is enabled
+
+   p->posaccum.s32 = 1000 << 16;
+   p->velaccum.s32 = 0;
+
 
 	/* Limit and overrun switches. */
 	levelwind_switches_init();   
@@ -155,7 +176,7 @@ extern CAN_HandleTypeDef hcan1;
       }
       else if ((0) && (p->state != LW_OVERRUN)) // here test for Overrun switch activations
       {
-         levelwind_task_move_to_off(1);   //move to Off with error asserted   
+         levelwind_task_move_to_off(0);   //move to Off with error flag cleared   
          p->state = LW_OVERRUN;
          p->isr_state = LW_ISR_OFF;
          p->indexed = 0;         
@@ -164,7 +185,6 @@ extern CAN_HandleTypeDef hcan1;
          p->enflag = Stepper_MF_Pin;         // configure for reset
          Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
 
-         // ADD initiate LW status-state message
       }
       // check to see if this drum is enabled for operation on the control panel
       else if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
@@ -176,6 +196,7 @@ extern CAN_HandleTypeDef hcan1;
             {  
                // clear error flag if LW mode is set to Off
                if (p->mode == LW_MODE_OFF) p->error = 0; 
+               
                else if ((p->mc_state == MC_PREP) && (p->error == 0) 
                   && (p->sw[LIMITDBOUTSIDE].flag2)) // last condition temporary for early development
                {  // we are in MC Prep state on an operational drum with error flag clear  
@@ -200,7 +221,7 @@ extern CAN_HandleTypeDef hcan1;
                   p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
                   p->Lplus32  = p->Lminus32 
                      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
-                  p->velaccum.s32 = 0;             // Velocity accumulator initial value  
+                  p->velaccum.s32 = 0; // Velocity accumulator initial value
                }              
                break;
             }
@@ -241,27 +262,29 @@ extern CAN_HandleTypeDef hcan1;
                   levelwind_task_move_to_off(0);    
                }
                else if ((p->mc_state == MC_RETRIEVE) && (p->mode == LW_MODE_CENTER))                  
-               {  /* setup to center for retrieve  */
+               {  /* setup to center for retrieve  */    
                   int32_t center;
                   int32_t distance;
                   center = (p->lc.Lplus + p->lc.Lminus) << 15; // calculate center position
-                  distance = p->posaccum.s32 - center;   // signed distance to center
+                  distance = center - p->posaccum.s32;   // signed distance to center
                   if (distance > (2 * p->rvrsldx))          
                   {  // move to increase posaccum  from 0 to distance
                      
                      /* start 1 iteration in to avoid immediate zero velocity termination 
-                        in LW_ISR_ARREST*/
+                        in LW_ISR_ARREST  */
                      p->posaccum.s32 = p->lc.Ka;        
                      p->velaccum.s32 = p->lc.Ka;
 
                      p->Lminus32 = p->rvrsldx;
-                     p->Lplus32  = p->rvrsldx 
-                        + (((distance - 2 * p->rvrsldx) << 16) / p->Ks) * p->Ks;
+                     p->Lplus32  = p->rvrsldx
+                        + ((distance - (2 * p->rvrsldx)) / p->Ks) * p->Ks;
+                     //   + (((distance - (2 * p->rvrsldx)) << 16) / p->Ks) * p->Ks;
                      
-                     /* consider to be in Center with Arresting sub-state
-                        but set previous state to avoid a message until arrest
-                        completes */
-                     p->state = p->state_prev = LW_CENTER | 0x01;
+                     /* consider to be immediately in Center with Arresting sub-state
+                        but set previous state to avoid a status-state 
+                        message until arrest completes */
+                     p->state = p->state_prev = LW_CENTER;
+                     p->ocinc = p->lc.ocidx; // center at indexing speed
                      p->isr_state_nxt = LW_ISR_OFF;   // exit Arrest into Off
                      p->isr_state = LW_ISR_ARREST;                             
                   }
@@ -275,19 +298,23 @@ extern CAN_HandleTypeDef hcan1;
 
                      p->Lplus32  = -p->rvrsldx;
                      p->Lminus32 = -p->rvrsldx  
-                        - (((distance - 2 * p->rvrsldx) << 16) / p->Ks) * p->Ks; 
+                        - (((distance - (2 * p->rvrsldx)) << 16) / p->Ks) * p->Ks; 
                      
-                     /* consider to be in Center with Arresting sub-state
-                        but set previous state to avoid a message until arrest
-                        completes */
-                     p->state = p->state_prev = LW_CENTER | 0x01;
+                     /* consider to be immediately in Center with Arresting sub-state
+                        but set previous state to avoid a status-state message
+                        until arrest completes */
+                     p->state = p->state_prev = LW_CENTER;
+                     p->ocinc = p->lc.ocidx; // center at indexing speed
                      p->isr_state_nxt = LW_ISR_OFF;   // exit Arrest into Off
                      p->isr_state = LW_ISR_ARREST;        
                   }
                   else
                   {  // absolute distance close enough, don't bother to move
+                     // REVISIT: Do shortened movement to center without reaching 
+                     // full speed
                      p->state = LW_CENTER;
                      p->isr_state = LW_ISR_OFF;
+                     p->ocinc = p->lc.ocidx; // ceneter at indexing speed
 
                      // disable stepper by resetting output with BSRR storing
                      p->enflag = Stepper_MF_Pin;               // configure for set
@@ -298,10 +325,18 @@ extern CAN_HandleTypeDef hcan1;
             }
 
             case (LW_CENTER):
-            {  /* This code initiates  indexing when the Retreive is completed*/
+            {  
+               if ((p->isr_state == LW_ISR_OFF) && (p->state_prev == LW_CENTER))
+               {  // movement to center has concluded
+                  p->state_prev = LW_TRACK;  // cause a status-state message to be sent once
+                  // disable stepper by resetting output with BSRR storing
+                     p->enflag = Stepper_MF_Pin;               // configure for set
+                     Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port 
+               }
+
                if((p->mc_state == MC_PREP))  
                {  // move to Index state with stepper driver enabled
-                  /* This code is essentially the same as is used in the  Off state
+                  /* This code is essentially the same as is used in the Off state
                      to start indexing. We could just move to Off but then that would 
                      generate two status-state messages. */                  
                   p->state = LW_INDEX;

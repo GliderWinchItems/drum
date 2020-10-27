@@ -1158,7 +1158,7 @@ yprintf(&pbuf2,"\n\rDTW DUR: %d",t2_DSUFT - t1_DSUFT);
 // ================= Moderate ===================================
 /* Countdown timer notifications. */
 			medtimectr += 1;
-			if (medtimectr >= 4)
+			if (medtimectr >= 8)
 			{
 				medtimectr = 0;
     		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); // BLUE LED
