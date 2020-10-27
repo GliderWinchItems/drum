@@ -92,8 +92,13 @@ void StartLevelwindTask(void const * argument)
    p->isr_state = LW_ISR_TRACK;   
    enable_stepper;
    
-
-   p->posaccum.s32 = 3500 << 16;
+   /* Move the position value around to simulate where the LW starts before 
+      centering operation. Center corresponds to 7500 with the current 
+      parameters. If it is within ~1500 microsteps of center (corresponding 
+      to about +/-15 mm), it says close enough and does nothing but disable 
+      the stepper (disabling the stepper happens in all cases. That limitation
+      is planned to be removed shortly.  */
+   p->posaccum.s32 = 1000 << 16;
    p->velaccum.s32 = 0;
 #endif
 
@@ -256,7 +261,7 @@ extern CAN_HandleTypeDef hcan1;
                   levelwind_task_move_to_off(0);    
                }
                else if ((p->mc_state == MC_RETRIEVE) && (p->mode == LW_MODE_CENTER))                  
-               {  /* setup to center for retrieve  */    
+               {  /* setup to center for retrieve and transition to Center  */    
                   int32_t center;
                   int32_t distance;
                   center = (p->lc.Lplus + p->lc.Lminus) << 15; // calculate center position
@@ -273,13 +278,13 @@ extern CAN_HandleTypeDef hcan1;
                      p->Lplus32  = p->rvrsldx
                         + ((distance - (2 * p->rvrsldx)) / p->Ks) * p->Ks;
                      
-                     /* consider to be immediately in Center with Arresting sub-state
-                        but set previous state to avoid a status-state 
-                        message until arrest completes */
+                     /* Consider to be immediately in Center with Arresting sub-state
+                        but set previous state to avoid a status-state message 
+                        until arrest completes. (Somewhat a 'trick'.) */
                      p->state = p->state_prev = LW_CENTER;
-                     p->ocinc = p->lc.ocidx; // center at indexing speed
-                     p->isr_state_nxt = LW_ISR_OFF;   // exit Arrest into Off
-                     p->isr_state = LW_ISR_ARREST;                             
+                     p->ocinc = p->ocswp; // center at sweep speed
+                     // transition to Arrest with next state Off
+                     p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4);                             
                   }
                   else if (-distance > (2 * p->rvrsldx))
                   {  // move to decrease posaccum from 0 to -distance
@@ -293,13 +298,13 @@ extern CAN_HandleTypeDef hcan1;
                      p->Lminus32 = -p->rvrsldx  
                         + ((distance + (2 * p->rvrsldx)) / p->Ks) * p->Ks; 
                      
-                     /* consider to be immediately in Center with Arresting sub-state
+                     /* Consider to be immediately in Center with Arresting sub-state
                         but set previous state to avoid a status-state message
-                        until arrest completes */
+                        until arrest completes. (Somewhat a 'trick'.) */
                      p->state = p->state_prev = LW_CENTER;
-                     p->ocinc = p->lc.ocidx; // center at indexing speed
-                     p->isr_state_nxt = LW_ISR_OFF;   // exit Arrest into Off
-                     p->isr_state = LW_ISR_ARREST;        
+                     p->ocinc = p->ocswp; // center at sweep speed
+                     // transition to Arrest with next state Off
+                     p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4);    
                   }
                   else
                   {  // absolute distance close enough, don't bother to move
@@ -307,7 +312,7 @@ extern CAN_HandleTypeDef hcan1;
                      // full speed
                      p->state = LW_CENTER;
                      p->isr_state = LW_ISR_OFF;
-                     p->ocinc = p->lc.ocidx; // ceneter at indexing speed
+                     p->ocinc = p->ocman; // reduce output compare interrupt rate
                      disable_stepper;
                   }                  
                }

@@ -352,26 +352,22 @@ void levelwind_items_TIM2_IRQHandler(void)
                p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
             }
 
-            if (p->sw[LIMITDBOUTSIDE].flag1) // temporary until termination criteria 
-            {                                // is established
-               p->isr_state_nxt = LW_ISR_TRACK;
-               p->isr_state = LW_ISR_ARREST;   
-            }            
+            // temporary until termination criteria is established
+            if (p->sw[LIMITDBOUTSIDE].flag1)
+               // transition to Arrest with next state Track 
+               p->isr_state = LW_ISR_ARREST | (LW_ISR_TRACK >> 4);             
+            
             emulation_run = 1;
             break;
          }
 
          case (LW_ISR_ARREST):
-         {  // code here dealing with stopping next time velocity reaches 0
-
-            /* Transition to isr_state_nxt (Track or Center) when done. This state 
-               can be reached from LW_ISR_SWEEP state or when LW task
-               tells the LW to center. isr_state_nxt tells it where to go based
-               on who initated the transition into this state, i.e., it is 
-               essentially a sub-state indicator   */  
+         {  // code here dealing with stopping next time velocity reaches 0  
             if (p->velaccum.s32 == 0)
             {
-               p->isr_state = p->isr_state_nxt;
+               /* Transition to Track or Center when done. The state to transtion 
+               to is held in the lower nibble of  isr_state */
+               p->isr_state = p->isr_state << 4;
                p->ocinc = p->ocman; // reduce output compare interrupt rate
             }
             else  emulation_run = 1;
