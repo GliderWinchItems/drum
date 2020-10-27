@@ -21,13 +21,20 @@
 #include "controlpanel_items.h"
 #include "levelwind_items.h"
 
-/* Private functions to the file */
+/* Private functions and macros to the file */
 
 /* ************************************************************************/
  void levelwind_task_move_to_off(uint8_t);
 /* @brief   : move to level-wind off state
  * @param   : erroor flag; 1 error, 0 no error
  * *************************************************************************/
+
+#define enable_stepper  p->enflag = Stepper_MF_Pin << 16;         \
+                        Stepper_MF_GPIO_Port->BSRR = p->enflag    
+
+#define disable_stepper p->enflag = Stepper_MF_Pin;               \
+                        Stepper_MF_GPIO_Port->BSRR = p->enflag
+                  
 
 osThreadId LevelwindTaskHandle;
 
@@ -74,19 +81,16 @@ void StartLevelwindTask(void const * argument)
    levelwind_task_move_to_off(0);   
 
    
-   
+   // initial conditions for indexing demo
    p->mc_state = MC_PREP;
    p->isr_state = LW_ISR_OFF;
    p->mode = LW_MODE_CENTER;
    
-#if 0 // intial conditions for testing centering operation
+#if 1 // intial conditions for testing centering operation
    p->mc_state = MC_RETRIEVE;
    p->state = LW_TRACK;
-   p->isr_state = LW_ISR_TRACK;
-   
-   // enable stepper by resetting output with BSRR storing
-   p->enflag = Stepper_MF_Pin << 16;         // configure for reset
-   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+   p->isr_state = LW_ISR_TRACK;   
+   enable_stepper;
    
 
    p->posaccum.s32 = 3500 << 16;
@@ -163,11 +167,8 @@ extern CAN_HandleTypeDef hcan1;
       if ((0) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed
          p->state = LW_MANUAL;
-         p->isr_state = LW_ISR_MANUAL;
-         
-         // enable stepper by resetting output with BSRR storing
-         p->enflag = Stepper_MF_Pin << 16;         // configure for reset
-         Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+         p->isr_state = LW_ISR_MANUAL;         
+         enable_stepper;
       }
       else if ((0) && (p->state = LW_MANUAL)) // test if maunal switch has opened when in MANUAL
       {
@@ -179,12 +180,8 @@ extern CAN_HandleTypeDef hcan1;
          levelwind_task_move_to_off(0);   //move to Off with error flag cleared   
          p->state = LW_OVERRUN;
          p->isr_state = LW_ISR_OFF;
-         p->indexed = 0;         
-
-         // disable stepper by setting output with BSRR storing
-         p->enflag = Stepper_MF_Pin;         // configure for reset
-         Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
-
+         p->indexed = 0; 
+         disable_stepper;
       }
       // check to see if this drum is enabled for operation on the control panel
       else if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
@@ -205,14 +202,7 @@ extern CAN_HandleTypeDef hcan1;
                   p->state = LW_INDEX;
                   p->isr_state = LW_ISR_INDEX;
                   p->ocinc = p->lc.ocidx; // set oc  interrupt rate for indexing
-                  // enable stepper by resetting output with BSRR storing
-                  p->enflag = Stepper_MF_Pin << 16;         // configure for reset
-                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
-                  
-                  /* Delay to make sure stepper driver is operational before staring indexing.
-                     Change to a parameter once characterized. May not be needed. */
-                  vTaskDelay(pdMS_TO_TICKS(500));          
-
+                  enable_stepper;
 
                   // these values are set up temporarily for development to make leftost position 0
                   // Need padding for to provide margin for initial sweep
@@ -318,10 +308,7 @@ extern CAN_HandleTypeDef hcan1;
                      p->state = LW_CENTER;
                      p->isr_state = LW_ISR_OFF;
                      p->ocinc = p->lc.ocidx; // ceneter at indexing speed
-
-                     // disable stepper by resetting output with BSRR storing
-                     p->enflag = Stepper_MF_Pin;               // configure for set
-                     Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+                     disable_stepper;
                   }                  
                }
                break;
@@ -332,9 +319,7 @@ extern CAN_HandleTypeDef hcan1;
                if ((p->isr_state == LW_ISR_OFF) && (p->state_prev == LW_CENTER))
                {  // movement to center has concluded
                   p->state_prev = LW_TRACK;  // cause a status-state message to be sent once
-                  // disable stepper by resetting output with BSRR storing
-                     p->enflag = Stepper_MF_Pin;               // configure for set
-                     Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port 
+                  disable_stepper;
                }
 
                if((p->mc_state == MC_PREP))  
@@ -345,9 +330,7 @@ extern CAN_HandleTypeDef hcan1;
                   p->state = LW_INDEX;
                   p->isr_state = LW_ISR_INDEX;
                   p->ocinc = p->lc.ocidx;
-                  // enable stepper by resetting output with BSRR storing
-                  p->enflag = Stepper_MF_Pin << 16;         // configure for reset
-                  Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+                  enable_stepper;
 
                   // initialize trajectory integrators and associated values
                   // these values are set up temporarily for development to make leftost position 0
@@ -408,10 +391,7 @@ void levelwind_task_move_to_off(uint8_t err)
    p->indexed = 0;
    p->error = err;
    p->ocinc = p->ocman;    // slow down output compare interrupt rate
-   
-   // disable stepper by resetting output with BSRR storing
-   p->enflag = Stepper_MF_Pin;         // configure for set
-   Stepper_MF_GPIO_Port->BSRR = p->enflag;   // write to port
+   disable_stepper;
 
    return;  
 }
