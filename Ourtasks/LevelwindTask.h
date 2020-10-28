@@ -62,9 +62,23 @@
 /* Level-Wind Status Definitions */
 // these will be expanded to capture reasons for non-good status as
 // development continues
-#define  LW_GOOD      0 // Green
-#define  LW_BAD      -1 // Red
-#define  LW_Caution  +1 // Yellow
+// Green Status
+#define  LW_STATUS_GOOD              0 
+// Red Statii
+#define  LW_STATUS_OFF_AFTER_ERROR  -1 
+#define  LW_STATUS_OVERRUN          -2
+#define  LW_STATUS_MANUAL           -3
+#define  LW_STATUS_INDEX_FAILURE    -4
+#define  LW_STATUS_SWEEP_FAILURE    -5
+#define  LW_STATUS_LOS_FAILURE      -6
+#define  LW_STATUS_STEPPER_POWER    -7
+#define  LW_STATUS_NODE_POWER       -8
+//Yellow Statii
+#define  LW_STATUS_SWEEPING          1 
+#define  LW_STATUS_ARRESTING         2
+#define  LW_STATUS_LOS_REINDEXING    3
+#define  LW_STATUS_LOS_TRACKING      4
+
 
 #define NUMCANMSGSLEVELWIND 2  // Number of CAN msgs levelwind sends
 enum cididx

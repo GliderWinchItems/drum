@@ -81,12 +81,13 @@ void StartLevelwindTask(void const * argument)
    levelwind_task_move_to_off(0);   
 
    
-   // initial conditions for indexing demo
+ #if 1   // initial conditions for indexing demo
    p->mc_state = MC_PREP;
    p->isr_state = LW_ISR_OFF;
    p->mode = LW_MODE_CENTER;
+#endif
    
-#if 1 // intial conditions for testing centering operation
+#if 0 // intial conditions for testing centering operation
    p->mc_state = MC_RETRIEVE;
    p->state = LW_TRACK;
    p->isr_state = LW_ISR_TRACK;   
@@ -98,9 +99,49 @@ void StartLevelwindTask(void const * argument)
       to about +/-15 mm), it says close enough and does nothing but disable 
       the stepper (disabling the stepper happens in all cases. That limitation
       is planned to be removed shortly.  */
+
    p->posaccum.s32 = 1000 << 16;
    p->velaccum.s32 = 0;
 #endif
+
+
+
+/* Manaual mode test. Close the manaul switch either with a acutal switch or 
+   by setting the test for that switch to true in the  code for it below. Either
+   use a real sensed switch or set the test for the desired switch direction
+   in levelwind_items to 1 in its Manual case. (Current code has the right switch
+   indicating asserted.)  */  
+
+#if 0  // initial condtions for exit Manual demo
+   p->mc_state = MC_PREP;
+   p->state = LW_MANUAL;
+   p->isr_state = LW_ISR_MANUAL;
+   p->mode = LW_MODE_CENTER;
+
+   /* When Manual switch test is Off in code below and the move_to_off error 
+   is not asserted, LW Manual case below should 
+   transition to Off and then start indexing demo */
+
+#endif
+
+#if 0 // Overrun test setup
+
+   p->mc_state = MC_PREP;
+   p->mode = LW_MODE_CENTER;
+   p->state = LW_TRACK;
+   p->isr_state = LW_ISR_TRACK;   
+   enable_stepper;
+
+   /* Assert Overrun switch and system should go to Off with stepper disabled.
+      Insufficient setup for track to actually run but stepper should be enabled
+      until Overrun switch is asserted.
+
+      When the overrun switch is cleared, the system should go back to Off. If 
+      the error flag is cleared, it should re-index.
+    */
+
+#endif
+
 
 	/* Limit and overrun switches. */
 	levelwind_switches_init();   
@@ -170,22 +211,20 @@ extern CAN_HandleTypeDef hcan1;
 		}
 
       if ((0) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
-      {  // Manual (bypass) switch is closed
+      {  // Manual (bypass) switch is closed; go to Manual state
          p->state = LW_MANUAL;
-         p->isr_state = LW_ISR_MANUAL;         
+         p->ocinc = p->ocman;
+         p->isr_state = LW_ISR_MANUAL;
+         p->indexed = 0;                  // indexed flag may not be needed???
          enable_stepper;
       }
-      else if ((0) && (p->state = LW_MANUAL)) // test if maunal switch has opened when in MANUAL
-      {
-         levelwind_task_move_to_off(0);
+
+      else if ((0) && (p->state != LW_OVERRUN)) // here test for Overrun switches activation
+      {  // An Overrun switch is closed; go to Overrun state           
          p->state = LW_OVERRUN;
-      }
-      else if ((0) && (p->state != LW_OVERRUN)) // here test for Overrun switch activations
-      {
-         levelwind_task_move_to_off(0);   //move to Off with error flag cleared   
-         p->state = LW_OVERRUN;
+         p->ocinc = p->ocman;    // slow down output compare interrupt rate
          p->isr_state = LW_ISR_OFF;
-         p->indexed = 0; 
+         p->indexed = 0;                  // indexed flag may not be needed???
          disable_stepper;
       }
       // check to see if this drum is enabled for operation on the control panel
@@ -205,8 +244,8 @@ extern CAN_HandleTypeDef hcan1;
                   p->sw[LIMITDBOUTSIDE].flag2 = 0; // TEMPORARY: clear LS outside latching flag
                   
                   p->state = LW_INDEX;
-                  p->isr_state = LW_ISR_INDEX;
                   p->ocinc = p->lc.ocidx; // set oc  interrupt rate for indexing
+                  p->isr_state = LW_ISR_INDEX;
                   enable_stepper;
 
                   // these values are set up temporarily for development to make leftost position 0
@@ -227,18 +266,18 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_OVERRUN):
             {  
-               if(1) // poll overrun switch to see if it is still activated
+               if(0) // poll overrun switch to see if it is cleared
                {  // move level-wind state machine to off with error flag set
                   levelwind_task_move_to_off(1);  
                }
                break;
             }         
 
-            case (LW_MANUAL):
+            case (LW_MANUAL): // poll Manual switch to see if it is cleared
             {
                if (1)   // poll if an Manual switch is still activated
                {  // move level-wind state machine to off with error flag set
-                  levelwind_task_move_to_off(1);                   
+                  levelwind_task_move_to_off(1);           
                }
                break;
             }
@@ -321,23 +360,27 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_CENTER):
             {  
-               if ((p->isr_state == LW_ISR_OFF) && (p->state_prev == LW_CENTER))
+               if ((p->isr_state == LW_ISR_OFF) 
+                  && (p->state_prev == LW_CENTER))
                {  // movement to center has concluded
-                  p->state_prev = LW_TRACK;  // cause a status-state message to be sent once
+                  // cause a status-state message to be sent once
+                  p->state_prev = LW_TRACK; 
                   disable_stepper;
                }
 
                if((p->mc_state == MC_PREP))  
                {  // move to Index state with stepper driver enabled
-                  /* This code is essentially the same as is used in the Off state
+                  
+                     /* This code is essentially the same as is used in the Off state
                      to start indexing. We could just move to Off but then that would 
-                     generate two status-state messages. */                  
+                     generate two status-state messages. That could be circumvented
+                     with a trick but this is cleaner. */                  
                   p->state = LW_INDEX;
                   p->isr_state = LW_ISR_INDEX;
                   p->ocinc = p->lc.ocidx;
                   enable_stepper;
 
-                  // initialize trajectory integrators and associated values
+                  // REVISIT: initialize trajectory integrators and associated values
                   // these values are set up temporarily for development to make leftost position 0
                   // Need padding for to provide margin for initial sweep
                   // Position accumulator initial value. Reference paper for the value employed.
@@ -366,10 +409,9 @@ extern CAN_HandleTypeDef hcan1;
          levelwind_task_move_to_off(1);           
       }
 
-
       /* see if status or super-state have changed or HB timer has expired
          and send appropriate status-state message */
-      if (((p->state & 0xF0) != (p->state_prev & 0xF0)) || (p->status != p->status_prev))
+      if ((p->state != p->state_prev) || (p->status != p->status_prev))
       {  
          p->state_prev = p->state;
          p->status_prev = p->status;
@@ -392,10 +434,10 @@ void levelwind_task_move_to_off(uint8_t err)
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
    p->state = LW_OFF;
-   p->isr_state = LW_ISR_OFF;
-   p->indexed = 0;
-   p->error = err;
    p->ocinc = p->ocman;    // slow down output compare interrupt rate
+   p->isr_state = LW_ISR_OFF;
+   p->indexed = 0;   // may not be needed
+   p->error = err;
    disable_stepper;
 
    return;  

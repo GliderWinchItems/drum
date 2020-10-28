@@ -195,7 +195,7 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
       p->enflag = (Stepper_MF_Pin << 16); // Reset
    }
    else
-   {
+   {  // disable stepper
       p->enflag = Stepper_MF_Pin; // Set
    }
 
@@ -312,8 +312,8 @@ void levelwind_items_TIM2_IRQHandler(void)
                // Start TIM9 to generate a delayed pulse.
                pT9base->CR1 = 0x9; 
             }
-            if (0)   // REVIST: test the left/right switch for right
-            {  // switch is signaling left
+            else if (1)   // REVIST: test the left/right switch for right
+            {  // switch is signaling right
                Stepper_DR_GPIO_Port->BSRR = L0R_RIGHT;  // set direction right
                // Start TIM9 to generate a delayed pulse.
                pT9base->CR1 = 0x9; 
@@ -376,9 +376,10 @@ void levelwind_items_TIM2_IRQHandler(void)
       }      
    }
 
-#if LEVELWINDDEBUG   // move this out of ISR at some point???
-   // Update enable i/o pin
-   Stepper_MF_GPIO_Port->BSRR = p->enflag;
+// testing to see if this is needed anymore
+#if 0   // move this out of ISR at some point???
+      // Update enable i/o pin
+      Stepper_MF_GPIO_Port->BSRR = p->enflag;
 #endif     
 
    /* reversing screw emulation code */
