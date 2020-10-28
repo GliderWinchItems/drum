@@ -239,9 +239,9 @@ extern CAN_HandleTypeDef hcan1;
                if (p->mode == LW_MODE_OFF) p->error = 0; 
                
                else if ((p->mc_state == MC_PREP) && (p->error == 0) 
-                  && (p->sw[LIMITDBOUTSIDE].flag2)) // last condition temporary for early development
+                  && (p->sw[LIMITDBMS].flag2)) // last condition temporary for early development
                {  // we are in MC Prep state on an operational drum with error flag clear  
-                  p->sw[LIMITDBOUTSIDE].flag2 = 0; // TEMPORARY: clear LS outside latching flag
+                  p->sw[LIMITDBMS].flag2 = 0; // TEMPORARY: clear LS outside latching flag
                   
                   p->state = LW_INDEX;
                   p->ocinc = p->lc.ocidx; // set oc  interrupt rate for indexing

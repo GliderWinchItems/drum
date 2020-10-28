@@ -676,10 +676,6 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
@@ -930,10 +926,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Stepper_MF_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ManualSw_left_NO_Pin ManualSw_right_NO_Pin LimitSw_inside_NO_Pin LimitSw_inside_NC_Pin
-                           LimitSw_outside_NO_Pin LimitSw_outside_NC_Pin OverrunSwes_NO_Pin */
-  GPIO_InitStruct.Pin = ManualSw_left_NO_Pin|ManualSw_right_NO_Pin|LimitSw_inside_NO_Pin|LimitSw_inside_NC_Pin
-                          |LimitSw_outside_NO_Pin|LimitSw_outside_NC_Pin|OverrunSwes_NO_Pin;
+  /*Configure GPIO pins : ManualSw_MSN_NO_Pin ManualSw_MS_NO_Pin LimitSw_MSN_NO_Pin LimitSw_MSN_NC_Pin
+                           LimitSw_MS_NO_Pin LimitSw_MS_NC_Pin OverrunSwes_NO_Pin */
+  GPIO_InitStruct.Pin = ManualSw_MSN_NO_Pin|ManualSw_MS_NO_Pin|LimitSw_MSN_NO_Pin|LimitSw_MSN_NC_Pin
+                          |LimitSw_MS_NO_Pin|LimitSw_MS_NC_Pin|OverrunSwes_NO_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);

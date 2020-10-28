@@ -17,26 +17,26 @@
 #include "main.h"
 
 /* Positions of bits in 'switchbits' */
-#define LIMITDBINSIDE  0   // Debounced inside limit sw 1 = closed
-#define LIMITDBOUTSIDE 1   // Debounced outside limit sw 1 = closed
-#define LIMITINSIDENO    (LimitSw_inside_NO_Pin)  // Inside  NC contact 0 = closed
-#define LIMITINSIDENC    (LimitSw_inside_NC_Pin)  // Inside  NO contact 0 = closed
-#define LIMITOUTSIDENO   (LimitSw_outside_NO_Pin) // Outside NC contact 0 = closed
-#define LIMITOUTSIDENC   (LimitSw_outside_NC_Pin) // Outside NO contact 0 = closed
+#define LIMITDBMSN  0   // Debounced MotorSideNot limit sw 1 = closed
+#define LIMITDBMS 1   // Debounced MotorSide limit sw 1 = closed
+#define LIMITMSNNO    (LimitSw_MSN_NO_Pin)  // MotorSideNot  NC contact 0 = closed
+#define LIMITMSNNC    (LimitSw_MSN_NC_Pin)  // MotorSideNot  NO contact 0 = closed
+#define LIMITMSNO   (LimitSw_MS_NO_Pin) // MotorSide NC contact 0 = closed
+#define LIMITMSNC   (LimitSw_MS_NC_Pin) // MotorSide NO contact 0 = closed
 #define OVERRUNSWES      (OverrunSwes_NO_Pin)     // Either  NO contact 0 = closed
 #define OVERRUNBRIDGE (1<<9) // Bridge sw for testing overrun. 0 = test position
 
 /* Integrity status bits. */
 #define STEPPERSWSTS00 (1<<00) // Bridge switch in TEST position
 #define STEPPERSWSTS01 (1<<01) // All switch contacts show ON (pullups)
-#define STEPPERSWSTS02 (1<<02) // Inside-Outside limit sws both ON 
-#define STEPPERSWSTS03 (1<<03) // Inside NC and NO are both closed
-#define STEPPERSWSTS04 (1<<04) // Outside NC and NO are both closed
+#define STEPPERSWSTS02 (1<<02) // MotorSideNot-MotorSide limit sws both ON 
+#define STEPPERSWSTS03 (1<<03) // MotorSideNot NC and NO are both closed
+#define STEPPERSWSTS04 (1<<04) // MotorSide NC and NO are both closed
 
 /*  Reconsider with wire-ORed overrun levelwind_switches*/
 #define STEPPERSWSTS05 (1<<05) // Both overrun NC are open
-#define STEPPERSWSTS06 (1<<06) // Outside overrun closed, outside limit sw open
-#define STEPPERSWSTS07 (1<<07) // Inside overrun closed, outside limit sw open 
+#define STEPPERSWSTS06 (1<<06) // MotorSide overrun closed, MotorSide limit sw open
+#define STEPPERSWSTS07 (1<<07) // MotorSideNot overrun closed, MotorSide limit sw open 
 
 
 /* Alert status bits */

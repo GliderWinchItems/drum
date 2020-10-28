@@ -11,19 +11,19 @@ PE9 - Input:pullup. Test sw bridges across overrun switches.
 
 Limit switches: resistor pullup to +5v. Contact closes to gnd
    Interrupt vector: EXTI15_10_IRQHandler (common to PE10-PE15)
-PE10 - EXTI10 Inside  Limit switch: NO contacts (switch connects to gnd) 
-PE11 - EXTI11 Inside  Limit switch: NC contacts (switch connects to gnd)
-PE12 - EXTI12 Outside Limit switch: NO contacts (switch connects to gnd)
-PE13 - EXTI13 Outside Limit switch: NC contacts (switch connects to gnd)
-PE14 - EXTI13 Inside Overrun switches: wire-Ored NO contacts 
+PE10 - EXTI10 MotorSideNot  Limit switch: NO contacts (switch connects to gnd) 
+PE11 - EXTI11 MotorSideNot  Limit switch: NC contacts (switch connects to gnd)
+PE12 - EXTI12 MotorSide Limit switch: NO contacts (switch connects to gnd)
+PE13 - EXTI13 MotorSide Limit switch: NC contacts (switch connects to gnd)
+PE14 - EXTI13 MotorSideNot Overrun switches: wire-Ored NO contacts 
 		 (switch connects to gnd)
 
 
 Switch closed, the i/o pin shows--
-Inside limit switch: 
+MotorSideNot limit switch: 
   PE10 = 0
   PE11 = 1
-Outside limit switch: 
+MotorSide limit switch: 
   PE12 = 0
   PE13 = 1
 
@@ -108,15 +108,15 @@ extern TIM_HandleTypeDef htim5;
 	p->swbits = GPIOE->IDR & 0xfc00; // Save current switch bits PE10:15
 
 	/* Initialize the debounced limit switch state & flags. */
-	if ((p->swbits & LimitSw_inside_NO_Pin) == 0)
+	if ((p->swbits & LimitSw_MSN_NO_Pin) == 0)
 	{ // Here NO contact is now closed.
-		p->sw[LIMITDBINSIDE].dbs = 1; // Set debounced R-S
-		p->sw[LIMITDBINSIDE].flag1  = 1; // Flag for stepper ISR
+		p->sw[LIMITDBMSN].dbs = 1; // Set debounced R-S
+		p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
 	}
-	if ((p->swbits & LimitSw_outside_NO_Pin) == 0)
+	if ((p->swbits & LimitSw_MS_NO_Pin) == 0)
 	{ // Here NO contact is now closed.
-		p->sw[LIMITDBOUTSIDE].dbs = 1; // Set debounced R-S
-		p->sw[LIMITDBOUTSIDE].flag1  = 1; // Flag for stepper ISR
+		p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
+		p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
 	}
 
 	EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
@@ -149,10 +149,10 @@ struct SWITCHXITION* levelwind_switches_get(void)
  * CH2 = OC faux encoder interrupts
  *####################################################################################### */
 /*
-LimitSw_inside_NO_Pin    GPIO_PIN_10
-LimitSw_inside_NC_Pin    GPIO_PIN_11
-LimitSw_outside_NO_Pin   GPIO_PIN_12
-LimitSw_outside_NC_Pin   GPIO_PIN_13
+LimitSw_MSN_NO_Pin    GPIO_PIN_10
+LimitSw_MSN_NC_Pin    GPIO_PIN_11
+LimitSw_MS_NO_Pin   GPIO_PIN_12
+LimitSw_MS_NC_Pin   GPIO_PIN_13
 OverrunSwitches_Pin      GPIO_PIN_14
 */
 void Stepper_EXTI15_10_IRQHandler(void)
@@ -172,37 +172,37 @@ void Stepper_EXTI15_10_IRQHandler(void)
 	if (padd >= pend) padd = pbegin; // Wrap-around
 
 	/* Do R-S flip-flop type switch debouncing for limit switches. */
-	if ((EXTI->PR & (LimitSw_inside_NO_Pin)) != 0)
+	if ((EXTI->PR & (LimitSw_MSN_NO_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
-		EXTI->PR = LimitSw_inside_NO_Pin; // Reset request
-		if ((p->swbits & LimitSw_inside_NO_Pin) == 0)
+		EXTI->PR = LimitSw_MSN_NO_Pin; // Reset request
+		if ((p->swbits & LimitSw_MSN_NO_Pin) == 0)
 		{ // Here NO contact is now closed.
 			if (p->sw[0].dbs != 1)
 			{ // Here R-S flip-flop was reset
-				p->sw[LIMITDBINSIDE].dbs = 1; // Set debounced R-S
-				p->sw[LIMITDBINSIDE].posaccum_NO = p->posaccum.s32;
-				p->sw[LIMITDBINSIDE].flag1  = 1; // Flag for stepper ISR
-				p->sw[LIMITDBINSIDE].flag2 += 1; // Flag for task(?)
+				p->sw[LIMITDBMSN].dbs = 1; // Set debounced R-S
+				p->sw[LIMITDBMSN].posaccum_NO = p->posaccum.s32;
+				p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
+				p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
 				/* Notification goes here. */
-				ptmp->sws |= LIMITDBINSIDE;
+				ptmp->sws |= LIMITDBMSN;
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);				
 			}
 		}
 		return;
 	}
-	if ((EXTI->PR & (LimitSw_inside_NC_Pin)) != 0)
+	if ((EXTI->PR & (LimitSw_MSN_NC_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
-		EXTI->PR = LimitSw_inside_NC_Pin; // Reset request
-		if ((p->swbits & LimitSw_inside_NC_Pin) == 0)
+		EXTI->PR = LimitSw_MSN_NC_Pin; // Reset request
+		if ((p->swbits & LimitSw_MSN_NC_Pin) == 0)
 		{ // Here NC contact is now closed.
-			if (p->sw[LIMITDBINSIDE].dbs != 0)
+			if (p->sw[LIMITDBMSN].dbs != 0)
 			{ // Here R-S flip-flop was set
-				p->sw[LIMITDBINSIDE].dbs = 0; // Reset debounced R-S
-				p->sw[LIMITDBINSIDE].posaccum_NC = p->posaccum.s32;
-				p->sw[LIMITDBINSIDE].flag1  = 1; // Flag for stepper ISR
-				p->sw[LIMITDBINSIDE].flag2 += 1; // Flag for task(?)
+				p->sw[LIMITDBMSN].dbs = 0; // Reset debounced R-S
+				p->sw[LIMITDBMSN].posaccum_NC = p->posaccum.s32;
+				p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
+				p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
 				/* Notification goes here. */
-				ptmp->sws |= LIMITDBINSIDE;
+				ptmp->sws |= LIMITDBMSN;
 
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);				
 
@@ -211,38 +211,38 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
 		return;
 	}
 
-	if ((EXTI->PR & (LimitSw_outside_NO_Pin)) != 0)
+	if ((EXTI->PR & (LimitSw_MS_NO_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
-		EXTI->PR = LimitSw_outside_NO_Pin; // Reset request
-		if ((p->swbits & LimitSw_outside_NO_Pin) == 0)
+		EXTI->PR = LimitSw_MS_NO_Pin; // Reset request
+		if ((p->swbits & LimitSw_MS_NO_Pin) == 0)
 		{ // Here NO contact is now closed.
-			if (p->sw[LIMITDBOUTSIDE].dbs != 1)
+			if (p->sw[LIMITDBMS].dbs != 1)
 			{ // Here R-S flip-flop was reset
-				p->sw[LIMITDBOUTSIDE].dbs = 1; // Set debounced R-S
-				p->sw[LIMITDBOUTSIDE].posaccum_NO = p->posaccum.s32;
-				p->sw[LIMITDBOUTSIDE].flag1  = 1; // Flag for stepper ISR
-				p->sw[LIMITDBOUTSIDE].flag2 += 1; // Flag for task(?)
+				p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
+				p->sw[LIMITDBMS].posaccum_NO = p->posaccum.s32;
+				p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
+				p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
 				/* Notification goes here. */	
-				ptmp->sws |= LIMITDBOUTSIDE;
+				ptmp->sws |= LIMITDBMS;
 
 HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);			
 			}
 		}
 		return;
 	}
-	if ((EXTI->PR & (LimitSw_outside_NC_Pin)) != 0)
+	if ((EXTI->PR & (LimitSw_MS_NC_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
-		EXTI->PR = LimitSw_outside_NC_Pin; // Reset request
-		if ((p->swbits & LimitSw_outside_NC_Pin) == 0)
+		EXTI->PR = LimitSw_MS_NC_Pin; // Reset request
+		if ((p->swbits & LimitSw_MS_NC_Pin) == 0)
 		{ // Here NC contact is now closed.
-			if (p->sw[LIMITDBOUTSIDE].dbs != 0)
+			if (p->sw[LIMITDBMS].dbs != 0)
 			{ // Here R-S flip-flop was set
-				p->sw[LIMITDBOUTSIDE].dbs = 0; // Reset debounced R-S
-				p->sw[LIMITDBOUTSIDE].posaccum_NC = p->posaccum.s32;
-				p->sw[LIMITDBOUTSIDE].flag1  = 1; // Flag for stepper ISR
-				p->sw[LIMITDBOUTSIDE].flag2 += 1; // Flag for task(?)
+				p->sw[LIMITDBMS].dbs = 0; // Reset debounced R-S
+				p->sw[LIMITDBMS].posaccum_NC = p->posaccum.s32;
+				p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
+				p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
 				/* Notification goes here. */			
-				ptmp->sws |= LIMITDBOUTSIDE;
+				ptmp->sws |= LIMITDBMS;
 
 HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);							
 			}
@@ -275,20 +275,20 @@ void levelwind_switches_error_check(void)
 	else
 		integrity &= ~STEPPERSWSTS01;
 
-	/* 2: Inside-Outside limit sw NO both closed. */
-	if ((p->swbits & (LIMITINSIDENO | LIMITOUTSIDENO)) == 0)
+	/* 2: MotorSideNot-MotorSide limit sw NO both closed. */
+	if ((p->swbits & (LIMITMSNNO | LIMITMSNO)) == 0)
 		integrity |= STEPPERSWSTS02; // Error
 	else
 		integrity &= ~STEPPERSWSTS02;
 
-	/* 3: Inside NC and NO are both closed. */
-	if ((p->swbits & (LIMITINSIDENO | LIMITINSIDENC)) == 0)
+	/* 3: MotorSideNot NC and NO are both closed. */
+	if ((p->swbits & (LIMITMSNNO | LIMITMSNNC)) == 0)
 		integrity |= STEPPERSWSTS03; // Error
 	else
 		integrity &= ~STEPPERSWSTS03;
 
-	/* 4: Inside NC and NO are both closed. */
-	if ((p->swbits & (LIMITOUTSIDENO | LIMITOUTSIDENC)) == 0)
+	/* 4: MotorSideNot NC and NO are both closed. */
+	if ((p->swbits & (LIMITMSNO | LIMITMSNC)) == 0)
 		integrity |= STEPPERSWSTS04; // Error
 	else
 		integrity &= ~STEPPERSWSTS04;
@@ -297,11 +297,11 @@ void levelwind_switches_error_check(void)
 	/* 5: Both overrun NC are open. Removed when switches were
 			wire-Ored 	*/
 
-	/* 6: Outside overrun closed, outside limit sw open.
+	/* 6: MotorSide overrun closed, MotorSide limit sw open.
 			Removed when overrun switches were wire-ORed. */
 	
 
-	/* 7: Inside overrun closed, outside limit sw open 
+	/* 7: MotorSideNot overrun closed, MotorSide limit sw open 
 			Removed when overrun switches were wire-ORed. */
 	
 
@@ -313,7 +313,7 @@ void levelwind_switches_error_check(void)
 	else
 		alert |= STEPPERSWALRT00; // Sw in MANUAL (bridged power) position	
 
-	/* 1: Inside overun switch is closed. */
+	/* 1: MotorSideNot overun switch is closed. */
 	if ((p->swbits & OVERRUNSWES) != 0)
 		alert |= STEPPERSWALRT01; // 
 	else

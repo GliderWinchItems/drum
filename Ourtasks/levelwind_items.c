@@ -324,13 +324,13 @@ void levelwind_items_TIM2_IRQHandler(void)
 
          case (LW_ISR_INDEX):
          {  // on indexing, switch to sweep state for limit switch testing
-            if (p->sw[LIMITDBINSIDE].flag1) // limit switch has activated
+            if (p->sw[LIMITDBMSN].flag1) // limit switch has activated
             {
                p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000); //  REVISIT: Parameter for 1000 magic number
                p->pos_prev = p->posaccum.s16[1];
                p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state
 #if LEVELWINDDEBUG //   for development only
-               p->sw[LIMITDBOUTSIDE].flag1 = 0; 
+               p->sw[LIMITDBMS].flag1 = 0; 
                p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
 #endif      
             } 
@@ -353,7 +353,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             }
 
             // temporary until termination criteria is established
-            if (p->sw[LIMITDBOUTSIDE].flag1)
+            if (p->sw[LIMITDBMS].flag1)
                // transition to Arrest with next state Track 
                p->isr_state = LW_ISR_ARREST | (LW_ISR_TRACK >> 4);             
             

@@ -1,6 +1,6 @@
 Configuration	drum
 STM32CubeMX 	6.0.1
-Date	10/23/2020
+Date	10/28/2020
 MCU	STM32F407VGTx
 
 
@@ -26,7 +26,6 @@ TIM3	Internal Clock	TIM3_VS_ClockSourceINT	VP_TIM3_VS_ClockSourceINT
 TIM3	Input Capture direct mode	TIM3_CH1	PC6
 TIM3	Input Capture direct mode	TIM3_CH2	PC7
 TIM3	Input Capture direct mode	TIM3_CH3	PC8
-TIM3	Input Capture direct mode	TIM3_CH4	PC9
 TIM5	Encoder Mode	TIM5_CH1	PA0-WKUP
 TIM5	Encoder Mode	TIM5_CH2	PA1
 TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
@@ -53,22 +52,21 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 33	PC4	ADC1_IN14	SpareV
 35	PB0	GPIO_Output	Stepper_DR
 36	PB1	GPIO_Output	Stepper_MF
-38	PE7	GPIO_EXTI7	ManualSw_left_NO
-39	PE8	GPIO_EXTI8	ManualSw_right_NO
+38	PE7	GPIO_EXTI7	ManualSw_MSN_NO
+39	PE8	GPIO_EXTI8	ManualSw_MS_NO
 40	PE9	GPIO_Input	ManualSw_NO
-41	PE10	GPIO_EXTI10	LimitSw_inside_NO
-42	PE11	GPIO_EXTI11	LimitSw_inside_NC
-43	PE12	GPIO_EXTI12	LimitSw_outside_NO
-44	PE13	GPIO_EXTI13	LimitSw_outside_NC
+41	PE10	GPIO_EXTI10	LimitSw_MSN_NO
+42	PE11	GPIO_EXTI11	LimitSw_MSN_NC
+43	PE12	GPIO_EXTI12	LimitSw_MS_NO
+44	PE13	GPIO_EXTI13	LimitSw_MS_NC
 45	PE14	GPIO_EXTI14	OverrunSwes_NO
 59	PD12	GPIO_Output	LED GREEN
 60	PD13	GPIO_Output	LED ORANGE
 61	PD14	GPIO_Output	LED RED
 62	PD15	GPIO_Output	LED BLUE
-63	PC6	TIM3_CH1	LimitSw_inside_NO
-64	PC7	TIM3_CH2	LimitSw_inside_NC
-65	PC8	TIM3_CH3	LimitSw_outside_NO
-66	PC9	TIM3_CH4	LimitSw_outside_NC
+63	PC6	TIM3_CH1	LimitSw_MSN_NO
+64	PC7	TIM3_CH2	LimitSw_MSN_NC
+65	PC8	TIM3_CH3	LimitSw_MS_NO
 72	PA13	SYS_JTMS-SWDIO	
 76	PA14	SYS_JTCK-SWCLK	
 78	PC10	USART3_TX	
@@ -97,7 +95,6 @@ TIM3	Internal Clock	TIM3_VS_ClockSourceINT	VP_TIM3_VS_ClockSourceINT
 TIM3	Input Capture direct mode	TIM3_CH1	PC6
 TIM3	Input Capture direct mode	TIM3_CH2	PC7
 TIM3	Input Capture direct mode	TIM3_CH3	PC8
-TIM3	Input Capture direct mode	TIM3_CH4	PC9
 TIM5	Encoder Mode	TIM5_CH1	PA0-WKUP
 TIM5	Encoder Mode	TIM5_CH2	PA1
 TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
@@ -124,22 +121,21 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 33	PC4	ADC1_IN14	SpareV
 35	PB0	GPIO_Output	Stepper_DR
 36	PB1	GPIO_Output	Stepper_MF
-38	PE7	GPIO_EXTI7	ManualSw_left_NO
-39	PE8	GPIO_EXTI8	ManualSw_right_NO
+38	PE7	GPIO_EXTI7	ManualSw_MSN_NO
+39	PE8	GPIO_EXTI8	ManualSw_MS_NO
 40	PE9	GPIO_Input	ManualSw_NO
-41	PE10	GPIO_EXTI10	LimitSw_inside_NO
-42	PE11	GPIO_EXTI11	LimitSw_inside_NC
-43	PE12	GPIO_EXTI12	LimitSw_outside_NO
-44	PE13	GPIO_EXTI13	LimitSw_outside_NC
+41	PE10	GPIO_EXTI10	LimitSw_MSN_NO
+42	PE11	GPIO_EXTI11	LimitSw_MSN_NC
+43	PE12	GPIO_EXTI12	LimitSw_MS_NO
+44	PE13	GPIO_EXTI13	LimitSw_MS_NC
 45	PE14	GPIO_EXTI14	OverrunSwes_NO
 59	PD12	GPIO_Output	LED GREEN
 60	PD13	GPIO_Output	LED ORANGE
 61	PD14	GPIO_Output	LED RED
 62	PD15	GPIO_Output	LED BLUE
-63	PC6	TIM3_CH1	LimitSw_inside_NO
-64	PC7	TIM3_CH2	LimitSw_inside_NC
-65	PC8	TIM3_CH3	LimitSw_outside_NO
-66	PC9	TIM3_CH4	LimitSw_outside_NC
+63	PC6	TIM3_CH1	LimitSw_MSN_NO
+64	PC7	TIM3_CH2	LimitSw_MSN_NC
+65	PC8	TIM3_CH3	LimitSw_MS_NO
 72	PA13	SYS_JTMS-SWDIO	
 76	PA14	SYS_JTCK-SWCLK	
 78	PC10	USART3_TX	
@@ -154,7 +150,7 @@ SOFTWARE PROJECT
 
 Project Settings : 
 Project Name : drum
-Project Folder : /home/deh/GliderWinchItems/drum
+Project Folder : /home/gsm/GliderWinchItems/drum
 Toolchain / IDE : Makefile
 Firmware Package Name and Version : STM32Cube FW_F4 V1.25.0
 
