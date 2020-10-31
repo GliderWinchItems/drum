@@ -237,12 +237,16 @@ extern CAN_HandleTypeDef hcan1;
          p->indexed = 0;                  // indexed flag may not be needed???
          disable_stepper;
       }
-      // check to see if this drum is enabled for operation on the control panel
-      else if  (pcp->op_drums & (0x01 << (p->lc.mydrum - 1))
-         && ((pcp->mode != LW_MODE_OFF)   
-               && (pcp->active_drum == p->lc.mydrum)))
-      {  // this node is operational
 
+      // is this drum is not enabled for operation on the control panel
+      else if  (!(pcp->op_drums & (0x01 << (p->lc.mydrum - 1))) 
+         || ((pcp->mode == LW_MODE_OFF) && (pcp->active_drum == p->lc.mydrum)))
+      {  // move level-wind state machine to off with error flag clear
+         levelwind_task_move_to_off(0);           
+      }
+
+      else 
+      {  // this drum node is in use and mode is not Off
          switch (p->state & 0xF0)   // deal with CAN notification based on LW super-state
          {
             case (LW_OFF):
@@ -409,12 +413,7 @@ extern CAN_HandleTypeDef hcan1;
             }
          }               
       }
-      else 
-      {  // move level-wind state machine to off with error flag clear
-         /* this could be made to only once but thi just keeps reseting things
-         // to the same values*/
-         levelwind_task_move_to_off(0);           
-      }
+      
 
       /* see if status or super-state have changed or HB timer has expired
          and send appropriate status-state message */
@@ -471,7 +470,7 @@ void levelwind_task_cp_state_init(void)
    pcp->brake = 0;  
    pcp->guillotine = 0;     
    pcp->emergency = 0;  
-   pcp->mode = LW_MODE_OFF;   // for debug, OFF for development     
+   pcp->mode = LW_MODE_OFF;
    pcp->index = 0;
    pcp->rev_fwd = 1;     
    pcp->rmt_lcl = 1;  
