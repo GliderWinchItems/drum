@@ -26,7 +26,7 @@
 /* ************************************************************************/
  void levelwind_task_move_to_off(uint8_t);
 /* @brief   : move to level-wind off state
- * @param   : erroor flag; 1 error, 0 no error
+ * @param   : error flag; 1 error, 0 no error
  * *************************************************************************/
 
 #define enable_stepper  p->enflag = Stepper_MF_Pin << 16;         \
@@ -257,11 +257,11 @@ extern CAN_HandleTypeDef hcan1;
                // clear error flag and status if LW mode is set to Off
                if (p->mode == LW_MODE_OFF) 
                {  
-                  p->error = 0;
+                  p->state = LW_MODE_OFF;
                   p->status = LW_STATUS_GOOD;
                } 
                
-               else if ((p->mc_state == MC_PREP) && (p->error == 0) 
+               else if ((p->mc_state == MC_PREP) && ((p->state & 0x0F) == 0) 
                   && (p->sw[LIMITDBMS].flag2)) // last condition temporary for early development
                {  // we are in MC Prep state on an operational drum with error flag clear  
                   p->sw[LIMITDBMS].flag2 = 0; // TEMPORARY: clear LS motorside latching flag
@@ -453,8 +453,8 @@ void levelwind_task_move_to_off(uint8_t err)
    p->ocinc = p->ocman;    // slow down output compare interrupt rate
    p->state = LW_OFF;
    p->indexed = 0;   // may not be needed
-   p->error = err;
-   p->status = (p->error) ? LW_STATUS_OFF_AFTER_ERROR : LW_STATUS_GOOD;
+   p->state = LW_MODE_OFF & err;
+   p->status = (err) ? LW_STATUS_OFF_AFTER_ERROR : LW_STATUS_GOOD;
    disable_stepper;
 
    return;  

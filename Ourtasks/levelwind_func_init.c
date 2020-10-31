@@ -110,7 +110,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->isr_state = LW_ISR_OFF;
    p->mode = LW_MODE_OFF;
    p->indexed = 0;   //REVIST: May not be needed
-   p->error = 0;
 
    p->mc_state = MC_SAFE;
 
