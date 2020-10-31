@@ -103,11 +103,18 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->drbit = p->drbit_prev = 0;    // Drum direction bit REVIST: Needed???   
 
    p->hbctr      = xTaskGetTickCount();
+
+   // initialize state machines and status
+   p->state = p->state_prev = LW_OFF;
+   p->status = p->status_prev = LW_STATUS_GOOD;
+   p->isr_state = LW_ISR_OFF;
+   p->mode = LW_MODE_OFF;
+   p->indexed = 0;   //REVIST: May not be needed
+   p->error = 0;
+
+   p->mc_state = MC_SAFE;
+
    
-   p->dtwmin     = 0x7fffffff;
-
-
-
    // TIM2 output compare increments
    p->ocswp       = p->lc.ocidx/p->lc.Nswp;     // initalize sweep increment
    p->ocman       = p->lc.ocidx * p->lc.Nman;   // initalize manual increment 

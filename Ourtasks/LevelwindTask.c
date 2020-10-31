@@ -38,6 +38,7 @@
 
 /* Open Questions:
       Is a delay needed after stepper enable
+      Is the variable indexed needed
 
 
 
@@ -225,7 +226,8 @@ extern CAN_HandleTypeDef hcan1;
          p->ocinc = p->ocman;
          p->isr_state = LW_ISR_MANUAL;
          p->state = LW_MANUAL;
-         p->indexed = 0;                  // indexed flag may not be needed???
+         p->indexed = 0;       // REVISIT: indexed flag may not be needed???
+         p->status = LW_STATUS_MANUAL;                  
          enable_stepper;
       }
 
@@ -235,6 +237,7 @@ extern CAN_HandleTypeDef hcan1;
          p->isr_state = LW_ISR_OFF;
          p->state = LW_OVERRUN;
          p->indexed = 0;                  // indexed flag may not be needed???
+         p->status = LW_STATUS_OVERRUN;
          disable_stepper;
       }
 
@@ -251,8 +254,12 @@ extern CAN_HandleTypeDef hcan1;
          {
             case (LW_OFF):
             {  
-               // clear error flag if LW mode is set to Off
-               if (p->mode == LW_MODE_OFF) p->error = 0; 
+               // clear error flag and status if LW mode is set to Off
+               if (p->mode == LW_MODE_OFF) 
+               {  
+                  p->error = 0;
+                  p->status = LW_STATUS_GOOD;
+               } 
                
                else if ((p->mc_state == MC_PREP) && (p->error == 0) 
                   && (p->sw[LIMITDBMS].flag2)) // last condition temporary for early development
@@ -299,9 +306,12 @@ extern CAN_HandleTypeDef hcan1;
             }
 
             case (LW_INDEX):
-            {  // Tim2 ISR moves LW state to Track when done
-
-               // Here check if ISR has finished the indexing
+            {  // Here check if ISR has finished the indexing
+               if (p->isr_state == LW_ISR_TRACK)
+               {
+                  p->state = LW_TRACK;
+                  p->status = LW_STATUS_GOOD;
+               }
                
                if(p->mc_state == MC_SAFE) 
                {  // move level-wind state machine to off with error flag not set
@@ -444,6 +454,7 @@ void levelwind_task_move_to_off(uint8_t err)
    p->state = LW_OFF;
    p->indexed = 0;   // may not be needed
    p->error = err;
+   p->status = (p->error) ? LW_STATUS_OFF_AFTER_ERROR : LW_STATUS_GOOD;
    disable_stepper;
 
    return;  
