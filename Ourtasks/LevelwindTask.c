@@ -36,6 +36,14 @@
                         Stepper_MF_GPIO_Port->BSRR = p->enflag
                   
 
+/* Open Questions:
+      Is a delay needed after stepper enable
+
+
+
+*/
+
+
 osThreadId LevelwindTaskHandle;
 
 uint32_t dbgEth;
@@ -80,7 +88,10 @@ void StartLevelwindTask(void const * argument)
    // move level-wind state machine to off with no error flag set
    levelwind_task_move_to_off(0);   
 
-   
+
+   pcp->mode = LW_MODE_CENTER;   // CP LW Mode selection 
+ 
+
  #if 1   // initial conditions for indexing demo
    p->mc_state = MC_PREP;
    p->isr_state = LW_ISR_OFF;
@@ -141,8 +152,7 @@ void StartLevelwindTask(void const * argument)
     */
 
 #endif
-
-
+   
 	/* Limit and overrun switches. */
 	levelwind_switches_init();   
 
@@ -212,23 +222,25 @@ extern CAN_HandleTypeDef hcan1;
 
       if ((0) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed; go to Manual state
-         p->state = LW_MANUAL;
          p->ocinc = p->ocman;
          p->isr_state = LW_ISR_MANUAL;
+         p->state = LW_MANUAL;
          p->indexed = 0;                  // indexed flag may not be needed???
          enable_stepper;
       }
 
       else if ((0) && (p->state != LW_OVERRUN)) // here test for Overrun switches activation
       {  // An Overrun switch is closed; go to Overrun state           
-         p->state = LW_OVERRUN;
          p->ocinc = p->ocman;    // slow down output compare interrupt rate
          p->isr_state = LW_ISR_OFF;
+         p->state = LW_OVERRUN;
          p->indexed = 0;                  // indexed flag may not be needed???
          disable_stepper;
       }
       // check to see if this drum is enabled for operation on the control panel
-      else if (pcp->op_drums & (0x01 << (p->lc.mydrum - 1)))
+      else if  (pcp->op_drums & (0x01 << (p->lc.mydrum - 1))
+         && ((pcp->mode != LW_MODE_OFF)   
+               && (pcp->active_drum == p->lc.mydrum)))
       {  // this node is operational
 
          switch (p->state & 0xF0)   // deal with CAN notification based on LW super-state
@@ -241,11 +253,11 @@ extern CAN_HandleTypeDef hcan1;
                else if ((p->mc_state == MC_PREP) && (p->error == 0) 
                   && (p->sw[LIMITDBMS].flag2)) // last condition temporary for early development
                {  // we are in MC Prep state on an operational drum with error flag clear  
-                  p->sw[LIMITDBMS].flag2 = 0; // TEMPORARY: clear LS outside latching flag
+                  p->sw[LIMITDBMS].flag2 = 0; // TEMPORARY: clear LS motorside latching flag
                   
-                  p->state = LW_INDEX;
                   p->ocinc = p->lc.ocidx; // set oc  interrupt rate for indexing
                   p->isr_state = LW_ISR_INDEX;
+                  p->state = LW_INDEX;
                   enable_stepper;
 
                   // these values are set up temporarily for development to make leftost position 0
@@ -266,7 +278,7 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_OVERRUN):
             {  
-               if(0) // poll overrun switch to see if it is cleared
+               if(1) // poll overrun switch to see if it is cleared
                {  // move level-wind state machine to off with error flag set
                   levelwind_task_move_to_off(1);  
                }
@@ -317,12 +329,9 @@ extern CAN_HandleTypeDef hcan1;
                      p->Lplus32  = p->rvrsldx
                         + ((distance - (2 * p->rvrsldx)) / p->Ks) * p->Ks;
                      
-                     /* Consider to be immediately in Center with Arresting sub-state
-                        but set previous state to avoid a status-state message 
-                        until arrest completes. (Somewhat a 'trick'.) */
-                     p->state = p->state_prev = LW_CENTER;
                      p->ocinc = p->ocswp; // center at sweep speed
-                     // transition to Arrest with next state Off
+                     p->state = LW_CENTER;
+                     // transition to Arrest with next isr state Off
                      p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4);                             
                   }
                   else if (-distance > (2 * p->rvrsldx))
@@ -337,21 +346,19 @@ extern CAN_HandleTypeDef hcan1;
                      p->Lminus32 = -p->rvrsldx  
                         + ((distance + (2 * p->rvrsldx)) / p->Ks) * p->Ks; 
                      
-                     /* Consider to be immediately in Center with Arresting sub-state
-                        but set previous state to avoid a status-state message
-                        until arrest completes. (Somewhat a 'trick'.) */
-                     p->state = p->state_prev = LW_CENTER;
+                     // transition to Arrest with next isr state Off
+                     p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4); 
+                     p->state = LW_CENTER;
                      p->ocinc = p->ocswp; // center at sweep speed
-                     // transition to Arrest with next state Off
-                     p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4);    
+                        
                   }
                   else
                   {  // absolute distance close enough, don't bother to move
                      // REVISIT: Do shortened movement to center without reaching 
                      // full speed
-                     p->state = LW_CENTER;
-                     p->isr_state = LW_ISR_OFF;
                      p->ocinc = p->ocman; // reduce output compare interrupt rate
+                     p->isr_state = LW_ISR_OFF;
+                     p->state = LW_CENTER;
                      disable_stepper;
                   }                  
                }
@@ -360,24 +367,21 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_CENTER):
             {  
-               if ((p->isr_state == LW_ISR_OFF) 
-                  && (p->state_prev == LW_CENTER))
+               if ((p->isr_state == LW_ISR_OFF) && (p->state_prev == LW_TRACK))
                {  // movement to center has concluded
-                  // cause a status-state message to be sent once
-                  p->state_prev = LW_TRACK; 
                   disable_stepper;
                }
 
                if((p->mc_state == MC_PREP))  
                {  // move to Index state with stepper driver enabled
                   
-                     /* This code is essentially the same as is used in the Off state
-                     to start indexing. We could just move to Off but then that would 
-                     generate two status-state messages. That could be circumvented
-                     with a trick but this is cleaner. */                  
-                  p->state = LW_INDEX;
-                  p->isr_state = LW_ISR_INDEX;
+                  /* This code is essentially the same as is used in the Off state
+                  to start indexing. We could just move through Off but then that 
+                  would generate two status-state messages. That could be circumvented
+                  with a trick but this is cleaner. */                  
                   p->ocinc = p->lc.ocidx;
+                  p->isr_state = LW_ISR_INDEX;
+                  p->state = LW_INDEX;
                   enable_stepper;
 
                   // REVISIT: initialize trajectory integrators and associated values
@@ -400,13 +404,16 @@ extern CAN_HandleTypeDef hcan1;
             case (LW_LOS):
             {
                // exit from LOS handled by switches or Tim2 ISR?
+               // code here TBD
                break;
             }
          }               
       }
       else 
-      {  // move level-wind state machine to off with error flag set
-         levelwind_task_move_to_off(1);           
+      {  // move level-wind state machine to off with error flag clear
+         /* this could be made to only once but thi just keeps reseting things
+         // to the same values*/
+         levelwind_task_move_to_off(0);           
       }
 
       /* see if status or super-state have changed or HB timer has expired
@@ -433,9 +440,9 @@ void levelwind_task_move_to_off(uint8_t err)
 {   
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
-   p->state = LW_OFF;
-   p->ocinc = p->ocman;    // slow down output compare interrupt rate
    p->isr_state = LW_ISR_OFF;
+   p->ocinc = p->ocman;    // slow down output compare interrupt rate
+   p->state = LW_OFF;
    p->indexed = 0;   // may not be needed
    p->error = err;
    disable_stepper;
@@ -464,7 +471,7 @@ void levelwind_task_cp_state_init(void)
    pcp->brake = 0;  
    pcp->guillotine = 0;     
    pcp->emergency = 0;  
-   pcp->mode = LW_MODE_OFF;     
+   pcp->mode = LW_MODE_OFF;   // for debug, OFF for development     
    pcp->index = 0;
    pcp->rev_fwd = 1;     
    pcp->rmt_lcl = 1;  

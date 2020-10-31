@@ -116,6 +116,29 @@ void levelwind_items_timeout(void)
    xQueueSendToBack(CanTxQHandle,&p->canmsg[CID_LEVELWIND_HB],4);   
    return;
  }
+
+/* *************************************************************************
+ * void levelwind_items_CANsend_status-state(void);
+ * @brief   : Send CAN heartbeat for levelwind
+ * *************************************************************************/
+ void levelwind_items_CANsend_status_state(void)
+ { 
+   /* This needs to send a CAN status-state message or a HB status-state
+      message. The non-void function argument will indicate the CID to be 
+      used. This function is not in development and null at this point.
+
+
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+   // Setup CAN msg 
+   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[0] = p->status;
+   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[1] = p->state;
+
+   // Queue CAN msg to send. 
+   xQueueSendToBack(CanTxQHandle,&p->canmsg[CID_LEVELWIND_HB],4); 
+   */  
+   return;
+ }
+
 /* *************************************************************************
  * void levelwind_items_clupdate(struct CANRCVBUF* pcan);
  * @param   : pcan = pointer to CAN msg struct
