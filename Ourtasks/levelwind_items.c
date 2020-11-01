@@ -389,7 +389,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             if (p->velaccum.s32 == 0)
             {
                /* Transition to Track or Center when done. The state to transtion 
-               to is held in the lower nibble of  isr_state */
+               to is held in the lower nibble of isr_state */
                p->isr_state = p->isr_state << 4;
                p->ocinc = p->ocman; // reduce output compare interrupt rate
             }

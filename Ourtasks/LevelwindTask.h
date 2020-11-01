@@ -8,6 +8,7 @@
 #define __LEVELWINDTASK
 
 #include <stdint.h>
+#include <math.h>
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
@@ -90,10 +91,12 @@ union PAYFLT
 {
    float f;
    uint8_t  u8[4];
+   int8_t   s8[4];
    uint16_t u16[2];
+   int16_t  s16[2];
    uint32_t u32;
    int32_t  s32;
-   int16_t  s16[2];
+   
 };
 
 struct LEVELWINDFUNCTION
@@ -125,7 +128,7 @@ struct LEVELWINDFUNCTION
    uint8_t  status_prev;   // level-wind previous status
    uint8_t  isr_state;     // level-wind ISR state
    uint8_t  mode;          // level-wind mode (Off, Track, or Center)
-   uint8_t  indexed;       // indexed status MAY NOT BE NEEDED
+   uint8_t  indexed;       // REVISIT: indexed status MAY NOT BE NEEDED
    uint8_t  mc_state;      // master controller state 
 
    uint8_t  ocicbit;       

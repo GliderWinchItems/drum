@@ -40,8 +40,6 @@
       Is a delay needed after stepper enable
       Is the variable indexed needed
 
-
-
 */
 
 
@@ -112,11 +110,9 @@ void StartLevelwindTask(void const * argument)
       the stepper (disabling the stepper happens in all cases. That limitation
       is planned to be removed shortly.  */
 
-   p->posaccum.s32 = 1000 << 16;
+   p->posaccum.s32 = (7500 - 500) << 16;
    p->velaccum.s32 = 0;
 #endif
-
-
 
 /* Manaual mode test. Close the manaul switch either with a acutal switch or 
    by setting the test for that switch to true in the  code for it below. Either
@@ -327,49 +323,75 @@ extern CAN_HandleTypeDef hcan1;
                }
                else if ((p->mc_state == MC_RETRIEVE) && (p->mode == LW_MODE_CENTER))                  
                {  /* setup to center for retrieve and transition to Center  */    
-                  int32_t center;
-                  int32_t distance;
-                  center = (p->lc.Lplus + p->lc.Lminus) << 15; // calculate center position
-                  distance = center - p->posaccum.s32;   // signed distance to center
+                  int32_t center = (p->lc.Lplus + p->lc.Lminus) << 15; // calculate center position
+                  int32_t distance = center - p->posaccum.s32;   // signed distance to center
                   if (distance > (2 * p->rvrsldx))          
-                  {  // move to increase posaccum  from 0 to distance
-                     
+                  {  // move to increase posaccum  from 0 to distance                     
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST  */
                      p->posaccum.s32 = p->lc.Ka;        
                      p->velaccum.s32 = p->lc.Ka;
-
                      p->Lminus32 = p->rvrsldx;
                      p->Lplus32  = p->rvrsldx
-                        + ((distance - (2 * p->rvrsldx)) / p->Ks) * p->Ks;
-                     
+                        + ((distance - (2 * p->rvrsldx)) / p->Ks) * p->Ks;                     
                      p->ocinc = p->ocswp; // center at sweep speed
                      p->state = LW_CENTER;
                      // transition to Arrest with next isr state Off
                      p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4);                             
                   }
                   else if (-distance > (2 * p->rvrsldx))
-                  {  // move to decrease posaccum from 0 to -distance
-                                          
+                  {  // move to decrease posaccum from 0 to -distance                                          
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST*/
                      p->posaccum.s32 = -p->lc.Ka;        
                      p->velaccum.s32 = -p->lc.Ka;
-
                      p->Lplus32  = -p->rvrsldx;
                      p->Lminus32 = -p->rvrsldx  
-                        + ((distance + (2 * p->rvrsldx)) / p->Ks) * p->Ks; 
-                     
+                        + ((distance + (2 * p->rvrsldx)) / p->Ks) * p->Ks;                     
                      // transition to Arrest with next isr state Off
                      p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4); 
                      p->state = LW_CENTER;
                      p->ocinc = p->ocswp; // center at sweep speed
-                        
                   }
+                  else if (distance > ((int32_t) 2) << 16)          
+                  {  // distance greater than 2 stepper steps
+                     // compute truncated accell/deceration profile
+                     int16_t Nr = sqrtf((float)(distance / (p->lc.Ka)));
+                     int32_t rvrsldx = Nr * (Nr - 1) * p->lc.Ka / 2;
+                     int16_t Ks = Nr * p->lc.Ka;
+                     /* start 1 iteration in to avoid immediate zero velocity termination 
+                        in LW_ISR_ARREST  */
+                     p->posaccum.s32 = p->lc.Ka;        
+                     p->velaccum.s32 = p->lc.Ka;
+                     p->Lminus32 = rvrsldx;
+                     p->Lplus32  = rvrsldx
+                        + ((distance - (2 * rvrsldx)) / Ks) * Ks;                     
+                     p->ocinc = p->ocswp; // center at sweep speed
+                     p->state = LW_CENTER;
+                     // transition to Arrest with next isr state Off
+                     p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4);
+                  }
+                  else if (-distance > ((int32_t) 2) << 16)          
+                  {  // distance greater than 2 stepper steps
+                     // compute truncated accell/deceration profile
+                     int16_t Nr = sqrtf((float)(-distance / (p->lc.Ka)));
+                     int32_t rvrsldx = Nr * (Nr - 1) * p->lc.Ka / 2;
+                     int16_t Ks = Nr * p->lc.Ka;
+                     /* start 1 iteration in to avoid immediate zero velocity termination 
+                        in LW_ISR_ARREST  */
+                     p->posaccum.s32 = -p->lc.Ka;        
+                     p->velaccum.s32 = -p->lc.Ka;
+
+                     p->Lminus32 = -rvrsldx;
+                     p->Lplus32  = -rvrsldx
+                        + ((distance + (2 * rvrsldx)) / Ks) * Ks;                     
+                     p->ocinc = p->ocswp; // center at sweep speed
+                     p->state = LW_CENTER;
+                     // transition to Arrest with next isr state Off
+                     p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4);
+                  } 
                   else
-                  {  // absolute distance close enough, don't bother to move
-                     // REVISIT: Do shortened movement to center without reaching 
-                     // full speed
+                  {  //  distance close enough, don't bother to move
                      p->ocinc = p->ocman; // reduce output compare interrupt rate
                      p->isr_state = LW_ISR_OFF;
                      p->state = LW_CENTER;
@@ -381,7 +403,7 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_CENTER):
             {  
-               if ((p->isr_state == LW_ISR_OFF) && (p->state_prev == LW_TRACK))
+               if (p->isr_state == LW_ISR_OFF)
                {  // movement to center has concluded
                   disable_stepper;
                }
