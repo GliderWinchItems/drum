@@ -109,7 +109,7 @@ C_SOURCES += Ourtasks/drum_items.c
 C_SOURCES += Ourtasks/LevelwindTask.c
 C_SOURCES += Ourtasks/DrumTask.c
 C_SOURCES += Ourtasks/BrakeTask.c
-
+C_SOURCES += Ourtasks/levelwind_cmd.c
 
 # /* USER CODE END */ 
 

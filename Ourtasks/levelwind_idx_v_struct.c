@@ -60,9 +60,17 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
 // List of CAN ID's for setting up hw filter for incoming msgs
    	// We receive: Logger/gps 
 //	p->cid_gps_sync     = 0x00400000; // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
-	// We receive stepper repo: update100K sends
-	p->cid_drum_tst_stepcmd	=  CANID_TST_STEPCMD; //0xE4600000; // CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position:
-   p->cid_mc_state = CANID_MC_STATE; //'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
+	// We receive the following | stepper repo:levelwind (or later repos) sends
+	p->cid_drum_tst_stepcmd	= CANID_TST_STEPCMD;     //'E4600000','GENCMD', 1,4, 'U8_FF','DRUM1: U8: Enable,Direction, FF: CL position');
+   p->cid_hb_cpswsv1_1     = CANID_HB_CPSWSV1_1;    //'31000000','CPMC', 1,1,'S8_U8_7','HB_CPSWSV1 1: S8:status,U8[7]: status,switches,drum sel,operational,spare,spare');
+   p->cid_hb_cpswsclv1_1   = CANID_HB_CPSWSCLV1_1;  //'31800000','CPMC', 2,1,'S8_S16_FF_V','HB_CPSWSV1 1:S8:status, S16 CL: (+/-10000 )');
+   p->cid_cmd_levelwind_i1 = CANID_CMD_LEVELWIND_I1;//'B1000014','GENCMD',1,23,'U8_U8_U8_X4','1 incoming: U8:drum bits,U8:command code,X4:four byte value');
+   p->cid_mc_state         = CANID_MC_STATE;        //'26000000','MC',1,5,'U8_U8','MC: Launch state msg');
+
+   // We (levelwind) sends
+   p->cid_cmd_levelwind_r1 = CANID_CMD_LEVELWIND_R1;//'B1000114','LEVELWIND',1,3,'U8_U8_U8_X4','1: U8:drum bits,U8:command code,X4:four byte value');
+   p->cid_hb_levelwind_1   = CANID_HB_LEVELWIND_1;  //'80000000','LEVELWIND',1,2,'S8_U8','DRUM 1: S8:Status,U8:state');
+
 
 	return;
 }

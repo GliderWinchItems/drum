@@ -29,9 +29,12 @@
 #define LEVELWINDSWSNOTEBITLIMINOVR  (OVERRUNSWINSIDE)
 #define LEVELWINDSWSNOTEBITLIMOUTOVR (OVERRUNSWOUTSIDE)
 #define LEVELWINDSWSNOTEBITISR       (1<<16)    // Stepper ISR
-#define LEVELWINDSWSNOTEBITCAN1      (1<<17)    // CAN msg: Pushbuttons & CL position
+#define LEVELWINDSWSNOTEBITCAN1      (1<<17)    // CAN msg: cid_drum_tst_stepcmd; CANID_TST_STEPCMD: U8_FF DRUM1: U8:
 #define LEVELWINDSWSNOTEBITSWT1      (1<<18)    // Software timer #1
-#define LEVELWINDSWSNOTEBITCAN2      (1<<19)    // CAN msg: Launch state
+#define LEVELWINDSWSNOTEBITCAN2      (1<<19)    // CAN msg: cid_mc_state;         CANID_MC_STATE','26000000', 'MC', 'U8_U8'
+#define LEVELWINDSWSNOTEBITCAN3      (1<<20)    // CAN msg: cid_hb_cpswsv1_1;     CANID_HB_CPSWSV1_1'  ,'31000000''CPMC', 1,1,'S8_U8_7'
+#define LEVELWINDSWSNOTEBITCAN4      (1<<21)    // CAN msg: cid_hb_cpswsclv1_1;   CANID_HB_CPSWSCLV1_1','31800000','CPMC', 2,1,'S8_S16_FF_V'
+#define LEVELWINDSWSNOTEBITCAN5      (1<<22)    // CAN msg: cid_cmd_levelwind_i1; CANID_CMD_LEVELWIND_I1','B1000014','GENCMD',1,23,'U8_U8_U8_X4'
 
 
 /* Port and pin numbers for stepper controller. */
@@ -82,9 +85,11 @@
 
 
 #define NUMCANMSGSLEVELWIND 2  // Number of CAN msgs levelwind sends
-enum cididx
+
+enum cididx // Index for CAN msgs we send array
 {
-   CID_LEVELWIND_HB 
+   IDX_CID_CMD_LEVELWIND_R1,
+   IDX_CID_HB_LEVELWIND_1
 };
 
 union PAYFLT
@@ -158,6 +163,8 @@ struct LEVELWINDFUNCTION
 
    TimerHandle_t swtim1; // RTOS Timer #1 handle
 
+   uint8_t  mydrumbit;   // mydrum number converted to bit position
+
 /* Pointer into circular buffer for levelwind_items.c debugging. */
 #if LEVELWINDDEBUG
    struct LEVELWINDDBGBUF*  pdbgbegin;
@@ -176,6 +183,9 @@ struct LEVELWINDFUNCTION
    /* Pointers to incoming CAN msg mailboxes. */
    struct MAILBOXCAN* pmbx_cid_gps_sync;        // CANID_HB_TIMESYNC:  U8 : GPS_1: U8 GPS time sync distribution msg-GPS time sync msg
    struct MAILBOXCAN* pmbx_cid_drum_tst_stepcmd;// CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
+   struct MAILBOXCAN* pmbx_cid_hb_cpswsv1_1;    // CANID_HB_CPSWSV1_1'  ,'31000000','CPMC', 1,1,'S8_U8_7','HB_CPSWSV1 1: S8:status,U8[7]: status,switches,drum sel,operational,spare,spare');
+   struct MAILBOXCAN* pmbx_cid_hb_cpswsclv1_1;  // CANID_HB_CPSWSCLV1_1','31800000','CPMC', 2,1,'S8_S16_FF_V','HB_CPSWSV1 1:S8:status, S16 CL: (+/-10000 )');
+   struct MAILBOXCAN* pmbx_cid_cmd_levelwind_i1;// CANID_CMD_LEVELWIND_I1','B1000014','GENCMD',1,23,'U8_U8_U8_X4','1 incoming: U8:drum bits,U8:command code,X4:four byte value');
    struct MAILBOXCAN* pmbx_cid_mc_state; //'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
 
    /* CAN msgs */

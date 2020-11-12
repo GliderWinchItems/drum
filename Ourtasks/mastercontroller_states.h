@@ -1,7 +1,7 @@
 /******************************************************************************
-* File Name          : MasterControllerState.h
-* Date First Issued  : 10/113/2020
-* Description        : Defines (super-) states for Master Controller
+* File Name          : mastercontroller_states.h
+* Date First Issued  : 11/09/2020
+* Description        : Defines states for Master Controller
 *******************************************************************************/
 
 #ifndef __MASTERCONTROLLERSTATES
@@ -10,16 +10,18 @@
 #include <stdint.h>
 
 // Master Controller state machine  definitions 
-// Lower nibble reserved for sub-states if needed
-#define MC_SAFE      (0 << 4)
-#define MC_PREP      (1 << 4)
-#define MC_ARMED     (2 << 4)
-#define MC_GRNDRTN   (3 << 4)
-#define MC_RAMP      (4 << 4)
-#define MC_CLIMB     (5 << 4)
-#define MC_RECOVERY  (6 << 4)
-#define MC_RETRIEVE  (7 << 4)
-#define MC_ABORT     (8 << 4)
-#define MC_STOP      (9 << 4)
+// Major state names
+#define MC_INIT     ( 0 << 3)
+#define MC_SAFE     ( 1 << 3)
+#define MC_PREP     ( 2 << 3)
+#define MC_ARMED    ( 3 << 3)
+#define MC_GRNDRTN  ( 4 << 3)
+#define MC_RAMP     ( 5 << 3)
+#define MC_CLIMB    ( 6 << 3)
+#define MC_RECOVERY ( 7 << 3)
+#define MC_RETRIEVE ( 8 << 3)
+#define MC_ABORT    ( 9 << 3)
+#define MC_STOP     (10 << 3)
+#define MC_TEST     (11 < <3)
 
 #endif

@@ -49,12 +49,16 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
 	p->Ks = p->lc.Nr * p->lc.Ka; // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
 
+   p->mydrumbit = (1 << (p->lc.mydrum-1)); // Convert drum number (1-7) to bit position (0-6)
 		
-// Skip CAN msg arrival notifications for lines that are commented out.
 	/* Add CAN Mailboxes                               CAN     CAN ID             TaskHandle,Notify bit,Skip, Paytype */
-//	p->pmbx_cid_gps_sync          =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,          NULL,LEVELWINDBIT06,0,U8);
+//	p->pmbx_cid_gps_sync         =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,       NULL,LEVELWINDBIT06,0,U8);
 	p->pmbx_cid_drum_tst_stepcmd = MailboxTask_add(pctl0,p->lc.cid_drum_tst_stepcmd,NULL,LEVELWINDSWSNOTEBITCAN1,0,U8_FF);
-   p->pmbx_cid_mc_state         = MailboxTask_add(pctl0,p->lc.cid_mc_state,        NULL,LEVELWINDSWSNOTEBITCAN2,0,U8_FF);   
+ //  p->pmbx_cid_mc_state         = MailboxTask_add(pctl0,p->lc.cid_mc_state,        NULL,LEVELWINDSWSNOTEBITCAN2,0,U8_U8); 
+//   p->pmbx_cid_hb_cpswsv1_1     = MailboxTask_add(pctl0,p->lc.cid_hb_cpswsv1_1,    NULL,LEVELWINDSWSNOTEBITCAN3,0,S8_U8_7);
+//   p->pmbx_cid_hb_cpswsclv1_1   = MailboxTask_add(pctl0,p->lc.cid_hb_cpswsclv1_1,  NULL,LEVELWINDSWSNOTEBITCAN4,0,S8_S16_FF_V);
+//   p->pmbx_cid_cmd_levelwind_i1 = MailboxTask_add(pctl0,p->lc.cid_cmd_levelwind_i1,NULL,LEVELWINDSWSNOTEBITCAN5,0,U8_U8_U8_X4);
+
 	/* Pre-load fixed data in CAN msgs */
 	for (i = 0; i < NUMCANMSGSLEVELWIND; i++)
 	{
@@ -64,10 +68,14 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 		p->canmsg[i].can.dlc = 8;    // Default payload size (might be modified when loaded and sent)
 	}
 
-	  /* Pre-load CAN msg id and dlc. */
-   // Stepper heartbeat
-   p->canmsg[CID_LEVELWIND_HB].can.id  = p->lc.cid_hb_levelwind; // CAN id.
-   p->canmsg[CID_LEVELWIND_HB].can.dlc = 5;    // U8_U32 payload
+	/* Pre-load CAN msg id and dlc. */
+   // Levelwind command response
+   p->canmsg[IDX_CID_CMD_LEVELWIND_R1].can.id  = p->lc.cid_cmd_levelwind_r1; // CAN id.
+   p->canmsg[IDX_CID_CMD_LEVELWIND_R1].can.dlc = 7; // U8_U8_U8_X4
+
+   // Levelwind status & heartbeat
+   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.id  = p->lc.cid_hb_levelwind; // CAN id.
+   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.dlc = 2;  // S8_U8
 
 #if LEVELWINDDEBUG 
 	/* DEBUG buffer. */ 

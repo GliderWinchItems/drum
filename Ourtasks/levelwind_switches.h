@@ -16,6 +16,30 @@
 #include "SerialTaskSend.h"
 #include "main.h"
 
+/*
+#define ManualSw_MSN_NO_Pin GPIO_PIN_7
+#define ManualSw_MSN_NO_GPIO_Port GPIOE
+#define ManualSw_MS_NO_Pin GPIO_PIN_8
+#define ManualSw_MS_NO_GPIO_Port GPIOE
+#define ManualSw_NO_Pin GPIO_PIN_9
+#define ManualSw_NO_GPIO_Port GPIOE
+#define LimitSw_MSN_NO_Pin GPIO_PIN_10
+#define LimitSw_MSN_NO_GPIO_Port GPIOE
+#define LimitSw_MSN_NO_EXTI_IRQn EXTI15_10_IRQn
+#define LimitSw_MSN_NC_Pin GPIO_PIN_11
+#define LimitSw_MSN_NC_GPIO_Port GPIOE
+#define LimitSw_MSN_NC_EXTI_IRQn EXTI15_10_IRQn
+#define LimitSw_MS_NO_Pin GPIO_PIN_12
+#define LimitSw_MS_NO_GPIO_Port GPIOE
+#define LimitSw_MS_NO_EXTI_IRQn EXTI15_10_IRQn
+#define LimitSw_MS_NC_Pin GPIO_PIN_13
+#define LimitSw_MS_NC_GPIO_Port GPIOE
+#define LimitSw_MS_NC_EXTI_IRQn EXTI15_10_IRQn
+#define OverrunSwes_NO_Pin GPIO_PIN_14
+#define OverrunSwes_NO_GPIO_Port GPIOE
+#define OverrunSwes_NO_EXTI_IRQn EXTI15_10_IRQn
+*/
+
 /* Positions of bits in 'switchbits' */
 #define LIMITDBMSN  0   // Debounced MotorSideNot limit sw 1 = closed
 #define LIMITDBMS 1   // Debounced MotorSide limit sw 1 = closed

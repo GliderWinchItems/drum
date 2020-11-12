@@ -97,7 +97,7 @@ struct LEVELWINDDBGBUF
  void levelwind_items_timeout(void);
 /* @brief   : Check for loss of CL CAN msgs
  * *************************************************************************/
- void levelwind_items_CANsendHB(void);
+ void levelwind_items_CANsend_hb_levelwind_1(void);
 /* @brief   : Send CAN heartbeat for levelwind
  * *************************************************************************/
   struct LEVELWINDDBGBUF* levelwind_items_getdbg(void);

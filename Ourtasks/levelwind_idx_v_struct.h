@@ -60,12 +60,17 @@ struct LEVELWINDLC
     // Levelwind sends; PC receives
    uint32_t cid_hb_levelwind;        // CANID_HB_LEVELWIND: U8_U32','LEVELWIND: U8: Status, U32: stepper position accum
 
-
  // List of CAN ID's for setting up hw filter for incoming msgs
-	// stepper test repo sends: drum receives
+	// stepper test repo sends: levelwind receives
 	uint32_t cid_drum_tst_stepcmd; // CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
-   uint32_t cid_mc_state; //'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
+   uint32_t cid_hb_cpswsv1_1;     // CANID_HB_CPSWSV1_1'  ,'31000000','CPMC', 1,1,'S8_U8_7','HB_CPSWSV1 1: S8:status,U8[7]: status,switches,drum sel,operational,spare,spare');
+   uint32_t cid_hb_cpswsclv1_1;   // CANID_HB_CPSWSCLV1_1','31800000','CPMC', 2,1,'S8_S16_FF_V','HB_CPSWSV1 1:S8:status, S16 CL: (+/-10000 )');
+   uint32_t cid_cmd_levelwind_i1; // CANID_CMD_LEVELWIND_I1','B1000014','GENCMD',1,23,'U8_U8_U8_X4','1 incoming: U8:drum bits,U8:command code,X4:four byte value');
+   uint32_t cid_mc_state;         // CANID_MC_STATE','26000000','MC',1,5,'U8_U8','MC: Launch state msg');
 
+   // Levelwind sends : others receive
+   uint32_t cid_cmd_levelwind_r1; // CANID_CMD_LEVELWIND_R1','B1000114','LEVELWIND',1,3,'U8_U8_U8_X4','1: U8:drum bits,U8:command code,X4:four byte value');
+   uint32_t cid_hb_levelwind_1;   // CANID_HB_LEVELWIND_1','80000000','LEVELWIND',1,2,'S8_U8','DRUM 1: S8:Status,U8:state');
  };
 
 /* *************************************************************************/

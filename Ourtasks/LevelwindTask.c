@@ -73,7 +73,6 @@ void StartLevelwindTask(void const * argument)
 
 	/* A notification copies the internal notification word to this. */
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
-	uint32_t noteuse = 0xffffffff;
 
 	/* Initialize levelwind function struct. */
 	levelwind_func_init_init(p);
@@ -180,12 +179,10 @@ extern CAN_HandleTypeDef hcan1;
 		/* Wait for notifications 
          250 ms timeout insures Manual and Overrun switches gets polled at least 
          4 times per second. */      
-		xTaskNotifyWait(0,noteuse, &noteval, pdMS_TO_TICKS(250));
-		noteuse = 0;	// Accumulate bits in 'noteval' processed.
+		xTaskNotifyWait(0,0xffffffff, &noteval, pdMS_TO_TICKS(250));
 
       if ((noteval & LEVELWINDSWSNOTEBITISR) != 0)
 		{ // Here levelwind_items.c triggered the ETH_IRQHandler
-			noteuse |= LEVELWINDSWSNOTEBITISR;
          dbgEth += 1;
 
          /* Code here to figure out which ISR initated the notification 
@@ -195,26 +192,34 @@ extern CAN_HandleTypeDef hcan1;
             MANUAL instead of repeating that code everywhere.  */                  
 		}
 
-		if ((noteval & LEVELWINDSWSNOTEBITCAN2) != 0) 
-		{  // CAN:  'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
-			// clupdate( ) should not be called. The MC state should be extracted from message
-         // levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
-			noteuse |= LEVELWINDSWSNOTEBITCAN2;
-		}
 
 		if ((noteval & LEVELWINDSWSNOTEBITCAN1) != 0) 
-		{   // CAN:  CANID_TST_STEPCMD: U8_FF DRUM1: U8: Enable,Direction, FF: CL position: E4600000
+		{   // CAN:  cid_drum_tst_stepcmd; CANID_TST_STEPCMD: U8_FF DRUM1: U8:
 		    // Received CAN msg with Control Lever position, direction and enable bits 
 			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
          // this will process the control panel state messages and above clupdate scraped
          levelwind_task_cp_state_update(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
-			noteuse |= LEVELWINDSWSNOTEBITCAN1;   
       }       
+
+      if ((noteval & LEVELWINDSWSNOTEBITCAN2) != 0) 
+      {  // CAN: cid_mc_state;         CANID_MC_STATE','26000000', 'MC', 'U8_U8'
+      }
+
+      if ((noteval & LEVELWINDSWSNOTEBITCAN3) != 0) 
+      {  // CAN: cid_hb_cpswsv1_1;     CANID_HB_CPSWSV1_1'  ,'31000000''CPMC', 1,1,'S8_U8_7'
+      }
+
+      if ((noteval & LEVELWINDSWSNOTEBITCAN4) != 0) 
+      {  // CAN: cid_hb_cpswsclv1_1;   CANID_HB_CPSWSCLV1_1','31800000','CPMC', 2,1,'S8_S16_FF_V'
+      }
+
+      if ((noteval & LEVELWINDSWSNOTEBITCAN5) != 0) 
+      {  // CAN: cid_cmd_levelwind_i1; CANID_CMD_LEVELWIND_I1','B1000014','GENCMD',1,23,'U8_U8_U8_X4'
+      }
 
 		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
 		{ // Software timer #1: Send heartbeat
-			levelwind_items_CANsendHB();
-			noteuse |= LEVELWINDSWSNOTEBITSWT1;
+			levelwind_items_CANsend_hb_levelwind_1();
 		}
 
       if ((0) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)

@@ -99,21 +99,18 @@ void levelwind_items_timeout(void)
    return;
 }
 /* *************************************************************************
- * void levelwind_items_CANsendHB(void);
+ * void levelwind_items_CANsend_hb_levelwind_1(void);
  * @brief   : Send CAN heartbeat for levelwind
  * *************************************************************************/
- void levelwind_items_CANsendHB(void)
+ void levelwind_items_CANsend_hb_levelwind_1(void)
  {
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
    /* Setup CAN msg */
-   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[0] = p->status;
-   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[1] = p->posaccum.s32 >>  0;
-   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[2] = p->posaccum.s32 >>  8;
-   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[3] = p->posaccum.s32 >> 16;
-   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[4] = p->posaccum.s32 >> 24;
-
+   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[0] = p->status;
+   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[1] = p->state;
+   
    /* Queue CAN msg to send. */
-   xQueueSendToBack(CanTxQHandle,&p->canmsg[CID_LEVELWIND_HB],4);   
+   xQueueSendToBack(CanTxQHandle,&p->canmsg[IDX_CID_HB_LEVELWIND_1],4);   
    return;
  }
 
@@ -130,11 +127,11 @@ void levelwind_items_timeout(void)
 
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
    // Setup CAN msg 
-   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[0] = p->status;
-   p->canmsg[CID_LEVELWIND_HB].can.cd.uc[1] = p->state;
+   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[0] = p->status;
+   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[1] = p->state;
 
    // Queue CAN msg to send. 
-   xQueueSendToBack(CanTxQHandle,&p->canmsg[CID_LEVELWIND_HB],4); 
+   xQueueSendToBack(CanTxQHandle,&p->canmsg[IDX_CID_HB_LEVELWIND_1],4); 
    */  
    return;
  }
