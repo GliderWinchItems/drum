@@ -66,6 +66,15 @@ TIM13 (84 MHz) Solenoid FET drive (no interrupt)
 
 #define DTW 1  // True to keep DTW timing Code
 
+/* Union for various types of four byte CAN payloads. */
+union X4
+{
+   uint8_t  u8[4];
+   int32_t  s32;
+   uint32_t u32;
+   float    ff;
+};
+
 struct LEVELWINDDBGBUF levelwinddbgbuf[LEVELWINDDBGBUFSIZE];
 
 TIM_TypeDef  *pT2base; // Register base address 
@@ -100,7 +109,7 @@ void levelwind_items_timeout(void)
 }
 /* *************************************************************************
  * void levelwind_items_CANsend_hb_levelwind_1(void);
- * @brief   : Send CAN heartbeat for levelwind
+ * @brief   : CAN msg send: heartbeat for levelwind
  * *************************************************************************/
  void levelwind_items_CANsend_hb_levelwind_1(void)
  {
@@ -110,39 +119,106 @@ void levelwind_items_timeout(void)
    p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[1] = p->state;
    
    /* Queue CAN msg to send. */
-   xQueueSendToBack(CanTxQHandle,&p->canmsg[IDX_CID_HB_LEVELWIND_1],4);   
+   xQueueSendToBack(CanTxQHandle,&p->canmsg[IDX_CID_HB_LEVELWIND_1],4);  
+
+   /* Save FreeRTOS tick count. */
+   p->hb_tick_ct = xTaskGetTickCount();
    return;
  }
-
 /* *************************************************************************
- * void levelwind_items_CANsend_status-state(void);
- * @brief   : Send CAN heartbeat for levelwind
+ * void levelwind_items_rcv_cid_hb_cpswsclv1_1(struct CANRCVBUF* pcan);
+ * @param   : pcan = pointer to CAN msg struct
+ * @brief   : CAN msg rcv: cid_hb_cpswsclv1_1 (control lever position)
  * *************************************************************************/
- void levelwind_items_CANsend_status_state(void)
- { 
-   /* This needs to send a CAN status-state message or a HB status-state
-      message. The non-void function argument will indicate the CID to be 
-      used. This function is not in development and null at this point.
+ void levelwind_items_rcv_cid_hb_cpswsclv1_1(struct CANRCVBUF* pcan)
+ {
+   struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+   int32_t tmp;
 
+     /* Check Control Lever status. */
+   if (pcan->cd.sc[0] < 0) return;
+
+   /* Convert two byte int (+/-10,000) to float (+/-100.0) */
+   tmp = (pcan->cd.uc[1] << 8) + pcan->cd.uc[2];
+   p->clpos = (float)tmp * 0.01f;
+
+// The following lifted from levelwind_items_clupdate
+     /* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
+#define MAXDURF (84E5f) // 1/10sec per faux encoder interrupt max duration
+   p->focdur = (p->lc.clfactor / p->clpos);
+   if ( p->focdur > (MAXDURF))
+   { 
+      p->focdur = MAXDURF; // Hold at max
+   }
+   p->ocfauxinc = p->focdur;   // Convert to integer
+   
+   return;
+}
+ /* *************************************************************************
+ * void levelwind_items_rcv_cid_hb_cpswsv1_1(struct CANRCVBUF* pcan);
+ * @param   : pcan = pointer to CAN msg struct
+ * @brief   : CAN msg rcv: cid_hb_cpswsv1_1 (switches)
+ * *************************************************************************/
+ void levelwind_items_rcv_cid_hb_cpswsv1_1(struct CANRCVBUF* pcan)
+ {
+return;
 
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-   // Setup CAN msg 
-   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[0] = p->status;
-   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[1] = p->state;
 
-   // Queue CAN msg to send. 
-   xQueueSendToBack(CanTxQHandle,&p->canmsg[IDX_CID_HB_LEVELWIND_1],4); 
-   */  
+   /* Check switch status. */
+   if (pcan->cd.sc[0] < 0) return;
+
+   /* Is this drum operational. */
+   if ((pcan->cd.uc[3] & p->mydrumbit) == 0) return;
+
+   /* Applicable to us? */
+   if (((pcan->cd.uc[2] & 0x3) == 0) ||
+       ((pcan->cd.uc[2] & 0x3) == p->lc.mydrum) )
+   { // Here either it is intended for drums, or just us.
+
+      p->cpmode = pcan->cd.uc[2] >> 6; // Extract mode
+
+/* ==== Lifted from levelwind_items_clupdate ========================= */
+ /* Configure TIM2CH3 to be either input capture from encoder, or output compare (no pin). */
+   // Each ZTBIT pushbutton press toggles beween IC and OC modes
+   p->ocicbit = (pcan->cd.uc[1] & (1<<4)); // Zero Tension Pushbutton switch bit
+   if (p->ocicbit != p->ocicbit_prev)
+   { // Here, the bit changed
+      p->ocicbit_prev = p->ocicbit;
+      if (p->ocicbit != 0)
+      { // Here. Zero Tension bit went from Off to On
+         pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
+         if ((pT2base->CCMR2 & 0x1) != 0)
+         { // Here, currently using encoder input capture
+            // Setup for output c ompare
+            pT2base->CCER  |=  (1 << 11);    // CC3NP: Configure as output
+            pT2base->CCER  &= ~(1 << 8);     // CC3E = 0; Turn channel off
+            pT2base->CCMR2 &= ~(0xff << 0);  // Change to Output compare, no pin
+            pT2base->CCR3 = pT2base->CNT + p->ocfauxinc; // Schedule next faux encoder interrupt
+         }
+         else
+         { // Here, currently using output compare
+            // Setup for input capture
+            pT2base->CCER  &= ~((1 << 8) || (1 << 11));  // CC3E, CC3NP = input
+            pT2base->CCMR2 |= 0x01;       // Input capture mapped to TI3
+            pT2base->SR = ~(1 << 3);      // Reset CH3 flag if on
+            pT2base->CCER  |= (1 << 8);   // Capture enabled on pin.
+         }
+         pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
+      }
+   }  
+   }
    return;
  }
 
 /* *************************************************************************
  * void levelwind_items_clupdate(struct CANRCVBUF* pcan);
  * @param   : pcan = pointer to CAN msg struct
- * @brief   : Initialization of channel increment
+ * @brief   : CAN msg rcv: cid_drum_tst_stepcmd
  * *************************************************************************/
 void levelwind_items_clupdate(struct CANRCVBUF* pcan)
 {
+//return;   
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
    /* Reset loss of CL CAN msgs timeout counter. */

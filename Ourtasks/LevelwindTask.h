@@ -94,13 +94,13 @@ enum cididx // Index for CAN msgs we send array
 
 union PAYFLT
 {
-   float f;
-   uint8_t  u8[4];
-   int8_t   s8[4];
+   float         f;
+   uint8_t   u8[4];
+   int8_t    s8[4];
    uint16_t u16[2];
    int16_t  s16[2];
-   uint32_t u32;
-   int32_t  s32;
+   uint32_t    u32;
+   int32_t     s32;
    
 };
 
@@ -135,6 +135,7 @@ struct LEVELWINDFUNCTION
    uint8_t  mode;          // level-wind mode (Off, Track, or Center)
    uint8_t  indexed;       // REVISIT: indexed status MAY NOT BE NEEDED
    uint8_t  mc_state;      // master controller state 
+   uint8_t  mc_state_sub;  // master controller sub-state 
 
    uint8_t  ocicbit;       
    uint8_t  ocicbit_prev;  
@@ -159,11 +160,16 @@ struct LEVELWINDFUNCTION
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
    uint32_t drflag;     // BSRR pin set/reset bit position: direction
 
-   uint32_t keepalive_k;  // keep-alive timeout (timeout delay timer ticks) 
+   uint32_t keepalive_k;// keep-alive duration (RTOS ticks) 
+   uint32_t hbctmin_k;  // Minimum duration: between heartbeats (RTOS ticks)
+   uint32_t hbct_k;     // Heartbeat ct: milliseconds between sending 
 
-   TimerHandle_t swtim1; // RTOS Timer #1 handle
+
+   TimerHandle_t swtim1;  // RTOS Timer #1 handle
+   TickType_t hb_tick_ct; // RTOS tick count at time HB msg sent
 
    uint8_t  mydrumbit;   // mydrum number converted to bit position
+   uint8_t  cpmode;     // mode extracted from CAN msg cid_hb_cpswsv1_1
 
 /* Pointer into circular buffer for levelwind_items.c debugging. */
 #if LEVELWINDDEBUG
@@ -187,6 +193,7 @@ struct LEVELWINDFUNCTION
    struct MAILBOXCAN* pmbx_cid_hb_cpswsclv1_1;  // CANID_HB_CPSWSCLV1_1','31800000','CPMC', 2,1,'S8_S16_FF_V','HB_CPSWSV1 1:S8:status, S16 CL: (+/-10000 )');
    struct MAILBOXCAN* pmbx_cid_cmd_levelwind_i1;// CANID_CMD_LEVELWIND_I1','B1000014','GENCMD',1,23,'U8_U8_U8_X4','1 incoming: U8:drum bits,U8:command code,X4:four byte value');
    struct MAILBOXCAN* pmbx_cid_mc_state; //'CANID_MC_STATE','26000000', 'MC', 'UNDEF','MC: Launch state msg');
+
 
    /* CAN msgs */
    struct CANTXQMSG canmsg[NUMCANMSGSLEVELWIND];

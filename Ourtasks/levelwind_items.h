@@ -100,6 +100,14 @@ struct LEVELWINDDBGBUF
  void levelwind_items_CANsend_hb_levelwind_1(void);
 /* @brief   : Send CAN heartbeat for levelwind
  * *************************************************************************/
+ void levelwind_items_rcv_cid_hb_cpswsv1_1(struct CANRCVBUF* pcan);
+/* @param   : pcan = pointer to CAN msg struct
+ * @brief   : CAN msg rcv: 
+ * *************************************************************************/
+void levelwind_items_rcv_cid_hb_cpswsclv1_1(struct CANRCVBUF* pcan);
+/* @param   : pcan = pointer to CAN msg struct
+ * @brief   : CAN msg rcv: cid_hb_cpswsclv1_1 (control lever position)
+ * *************************************************************************/
   struct LEVELWINDDBGBUF* levelwind_items_getdbg(void);
 /* @brief   : Get pointer to debug buffer
  * @return  : NULL = no new data; otherwise ptr struct with data

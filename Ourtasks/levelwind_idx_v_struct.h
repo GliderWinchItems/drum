@@ -36,9 +36,10 @@ struct LEVELWINDLC
    // this belongs somewhere associated with the node, not the LW
    uint8_t  mydrum;     // the drum number for this node 
 
+   uint32_t hbct_t;     // Heartbeat ct: milliseconds between sending 
+
 	/* Timings in milliseconds. Converted later to 'swtim1' ticks. */
-	uint32_t hbct_t;     // Heartbeat ct: ms between sending 
-   uint32_t hbct;       // Number of ticks between hb msgs
+   uint32_t hbctmin_t;  // Minimum duration: between heartbeats (ms)
 
    int32_t  Lplus;      // start of positive reversal region 
    int32_t  Lminus;     // start of negative reversal region

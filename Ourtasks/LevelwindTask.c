@@ -20,6 +20,7 @@
 #include "MailboxTask.h"
 #include "controlpanel_items.h"
 #include "levelwind_items.h"
+#include "levelwind_cmd.h"
 
 /* Private functions and macros to the file */
 
@@ -203,23 +204,30 @@ extern CAN_HandleTypeDef hcan1;
 
       if ((noteval & LEVELWINDSWSNOTEBITCAN2) != 0) 
       {  // CAN: cid_mc_state;         CANID_MC_STATE','26000000', 'MC', 'U8_U8'
+         p->mc_state     = p->pmbx_cid_mc_state->ncan.can.cd.uc[0];
+         p->mc_state_sub = p->pmbx_cid_mc_state->ncan.can.cd.uc[1];
       }
 
       if ((noteval & LEVELWINDSWSNOTEBITCAN3) != 0) 
       {  // CAN: cid_hb_cpswsv1_1;     CANID_HB_CPSWSV1_1'  ,'31000000''CPMC', 1,1,'S8_U8_7'
+         levelwind_items_rcv_cid_hb_cpswsv1_1(&p->pmbx_cid_cmd_levelwind_i1->ncan.can);
       }
 
       if ((noteval & LEVELWINDSWSNOTEBITCAN4) != 0) 
       {  // CAN: cid_hb_cpswsclv1_1;   CANID_HB_CPSWSCLV1_1','31800000','CPMC', 2,1,'S8_S16_FF_V'
+         levelwind_items_rcv_cid_hb_cpswsclv1_1(&p->pmbx_cid_hb_cpswsclv1_1->ncan.can);
       }
 
       if ((noteval & LEVELWINDSWSNOTEBITCAN5) != 0) 
       {  // CAN: cid_cmd_levelwind_i1; CANID_CMD_LEVELWIND_I1','B1000014','GENCMD',1,23,'U8_U8_U8_X4'
+         levelwind_CANrcv_cid_cmd_levelwind_i1(&p->pmbx_cid_cmd_levelwind_i1->ncan.can);
       }
 
 		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
 		{ // Software timer #1: Send heartbeat
-			levelwind_items_CANsend_hb_levelwind_1();
+         /* Skip sending HB with duration from last msg is less than 16 ms. */
+//         if ((int32_t)(xTaskGetTickCount() - (p->hb_tick_ct + p->hbctmin_k)) >= 0)
+			   levelwind_items_CANsend_hb_levelwind_1();
 		}
 
       if ((0) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
