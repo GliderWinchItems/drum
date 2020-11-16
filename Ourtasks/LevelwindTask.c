@@ -226,7 +226,7 @@ extern CAN_HandleTypeDef hcan1;
 		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
 		{ // Software timer #1: Send heartbeat
          /* Skip sending HB with duration from last msg is less than 16 ms. */
-//         if ((int32_t)(xTaskGetTickCount() - (p->hb_tick_ct + p->hbctmin_k)) >= 0)
+         if ((int32_t)(xTaskGetTickCount() - (p->hb_tick_ct + p->hbctmin_k)) >= 0)
 			   levelwind_items_CANsend_hb_levelwind_1();
 		}
 

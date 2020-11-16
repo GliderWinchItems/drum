@@ -79,7 +79,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->canmsg[IDX_CID_CMD_LEVELWIND_R1].can.dlc = 7; // U8_U8_U8_X4
 
    // Levelwind status & heartbeat
-   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.id  = p->lc.cid_hb_levelwind; // CAN id.
+   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.id  = p->lc.cid_hb_levelwind_1; // CAN id.
    p->canmsg[IDX_CID_HB_LEVELWIND_1].can.dlc = 2;  // S8_U8
 
 #if LEVELWINDDEBUG 
@@ -203,5 +203,10 @@ void levelwind_func_init_canfilter(struct LEVELWINDFUNCTION* p)
 {
 //	canfilt(661,p->pmbx_cid_gps_sync);
 	canfilt(660,p->pmbx_cid_drum_tst_stepcmd);
+   canfilt(661,p->pmbx_cid_hb_cpswsv1_1);
+   canfilt(662,p->pmbx_cid_hb_cpswsclv1_1);
+   canfilt(663,p->pmbx_cid_cmd_levelwind_i1);
+   canfilt(664,p->pmbx_cid_mc_state);
+
 	return;
 }

@@ -35,6 +35,7 @@ static void cmd_get_reading(struct CANRCVBUF* pcan);
 union X4
 {
    uint8_t  u8[4];
+   uint16_t u16[2];
    int32_t  s32;
    uint32_t u32;
    float    ff;

@@ -132,6 +132,7 @@ void levelwind_items_timeout(void)
  * *************************************************************************/
  void levelwind_items_rcv_cid_hb_cpswsclv1_1(struct CANRCVBUF* pcan)
  {
+return;
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
    int32_t tmp;
 

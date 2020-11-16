@@ -55,7 +55,7 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
 // CAN ids levelwind sends
    //                      CANID_HEX      CANID_NAME             CAN_MSG_FMT     DESCRIPTION
    // Others receive
-   p->cid_hb_levelwind  = 0xE4A00000;   // CANID_HB_LEVELWIND: U8_U32, Heartbeat Status, levelwind position accum');
+// obsolete   p->cid_hb_levelwind  = 0xE4A00000;   // CANID_HB_LEVELWIND: U8_U32, Heartbeat Status, levelwind position accum');
 
 // List of CAN ID's for setting up hw filter for incoming msgs
    	// We receive: Logger/gps 
