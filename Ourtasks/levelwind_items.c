@@ -183,6 +183,9 @@ void levelwind_items_timeout(void)
    if (!(((pcan->cd.uc[2] & 0x7) == 0) ||
          ((pcan->cd.uc[2] & 0x7) == p->lc.mydrum))) return;
 
+   /* Mode command from CAN msg. */
+   p->mode = pcp->mode;
+
    // Here either it is intended for all drums, or just us.
 
 /* ==== Lifted from levelwind_items_clupdate ========================= */
