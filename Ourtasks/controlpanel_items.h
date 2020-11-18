@@ -24,7 +24,7 @@
 // number of bits in the mask is width of the field
 // ...BIT is the lsb in the ...BYTE
 
-// payload byte 1
+// payload[1]
 #define SAFEACTIVE_BYTE    1  // Safe/Active switch
 #define SAFEACTIVE_BIT     7
 #define SAFEACTIVE_MASK    0x01
@@ -57,7 +57,7 @@
 #define EMERGENCY_BIT      0
 #define EMERGENCY_MASK     0x01
 
-// payload byte 2
+// payload[2]
 #define LWMODE_BYTE        2  // Level-Wind Mode switch (3 position) 
 #define LWMODE_BIT         6
 #define LWMODE_MASK        0x03  // 2 bit field
@@ -74,14 +74,17 @@
 #define RMTLCL_BIT         3
 #define RMTLCL_MASK        0x01
 
-/* provision for muliple retrieve_drums  */
 #define ACTIVEDRUM_BYTE    2  // active drum rotary switch  
 #define ACTIVEDRUM_BIT     0   
 #define ACTIVEDRUM_MASK    0x07  // 3 bit field
 
 
 
-// payload byte 3
+// payload[3]
+#define SPARE3_BYTE       3
+#define SPARE3_BIT        7
+#define SPARE3_MASK       0x01
+
 #define OPDRUMS_BYTE       3  // array of spst switches, one for each drum         
 #define OPDRUMS_BIT        0    
 #define OPDRUMS_MASK       0x7F  // 7 bit field

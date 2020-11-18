@@ -19,6 +19,11 @@
 #include "controlpanel_items.h"
 #include "mastercontroller_states.h"
 
+/* =========== switch between old and new CAN msgs ====== */
+#define USECPSWSMSGS  // Use CP switches and CL
+
+
+
 /* Stepper switch bit positions */
 #define LEVELWINDSWSNOTEBITLIMINDB   (1<<LIMITDBINSIDE)  
 #define LEVELWINDSWSNOTEBITLIMOUTDB  (1<<LIMITDBOUTSIDE) 
@@ -212,14 +217,16 @@ struct LEVELWINDFUNCTION
 #endif
 
 /* *************************************************************************/
- void levelwind_task_cp_state_update();
-/* @brief   :  update the CP state struct from CP state CAN message
+int levelwind_task_cp_state_update(struct CANRCVBUF* pcan);
+/* @brief   : update of control panel state structure from CPSWSV1 CAN msg
+ * @arg     : pcan = pointer to CAN msg
+ * @return  : 0 = OK, -1 = sws not ready
  * *************************************************************************/
-
- /* *************************************************************************/
  void levelwind_task_cp_state_init();
 /* @brief   :  function to initialize the state struct before first CAN
  *             message
  * *************************************************************************/
+
+ extern struct CONTROLPANELSTATE cp_state;
 
  

@@ -31,7 +31,7 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
 	//    my drum should be associated with whole node and not just the
    //    level-wind function. need to figure out where the parameters for 
    //    the whole node should be placed       
-   p->mydrum      = 1;     // drum this node is assigned to     
+   p->mydrum      = 1;     // drum this node is assigned (1-7)  
 
    p->hbct_t      = 500;   // Heartbeat ct: milliseconds between sending 
    

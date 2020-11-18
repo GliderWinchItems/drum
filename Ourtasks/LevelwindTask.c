@@ -91,7 +91,7 @@ void StartLevelwindTask(void const * argument)
    pcp->mode = LW_MODE_CENTER;   // CP LW Mode selection 
  
 
- #if 1   // initial conditions for indexing demo
+ #if 0   // initial conditions for indexing demo
    p->mc_state = MC_PREP;
    p->isr_state = LW_ISR_OFF;
    p->mode = LW_MODE_CENTER;
@@ -163,7 +163,7 @@ void StartLevelwindTask(void const * argument)
 
     /* Create timer #1: hearbeat (2 per sec) */
 	levelwindfunction.swtim1 = xTimerCreate("swtim1",
-		   pdMS_TO_TICKS(p->lc.hbct_t), 
+		   p->hbct_k, 
 		   pdTRUE, (void *) 0, 
 		   swtim1_callback);
 	if (levelwindfunction.swtim1 == NULL) {morse_trap(404);}
@@ -197,9 +197,11 @@ extern CAN_HandleTypeDef hcan1;
 		if ((noteval & LEVELWINDSWSNOTEBITCAN1) != 0) 
 		{   // CAN:  cid_drum_tst_stepcmd; CANID_TST_STEPCMD: U8_FF DRUM1: U8:
 		    // Received CAN msg with Control Lever position, direction and enable bits 
+#ifndef USECPSWSMSGS  // Use CP switches and CL         
 			levelwind_items_clupdate(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
          // this will process the control panel state messages and above clupdate scraped
          levelwind_task_cp_state_update(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
+#endif         
       }       
 
       if ((noteval & LEVELWINDSWSNOTEBITCAN2) != 0) 
@@ -210,7 +212,7 @@ extern CAN_HandleTypeDef hcan1;
 
       if ((noteval & LEVELWINDSWSNOTEBITCAN3) != 0) 
       {  // CAN: cid_hb_cpswsv1_1;     CANID_HB_CPSWSV1_1'  ,'31000000''CPMC', 1,1,'S8_U8_7'
-         levelwind_items_rcv_cid_hb_cpswsv1_1(&p->pmbx_cid_cmd_levelwind_i1->ncan.can);
+         levelwind_items_rcv_cid_hb_cpswsv1_1(&p->pmbx_cid_hb_cpswsv1_1->ncan.can);
       }
 
       if ((noteval & LEVELWINDSWSNOTEBITCAN4) != 0) 
@@ -545,28 +547,26 @@ void levelwind_task_cp_state_init(void)
 
 
 /* *************************************************************************
- * void levelwind_task_cp_state_update(void);
- * @brief   : update of control panel state structure
+ * int levelwind_task_cp_state_update(struct CANRCVBUF* pcan);
+ * @brief   : update of control panel state structure from CPSWSV1 CAN msg
+ * @arg     : pcan = pointer to CAN msg
+ * @return  : 0 = OK, -1 = sws not ready
  * *************************************************************************/
-void levelwind_task_cp_state_update(struct CANRCVBUF* pcan)
+int levelwind_task_cp_state_update(struct CANRCVBUF* pcan)
 {
    struct CONTROLPANELSTATE* pcp = &cp_state;   // Convenience pointer
    
-#define  CL       1  // turn on control lever position updates
 #define  INPUTS   1  // turn on input updates
-#define  OUTPUTS  1  // turn on output updates
-
-return;  // DEBUG!!!!do nothing until real cp state CAN messages are present
+#define  OUTPUTS  0  // turn on output updates
 
    /* This does a full update of the control panel state struct. If speed is 
       important, only the items used in the function could be extracted by 
       simply commenting out unneeded updates. Order doesn't matter so unused
       could be grouped in a #if 0 block to preserve option to restore.  */ 
 
-#if CL
-   /* Extract and convert CL position from payload */
-   pcp->clpos = pcan->cd.uc[SAFEACTIVE_BYTE] * CLPOS_SCL;
-#endif
+   /* Check switch status. */
+   if (pcan->cd.uc[0] < 0) return -1; // Return if not OK.
+
 
 #if INPUTS
    /* extract switch and pb called from StartLevelwindTask*/
@@ -671,7 +671,7 @@ return;  // DEBUG!!!!do nothing until real cp state CAN messages are present
       & (BEEPER_MASK << BEEPER_BIT)) >> BEEPER_BIT; */
 #endif
 
-   return;  
+   return 0;  
 }
 
 /* *************************************************************************

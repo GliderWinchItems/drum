@@ -66,6 +66,7 @@ TIM13 (84 MHz) Solenoid FET drive (no interrupt)
 
 #define DTW 1  // True to keep DTW timing Code
 
+
 /* Union for various types of four byte CAN payloads. */
 union X4
 {
@@ -116,7 +117,7 @@ void levelwind_items_timeout(void)
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
    /* Setup CAN msg */
    p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[0] = p->status;
-   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[1] = p->state;
+   p->canmsg[IDX_CID_HB_LEVELWIND_1].can.cd.uc[1] = p->isr_state;
    
    /* Queue CAN msg to send. */
    xQueueSendToBack(CanTxQHandle,&p->canmsg[IDX_CID_HB_LEVELWIND_1],4);  
@@ -132,7 +133,8 @@ void levelwind_items_timeout(void)
  * *************************************************************************/
  void levelwind_items_rcv_cid_hb_cpswsclv1_1(struct CANRCVBUF* pcan)
  {
-return;
+#ifdef USECPSWSMSGS  // Use CP switches and CL
+   struct CONTROLPANELSTATE* pcp = &cp_state;   // Convenience pointer
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
    int32_t tmp;
 
@@ -143,7 +145,10 @@ return;
    tmp = (pcan->cd.uc[1] << 8) + pcan->cd.uc[2];
    p->clpos = (float)tmp * 0.01f;
 
-// The following lifted from levelwind_items_clupdate
+   // JIC: someone uses the CL pos from CP struct
+   pcp->clpos = p->clpos;
+
+// The following code was lifted from levelwind_items_clupdate
      /* Convert CL position (0.0 - 100.0) to output comnpare duration increment. */
 #define MAXDURF (84E5f) // 1/10sec per faux encoder interrupt max duration
    p->focdur = (p->lc.clfactor / p->clpos);
@@ -152,6 +157,7 @@ return;
       p->focdur = MAXDURF; // Hold at max
    }
    p->ocfauxinc = p->focdur;   // Convert to integer
+#endif  
    
    return;
 }
@@ -162,27 +168,27 @@ return;
  * *************************************************************************/
  void levelwind_items_rcv_cid_hb_cpswsv1_1(struct CANRCVBUF* pcan)
  {
-return;
+#ifdef USECPSWSMSGS  // Use CP switches and CL
 
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+   struct CONTROLPANELSTATE* pcp = &cp_state;   // Convenience pointer
 
-   /* Check switch status. */
-   if (pcan->cd.sc[0] < 0) return;
+   /* Update struct with control panel switch settings. */
+   if (levelwind_task_cp_state_update(pcan) < 0) return; // Return not ready
 
    /* Is this drum operational. */
    if ((pcan->cd.uc[3] & p->mydrumbit) == 0) return;
 
    /* Applicable to us? */
-   if (((pcan->cd.uc[2] & 0x3) == 0) ||
-       ((pcan->cd.uc[2] & 0x3) == p->lc.mydrum) )
-   { // Here either it is intended for drums, or just us.
+   if (!(((pcan->cd.uc[2] & 0x7) == 0) ||
+         ((pcan->cd.uc[2] & 0x7) == p->lc.mydrum))) return;
 
-      p->cpmode = pcan->cd.uc[2] >> 6; // Extract mode
+   // Here either it is intended for all drums, or just us.
 
 /* ==== Lifted from levelwind_items_clupdate ========================= */
  /* Configure TIM2CH3 to be either input capture from encoder, or output compare (no pin). */
    // Each ZTBIT pushbutton press toggles beween IC and OC modes
-   p->ocicbit = (pcan->cd.uc[1] & (1<<4)); // Zero Tension Pushbutton switch bit
+   p->ocicbit = pcp->zero_tension; // Zero Tension Pushbutton switch bit
    if (p->ocicbit != p->ocicbit_prev)
    { // Here, the bit changed
       p->ocicbit_prev = p->ocicbit;
@@ -208,7 +214,8 @@ return;
          pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
       }
    }  
-   }
+#endif   
+
    return;
  }
 
@@ -219,7 +226,9 @@ return;
  * *************************************************************************/
 void levelwind_items_clupdate(struct CANRCVBUF* pcan)
 {
-//return;   
+#ifndef USECPSWSMSGS  // Use CP switches and CL   
+  return;   
+#endif   
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
    /* Reset loss of CL CAN msgs timeout counter. */
