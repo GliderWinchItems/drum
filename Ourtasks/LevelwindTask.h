@@ -137,6 +137,7 @@ struct LEVELWINDFUNCTION
    uint8_t  status;        // level-wind status
    uint8_t  status_prev;   // level-wind previous status
    uint8_t  isr_state;     // level-wind ISR state
+   uint8_t  isr_state_prev;// level-wind ISR state, previous
    uint8_t  mode;          // level-wind mode (Off, Track, or Center)
    uint8_t  indexed;       // REVISIT: indexed status MAY NOT BE NEEDED
    uint8_t  mc_state;      // master controller state 

@@ -142,7 +142,7 @@ void levelwind_items_timeout(void)
    if (pcan->cd.sc[0] < 0) return;
 
    /* Convert two byte int (+/-10,000) to float (+/-100.0) */
-   tmp = (pcan->cd.uc[1] << 8) + pcan->cd.uc[2];
+   tmp = (pcan->cd.uc[2] << 8) + pcan->cd.uc[1];
    p->clpos = (float)tmp * 0.01f;
 
    // JIC: someone uses the CL pos from CP struct
@@ -185,6 +185,7 @@ void levelwind_items_timeout(void)
 
    /* Mode command from CAN msg. */
    p->mode = pcp->mode;
+
 
    // Here either it is intended for all drums, or just us.
 
@@ -585,6 +586,15 @@ void levelwind_items_TIM2_IRQHandler(void)
    if (p->dtwdiff > p->dtwmax) p->dtwmax = p->dtwdiff;
    else if (p->dtwdiff < p->dtwmin) p->dtwmin = p->dtwdiff;
 #endif
+
+   /* Notify LevelwindTask.c when the state, or status has changed. */
+   if ((p->isr_state != p->isr_state_prev) || (p->status != p->status_prev))
+   {
+      p->isr_state_prev = p->isr_state;
+      p->status_prev    = p->status;
+
+      NVIC_SetPendingIRQ(ETH_IRQn); // Trigger intermediate interrupt
+   }
 
    return;
 }

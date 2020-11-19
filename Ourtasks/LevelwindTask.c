@@ -91,7 +91,7 @@ void StartLevelwindTask(void const * argument)
    pcp->mode = LW_MODE_CENTER;   // CP LW Mode selection 
  
 
- #if 0   // initial conditions for indexing demo
+ #if 1   // initial conditions for indexing demo
    p->mc_state = MC_PREP;
    p->isr_state = LW_ISR_OFF;
    p->mode = LW_MODE_CENTER;
@@ -190,7 +190,11 @@ extern CAN_HandleTypeDef hcan1;
             and accordingly do  any preliminary processing. It  is possible 
             that a switch statement for each ISR would be used. Also, check
             if an overrun switch has activated and do a state change to 
-            MANUAL instead of repeating that code everywhere.  */                  
+            MANUAL instead of repeating that code everywhere.  */   
+
+         /* Send HB msg immediately upon isr notification of status and/or
+            state change. */
+         levelwind_items_CANsend_hb_levelwind_1();
 		}
 
 
