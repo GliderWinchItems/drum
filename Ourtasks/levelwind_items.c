@@ -329,13 +329,13 @@ void levelwind_items_TIM2_IRQHandler(void)
       {
          case (LW_ISR_MANUAL):
          {            
-            if (0)   // REVISIT: test the left/right switch for left
+            if (!(GPIOE->IDR & ManualSw_MSN_NO_Pin))  // REVISIT: test the left/right switch for left
             {  // switch is signaling left
                Stepper_DR_GPIO_Port->BSRR = L0R_LEFT;  // set direction left
                // Start TIM9 to generate a delayed pulse.
                pT9base->CR1 = 0x9; 
             }
-            else if (1)   // REVIST: test the left/right switch for right
+            else if (!(GPIOE->IDR & ManualSw_MS_NO_Pin)) // REVIST: test the left/right switch for right
             {  // switch is signaling right
                Stepper_DR_GPIO_Port->BSRR = L0R_RIGHT;  // set direction right
                // Start TIM9 to generate a delayed pulse.

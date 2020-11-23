@@ -217,8 +217,18 @@ extern CAN_HandleTypeDef hcan1;
 			noteuse |= LEVELWINDSWSNOTEBITSWT1;
 		}
 
-      if ((0) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
-      {  // Manual (bypass) switch is closed; go to Manual state
+      if (0 && (GPIOE->IDR & ManualSw_NO_Pin))  // To test a logical item (e.g., pin) when needed
+      {
+         HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
+      }
+      else
+      {
+         HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
+      }
+
+
+      if (!(GPIOE->IDR & ManualSw_NO_Pin) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
+      {  // Manual (bypass) switch is activated (closed); go to Manual state
          p->ocinc = p->ocman;
          p->isr_state = LW_ISR_MANUAL;
          p->state = LW_MANUAL;
@@ -294,7 +304,7 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_MANUAL): // poll Manual switch to see if it is cleared
             {
-               if (1)   // poll if an Manual switch is still activated
+               if (GPIOE->IDR & ManualSw_NO_Pin)   // poll if an NO Manual switch is still activated
                {  // move level-wind state machine to off with error flag set
                   levelwind_task_move_to_off(1);           
                }

@@ -20,6 +20,7 @@
 #include "mastercontroller_states.h"
 
 /* Stepper switch bit positions */
+/*
 #define LEVELWINDSWSNOTEBITLIMINDB   (1<<LIMITDBINSIDE)  
 #define LEVELWINDSWSNOTEBITLIMOUTDB  (1<<LIMITDBOUTSIDE) 
 #define LEVELWINDSWSNOTEBITLIMINNC   (LIMITINSIDENC) 
@@ -28,6 +29,7 @@
 #define LEVELWINDSWSNOTEBITLIMOUTNO  (LIMITOUTSIDENO)
 #define LEVELWINDSWSNOTEBITLIMINOVR  (OVERRUNSWINSIDE)
 #define LEVELWINDSWSNOTEBITLIMOUTOVR (OVERRUNSWOUTSIDE)
+*/
 #define LEVELWINDSWSNOTEBITISR       (1<<16)    // Stepper ISR
 #define LEVELWINDSWSNOTEBITCAN1      (1<<17)    // CAN msg: Pushbuttons & CL position
 #define LEVELWINDSWSNOTEBITSWT1      (1<<18)    // Software timer #1
@@ -41,10 +43,12 @@
 #define DR_pin   GPIO_PIN_0 // Direction
 #define EN_port  GPIOB      // Enable
 #define EN_pin   GPIO_PIN_1 // Enable
+/*
 #define LMIN_port  GPIOE       // Limit switch inner
 #define LMIN_pin   GPIO_PIN_5  // Limit switch inner
 #define LMOUT_port GPIOE       // Limit switch outside
 #define LMOUT_pin  GPIO_PIN_10 // Limit switch outside
+*/
 
 // LW state machine  definitions. Lower nibble reserved for sub-states
 #define LW_OFF       (0 << 4)

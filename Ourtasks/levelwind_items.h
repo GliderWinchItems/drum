@@ -77,8 +77,8 @@
 // Left/0/Right switch direction definitions 
 /* REVIST: Should these be tied to something else tthat deals with which
    side the drum is mounted on   */ 
-#define L0R_LEFT  (Stepper_DR_Pin << 16)
-#define L0R_RIGHT Stepper_DR_Pin 
+#define L0R_LEFT  Stepper_DR_Pin
+#define L0R_RIGHT (Stepper_DR_Pin << 16) 
 
 struct LEVELWINDDBGBUF
 {
