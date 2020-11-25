@@ -119,7 +119,7 @@ extern TIM_HandleTypeDef htim5;
 		p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
 	}
 
-	EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
+	//EXTI->RTSR |=  0xfc00;  // Trigger on rising edge
 	EXTI->FTSR |=  0xfc00;  // Trigger on falling edge
 	EXTI->IMR  |=  0xfc00;  // Interrupt mask reg: 10:15
 	EXTI->EMR  |=  0xfc00;  // Event mask reg: enable 10:15
@@ -175,7 +175,7 @@ void Stepper_EXTI15_10_IRQHandler(void)
 	if ((EXTI->PR & (LimitSw_MSN_NO_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
 		EXTI->PR = LimitSw_MSN_NO_Pin; // Reset request
-		if ((p->swbits & LimitSw_MSN_NO_Pin) == 0)
+		//if ((p->swbits & LimitSw_MSN_NO_Pin) == 0)
 		{ // Here NO contact is now closed.
 			if (p->sw[0].dbs != 1)
 			{ // Here R-S flip-flop was reset
@@ -193,7 +193,7 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
 	if ((EXTI->PR & (LimitSw_MSN_NC_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
 		EXTI->PR = LimitSw_MSN_NC_Pin; // Reset request
-		if ((p->swbits & LimitSw_MSN_NC_Pin) == 0)
+		//if ((p->swbits & LimitSw_MSN_NC_Pin) == 0)
 		{ // Here NC contact is now closed.
 			if (p->sw[LIMITDBMSN].dbs != 0)
 			{ // Here R-S flip-flop was set
@@ -214,7 +214,7 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
 	if ((EXTI->PR & (LimitSw_MS_NO_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
 		EXTI->PR = LimitSw_MS_NO_Pin; // Reset request
-		if ((p->swbits & LimitSw_MS_NO_Pin) == 0)
+		//if ((p->swbits & LimitSw_MS_NO_Pin) == 0)
 		{ // Here NO contact is now closed.
 			if (p->sw[LIMITDBMS].dbs != 1)
 			{ // Here R-S flip-flop was reset
@@ -233,7 +233,7 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
 	if ((EXTI->PR & (LimitSw_MS_NC_Pin)) != 0)
 	{ // Here Pending Register shows this switch transitioned
 		EXTI->PR = LimitSw_MS_NC_Pin; // Reset request
-		if ((p->swbits & LimitSw_MS_NC_Pin) == 0)
+		//if ((p->swbits & LimitSw_MS_NC_Pin) == 0)
 		{ // Here NC contact is now closed.
 			if (p->sw[LIMITDBMS].dbs != 0)
 			{ // Here R-S flip-flop was set

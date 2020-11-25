@@ -89,7 +89,7 @@ void StartLevelwindTask(void const * argument)
 
 
    pcp->mode = LW_MODE_CENTER;   // CP LW Mode selection 
- 
+   p->state = LW_OFF;
 
  #if 1   // initial conditions for indexing demo
    p->mc_state = MC_PREP;
@@ -178,7 +178,7 @@ extern CAN_HandleTypeDef hcan1;
 	for (;;)
 	{
 		/* Wait for notifications 
-         250 ms timeout insures Manual and Overrun switches gets polled at least 
+         250 ms timeout insures Manual and Overrun switches get polled at least 
          4 times per second. */      
 		xTaskNotifyWait(0,noteuse, &noteval, pdMS_TO_TICKS(250));
 		noteuse = 0;	// Accumulate bits in 'noteval' processed.
@@ -210,20 +210,20 @@ extern CAN_HandleTypeDef hcan1;
          levelwind_task_cp_state_update(&p->pmbx_cid_drum_tst_stepcmd->ncan.can);
 			noteuse |= LEVELWINDSWSNOTEBITCAN1;   
       }       
-
+// REVIST!!! Is this already being taken care of with status messages???
 		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
 		{ // Software timer #1: Send heartbeat
 			levelwind_items_CANsendHB();
 			noteuse |= LEVELWINDSWSNOTEBITSWT1;
 		}
 
-      if (0 && (GPIOE->IDR & ManualSw_NO_Pin))  // To test a logical item (e.g., pin) when needed
+      if ((p->sw[LIMITDBMS].flag2))  // To test a logical item (e.g., pin) when needed
       {
-         HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
+         //HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
       }
       else
       {
-         HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
+         //HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
       }
 
 
@@ -237,7 +237,7 @@ extern CAN_HandleTypeDef hcan1;
          enable_stepper;
       }
 
-      else if ((0) && (p->state != LW_OVERRUN)) // here test for Overrun switches activation
+      else if (!(GPIOE->IDR & OverrunSwes_NO_Pin) && (p->state != LW_OVERRUN)) // here test for Overrun switches activation
       {  // An Overrun switch is closed; go to Overrun state           
          p->ocinc = p->ocman;    // slow down output compare interrupt rate
          p->isr_state = LW_ISR_OFF;
@@ -247,7 +247,7 @@ extern CAN_HandleTypeDef hcan1;
          disable_stepper;
       }
 
-      // is this drum is not enabled for operation on the control panel
+      // is this drum not enabled for operation on the control panel
       else if  (!(pcp->op_drums & (0x01 << (p->lc.mydrum - 1))) 
          || ((pcp->mode == LW_MODE_OFF) && (pcp->active_drum == p->lc.mydrum)))
       {  // move level-wind state machine to off with error flag clear
@@ -263,8 +263,7 @@ extern CAN_HandleTypeDef hcan1;
                // clear error flag and status if LW mode is set to Off
                if (p->mode == LW_MODE_OFF) 
                {  
-                  p->state = LW_MODE_OFF;
-                  p->status = LW_STATUS_GOOD;
+                  p->status = LW_STATUS_GOOD; 
                } 
                
                else if ((p->mc_state == MC_PREP) && ((p->state & 0x0F) == 0) 
