@@ -462,7 +462,7 @@ void levelwind_items_TIM2_IRQHandler(void)
 
          // set direction based on sign of Velocity integrator
          Stepper_DR_GPIO_Port->BSRR = (p->velaccum.s16[1])
-            ? Stepper_DR_Pin : (Stepper_DR_Pin << 16);
+            ? L0R_RIGHT : L0R_LEFT;
 
          // Start TIM9 to generate a delayed pulse.
          pT9base->CR1 = 0x9;         
