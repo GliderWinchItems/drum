@@ -930,7 +930,7 @@ static void MX_GPIO_Init(void)
                            LimitSw_MS_NO_Pin LimitSw_MS_NC_Pin OverrunSwes_NO_Pin */
   GPIO_InitStruct.Pin = ManualSw_MSN_NO_Pin|ManualSw_MS_NO_Pin|LimitSw_MSN_NO_Pin|LimitSw_MSN_NC_Pin
                           |LimitSw_MS_NO_Pin|LimitSw_MS_NC_Pin|OverrunSwes_NO_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
@@ -1036,6 +1036,7 @@ uint8_t ratepace = 0;
 
 #ifdef STEPPERSHOW
   uint32_t stepctr = 1;
+  uint32_t dbsws1_prev = 0;
 #endif  
 // ===== BEGIN FOR LOOP ==============================
 
@@ -1057,6 +1058,12 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
+extern uint32_t dbsws1; // Debug
+  if ((dbsws1-dbsws1_prev) != 0)
+  {
+      yprintf(&pbuf4,"\n\r%9i",dbsws1-dbsws1_prev);
+      dbsws1_prev = dbsws1;
+  }
 
 /* Temporary so 'switches can do some yprintf from here w/o changing main.c */
 if (levelwind_switches_defaultTaskcall(pbuf1) == 0)
@@ -1180,7 +1187,7 @@ void CallbackdefaultTaskTimer(void const * argument)
   /* USER CODE END CallbackdefaultTaskTimer */
 }
 
-/**
+ /**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM12 interrupt took place, inside
   * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
