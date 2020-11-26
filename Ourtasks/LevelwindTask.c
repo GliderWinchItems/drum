@@ -178,7 +178,7 @@ extern CAN_HandleTypeDef hcan1;
 	for (;;)
 	{
 		/* Wait for notifications 
-         250 ms timeout insures Manual and Overrun switches gets polled at least 
+         250 ms timeout insures Manual and Overrun switches get polled at least 
          4 times per second. */      
 		xTaskNotifyWait(0,0xffffffff, &noteval, pdMS_TO_TICKS(250));
 
@@ -236,7 +236,7 @@ extern CAN_HandleTypeDef hcan1;
 			   levelwind_items_CANsend_hb_levelwind_1();
 		}
 
-      if ((0) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
+      if (!(GPIOE->IDR & ManualSw_NO_Pin) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed; go to Manual state
          p->ocinc = p->ocman;
          p->isr_state = LW_ISR_MANUAL;
@@ -246,7 +246,8 @@ extern CAN_HandleTypeDef hcan1;
          enable_stepper;
       }
 
-      else if ((0) && (p->state != LW_OVERRUN)) // here test for Overrun switches activation
+      else if (!(GPIOE->IDR & OverrunSwes_NO_Pin) && (p->state != LW_MANUAL)
+         && (p->state != LW_OVERRUN)) // here test for Overrun switches activation
       {  // An Overrun switch is closed; go to Overrun state           
          p->ocinc = p->ocman;    // slow down output compare interrupt rate
          p->isr_state = LW_ISR_OFF;
@@ -256,7 +257,7 @@ extern CAN_HandleTypeDef hcan1;
          disable_stepper;
       }
 
-      // is this drum is not enabled for operation on the control panel
+      // is this drum not enabled for operation on the control panel
       else if  (!(pcp->op_drums & (0x01 << (p->lc.mydrum - 1))) 
          || ((pcp->mode == LW_MODE_OFF) && (pcp->active_drum == p->lc.mydrum)))
       {  // move level-wind state machine to off with error flag clear
@@ -270,11 +271,7 @@ extern CAN_HandleTypeDef hcan1;
             case (LW_OFF):
             {  
                // clear error flag and status if LW mode is set to Off
-               if (p->mode == LW_MODE_OFF) 
-               {  
-                  p->state = LW_MODE_OFF;
-                  p->status = LW_STATUS_GOOD;
-               } 
+               if (p->mode == LW_MODE_OFF)   p->status = LW_STATUS_GOOD; 
                
                else if ((p->mc_state == MC_PREP) && ((p->state & 0x0F) == 0) 
                   && (p->sw[LIMITDBMS].flag2)) // last condition temporary for early development
@@ -304,7 +301,7 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_OVERRUN):
             {  
-               if(1) // poll overrun switch to see if it is cleared
+               if (GPIOE->IDR & OverrunSwes_NO_Pin) // poll overrun switch to see if it is cleared
                {  // move level-wind state machine to off with error flag set
                   levelwind_task_move_to_off(1);  
                }
@@ -313,7 +310,7 @@ extern CAN_HandleTypeDef hcan1;
 
             case (LW_MANUAL): // poll Manual switch to see if it is cleared
             {
-               if (1)   // poll if an Manual switch is still activated
+               if (GPIOE->IDR & ManualSw_NO_Pin)   // poll if an Manual switch is still activated
                {  // move level-wind state machine to off with error flag set
                   levelwind_task_move_to_off(1);           
                }
