@@ -479,7 +479,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    {
       p->ledctr2 = 500;
    }
-#if 0
+
    if (p->ledctr1 > p->ledctr2)        
    {
       p->ledctr1 = 0;
@@ -492,7 +492,6 @@ void levelwind_items_TIM2_IRQHandler(void)
          HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_RESET); // GREEN LED    
       }  
    }
-#endif
 #endif
 
 #if DTW

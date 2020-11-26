@@ -217,13 +217,13 @@ extern CAN_HandleTypeDef hcan1;
 			noteuse |= LEVELWINDSWSNOTEBITSWT1;
 		}
 
-      if ((p->sw[LIMITDBMS].flag2))  // To test a logical item (e.g., pin) when needed
+      if (GPIOE->IDR & LimitSw_MS_NO_Pin)  // To test a logical item (e.g., pin) when needed
       {
-         //HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
+         //HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_SET);
       }
       else
       {
-         //HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
+         //HAL_GPIO_WritePin(GPIOD,LED_GREEN_Pin,GPIO_PIN_RESET);
       }
 
 
