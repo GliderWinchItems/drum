@@ -433,9 +433,19 @@ void levelwind_items_TIM2_IRQHandler(void)
          }
 
          case (LW_ISR_INDEX):
-         {  // on indexing, switch to sweep state for limit switch testing
-            if (p->sw[LIMITDBMSN].flag1) // limit switch has activated
-            {
+         {  
+            if (p->drbit)
+            {  // moving towards motor
+               if (p->sw[LIMITDBMS].dbs)
+               {  // MS switch has activated
+                  p->posaccum.s32 = p->Lminus32 + (p->Ks * 1000); //  REVISIT: Parameter for 1000 magic number
+                  p->pos_prev = p->posaccum.s16[1];
+                  p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state
+               }
+            }
+            else if (p->sw[LIMITDBMSN].dbs)
+            {  // moving away from motor and it has activated
+               // switch to sweep state for limit switch testing
                p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000); //  REVISIT: Parameter for 1000 magic number
                p->pos_prev = p->posaccum.s16[1];
                p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state

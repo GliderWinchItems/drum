@@ -88,7 +88,8 @@ void StartLevelwindTask(void const * argument)
    levelwind_task_move_to_off(0);   
 
 
-   pcp->mode = LW_MODE_CENTER;   // CP LW Mode selection 
+   pcp->mode = LW_MODE_CENTER;   // CP LW Mode selection
+   p->status - LW_STATUS_GOOD; 
  
 
  #if 1   // initial conditions for indexing demo
@@ -271,30 +272,52 @@ extern CAN_HandleTypeDef hcan1;
             case (LW_OFF):
             {  
                // clear error flag and status if LW mode is set to Off
-               if (p->mode == LW_MODE_OFF)   p->status = LW_STATUS_GOOD; 
+               if (p->mode == LW_MODE_OFF) p->status = LW_STATUS_GOOD; 
                
-               else if ((p->mc_state == MC_PREP) && ((p->state & 0x0F) == 0) 
-                  && (p->sw[LIMITDBMS].flag2)) // last condition temporary for early development
+               if ((p->mc_state == MC_PREP) && (p->status == LW_STATUS_GOOD)) 
+                  //&& !(GPIOE->IDR & ManualSw_MS_NO_Pin)) // last condition temporary for early development
                {  // we are in MC Prep state on an operational drum with error flag clear  
                   p->sw[LIMITDBMS].flag2 = 0; // TEMPORARY: clear LS motorside latching flag
                   
-                  p->ocinc = p->lc.ocidx; // set oc  interrupt rate for indexing
-                  p->isr_state = LW_ISR_INDEX;
-                  p->state = LW_INDEX;
-                  enable_stepper;
+                  // indexing
+                  if ((GPIOE->IDR & (LimitSw_MSN_NO_Pin)) != 0)
+                  {  // starting with MSN switch not activated
+                     // these values are set up temporarily for development to make motorside position 0
+                     // Need padding to provide margin for initial sweep
+                     // Position accumulator initial value. Reference paper for the value employed.
+                     // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
+                     p->posaccum.s32 = 0; // temporary to have it start at 0.
+                     p->pos_prev = p->posaccum.s32;
+                     // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
+                     // p->Lminus32 = p->lc.Lminus << 16;
+                     p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
+                     p->Lplus32  = p->Lminus32 
+                        + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks; 
+                     p->drbit = p->drbit_prev = 0; // move away from motor 
+                     p->sw[LIMITDBMS].flag1 = 0;   //REVIST: Likely not needed in production code
+                  }
+                  else
+                  {  // starting with MSN switch activated
+                     // these values are set up temporarily for development to make motorside position 0
+                     // Need padding to provide margin for initial sweep
+                     // Position accumulator initial value. Reference paper for the value employed.
+                     // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
+                     p->pos_prev = p->posaccum.s32;
+                     // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
+                     // p->Lminus32 = p->lc.Lminus << 16;
+                     p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
+                     p->Lplus32  = p->Lminus32 
+                        + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
+                     p->posaccum.s32 = p->Lplus32; // temporarily have it start at Lplus.
+                     p->drbit = p->drbit_prev = 1; // move in negative direction (towards motor) 
+                  }                
 
-                  // these values are set up temporarily for development to make leftost position 0
-                  // Need padding for to provide margin for initial sweep
-                  // Position accumulator initial value. Reference paper for the value employed.
-                  // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
-                  p->posaccum.s32 = 0; // temporary to have it start at 0.
-                  p->pos_prev = p->posaccum.s32;
-                  // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
-                  // p->Lminus32 = p->lc.Lminus << 16;
-                  p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
-                  p->Lplus32  = p->Lminus32 
-                     + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
                   p->velaccum.s32 = 0; // Velocity accumulator initial value
+                  p->ocinc = p->lc.ocidx; // set oc  interrupt rate for indexing
+                  p->state = LW_INDEX;
+                  p->status = LW_STATUS_INDEXING;
+                  enable_stepper;
+                  p->isr_state = LW_ISR_INDEX;
                }              
                break;
             }

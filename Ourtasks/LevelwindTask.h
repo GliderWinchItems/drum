@@ -83,10 +83,11 @@
 #define  LW_STATUS_STEPPER_POWER    -7
 #define  LW_STATUS_NODE_POWER       -8
 //Yellow Statii
-#define  LW_STATUS_SWEEPING          1 
-#define  LW_STATUS_ARRESTING         2
-#define  LW_STATUS_LOS_REINDEXING    3
-#define  LW_STATUS_LOS_TRACKING      4
+#define  LW_STATUS_INDEXING          1
+#define  LW_STATUS_SWEEPING          2 
+#define  LW_STATUS_ARRESTING         3
+#define  LW_STATUS_LOS_REINDEXING    4
+#define  LW_STATUS_LOS_TRACKING      5
 
 
 #define NUMCANMSGSLEVELWIND 2  // Number of CAN msgs levelwind sends
