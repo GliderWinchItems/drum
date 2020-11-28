@@ -15,9 +15,12 @@ PE10 - EXTI10 MotorSideNot  Limit switch: NO contacts (switch connects to gnd)
 PE11 - EXTI11 MotorSideNot  Limit switch: NC contacts (switch connects to gnd)
 PE12 - EXTI12 MotorSide Limit switch: NO contacts (switch connects to gnd)
 PE13 - EXTI13 MotorSide Limit switch: NC contacts (switch connects to gnd)
-PE14 - EXTI13 MotorSideNot Overrun switches: wire-Ored NO contacts 
-		 (switch connects to gnd)
 
+Non-interrupting GPIO inputs
+PE14 - MotorSideNot Overrun switches: wire-Ored NO contacts (switch connects to gnd)
+PE7  - MotorSideNot Manual direction switch (switch connects to gnd)
+PE8  - MotorSide Manual direction switch (switch connects to gnd)
+PE9  - Manual enable switch (switch connects to gnd)
 
 Switch closed, the i/o pin shows--
 MotorSideNot limit switch: 
@@ -26,6 +29,8 @@ MotorSideNot limit switch:
 MotorSide limit switch: 
   PE12 = 0
   PE13 = 1
+
+Non-interrupting switches
 
 Overrun switches (wired-ORed):
   PE14 = 1
@@ -105,7 +110,7 @@ extern TIM_HandleTypeDef htim5;
    ptake  = &switchxtion[0];
    pend   = &switchxtion[SWITCHXITIONSIZE];
 
-	p->swbits = GPIOE->IDR & 0xfc00; // Save current switch bits PE10:15
+	p->swbits = GPIOE->IDR & 0x7f80; // Save current switch bits PE7:14
 
 	/* Initialize the debounced limit switch state & flags. */
 	if ((p->swbits & LimitSw_MSN_NO_Pin) == 0)
@@ -120,11 +125,11 @@ extern TIM_HandleTypeDef htim5;
 	}
 
 //	EXTI->RTSR |=  0x0000fc00;  // Trigger on rising edge
-//	EXTI->RTSR &=  ~0x0000fc00;  // Trigger on rising edge
+//	EXTI->RTSR &=  ~0x0000fc00;  // Trigger on rising edge not
 //	EXTI->FTSR |=  0x0000fc00;  // Trigger on falling edge
-	EXTI->IMR  |=  0x0000fc00;  // Interrupt mask reg: 10:15
-	EXTI->EMR  |=  0x0000fc00;  // Event mask reg: enable 10:15
-	EXTI->PR   |=  0x0000fc00;  // Clear any pending
+	EXTI->IMR  |=  0x00003c00;  // Interrupt mask reg: 10:13
+	EXTI->EMR  |=  0x00003c00;  // Event mask reg: enable 10:13
+	EXTI->PR   |=  0x00003c00;  // Clear any pending
 
 	return;
 }
@@ -154,7 +159,6 @@ LimitSw_MSN_NO_Pin    GPIO_PIN_10
 LimitSw_MSN_NC_Pin    GPIO_PIN_11
 LimitSw_MS_NO_Pin   GPIO_PIN_12
 LimitSw_MS_NC_Pin   GPIO_PIN_13
-OverrunSwitches_Pin      GPIO_PIN_14
 */
 uint32_t dbsws1; // Debug
 
@@ -164,9 +168,10 @@ void Stepper_EXTI15_10_IRQHandler(void)
 	struct SWITCHXITION* ptmp;
 //HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
 dbsws1 += 1;
+/*	Name is from time when switches beyond 10:13 were interrupt driven	*/
 
-	/* Here, one or more PE9-PE15 inputs changed. */
-	p->swbits = GPIOE->IDR & 0xfe00; // Save latest switch bits 09:15
+	/* Here, one or more PE10-PE13 inputs changed. */
+	p->swbits = GPIOE->IDR & 0x7f80; // Save latest switch bits 09:15
 
 	padd->sws = p->swbits;		// Save all switch contact bits
 	padd->tim = pT2base->CNT;   // 32b timer time
@@ -177,88 +182,69 @@ dbsws1 += 1;
 
 	/* Do R-S flip-flop type switch debouncing for limit switches. */
 	if ((EXTI->PR & (LimitSw_MSN_NO_Pin)) != 0)
-	{ // Here Pending Register shows this switch transitioned
+	{ // Here NSN_NO switch closed
 		EXTI->PR = LimitSw_MSN_NO_Pin; // Reset request
-//		if ((p->swbits & LimitSw_MSN_NO_Pin) == 0)
-		{ // Here NO contact is now closed.
-			if (p->sw[0].dbs != 1)
-			{ // Here R-S flip-flop was reset
-				p->sw[LIMITDBMSN].dbs = 1; // Set debounced R-S
-				p->sw[LIMITDBMSN].posaccum_NO = p->posaccum.s32;
-				p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
-				p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
-				/* Notification goes here. */
-				ptmp->sws |= LIMITDBMSN;
+		if (p->sw[0].dbs != 1)
+		{ // Here R-S flip-flop was reset
+			p->sw[LIMITDBMSN].dbs = 1; // Set debounced R-S
+			p->sw[LIMITDBMSN].posaccum_NO = p->posaccum.s32;
+			p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
+			p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
+			/* Notification goes here. */
+			ptmp->sws |= LIMITDBMSN;
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);				
-			}
 		}
 		return;
 	}
 	if ((EXTI->PR & (LimitSw_MSN_NC_Pin)) != 0)
-	{ // Here Pending Register shows this switch transitioned
+	{ // Here MSN_NO switch closed
 		EXTI->PR = LimitSw_MSN_NC_Pin; // Reset request
-//		if ((p->swbits & LimitSw_MSN_NC_Pin) == 0)
-		{ // Here NC contact is now closed.
-			if (p->sw[LIMITDBMSN].dbs != 0)
-			{ // Here R-S flip-flop was set
-				p->sw[LIMITDBMSN].dbs = 0; // Reset debounced R-S
-				p->sw[LIMITDBMSN].posaccum_NC = p->posaccum.s32;
-				p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
-				p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
-				/* Notification goes here. */
-				ptmp->sws |= LIMITDBMSN;
-
+		if (p->sw[LIMITDBMSN].dbs != 0)
+		{ // Here R-S flip-flop was set
+			p->sw[LIMITDBMSN].dbs = 0; // Reset debounced R-S
+			p->sw[LIMITDBMSN].posaccum_NC = p->posaccum.s32;
+			p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
+			p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
+			/* Notification goes here. */
+			ptmp->sws |= LIMITDBMSN;
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);				
 
-			}
 		}
+
 		return;
 	}
 
 	if ((EXTI->PR & (LimitSw_MS_NO_Pin)) != 0)
-	{ // Here Pending Register shows this switch transitioned
-		EXTI->PR = LimitSw_MS_NO_Pin; // Reset request
-//		if ((p->swbits & LimitSw_MS_NO_Pin) == 0)
-		{ // Here NO contact is now closed.
-			if (p->sw[LIMITDBMS].dbs != 1)
-			{ // Here R-S flip-flop was reset
-				p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
-				p->sw[LIMITDBMS].posaccum_NO = p->posaccum.s32;
-				p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
-				p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
-				/* Notification goes here. */	
-				ptmp->sws |= LIMITDBMS;
+	{ // Here Here MS_NO switch closed
+		EXTI->PR = LimitSw_MS_NO_Pin; // Reset request		
+		if (p->sw[LIMITDBMS].dbs != 1)
+		{ // Here R-S flip-flop was reset
+			p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
+			p->sw[LIMITDBMS].posaccum_NO = p->posaccum.s32;
+			p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
+			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
+			/* Notification goes here. */	
+			ptmp->sws |= LIMITDBMS;
 
 HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);			
-			}
 		}
 		return;
 	}
 	if ((EXTI->PR & (LimitSw_MS_NC_Pin)) != 0)
-	{ // Here Pending Register shows this switch transitioned
+	{ // Here MS_NC switch closed
 		EXTI->PR = LimitSw_MS_NC_Pin; // Reset request
-//		if ((p->swbits & LimitSw_MS_NC_Pin) == 0)
-		{ // Here NC contact is now closed.
-			if (p->sw[LIMITDBMS].dbs != 0)
-			{ // Here R-S flip-flop was set
-				p->sw[LIMITDBMS].dbs = 0; // Reset debounced R-S
-				p->sw[LIMITDBMS].posaccum_NC = p->posaccum.s32;
-				p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
-				p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
-				/* Notification goes here. */			
-				ptmp->sws |= LIMITDBMS;
+		if (p->sw[LIMITDBMS].dbs != 0)
+		{ // Here R-S flip-flop was set
+			p->sw[LIMITDBMS].dbs = 0; // Reset debounced R-S
+			p->sw[LIMITDBMS].posaccum_NC = p->posaccum.s32;
+			p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
+			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
+			/* Notification goes here. */			
+			ptmp->sws |= LIMITDBMS;
 
 HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);							
-			}
 		}
 		return;
-	}
-
-	/* These are the NO contacts on overrun switches. */
-	if ((EXTI->PR & (OverrunSwes_NO_Pin)) != 0)
-	{ // Here Pending Register shows this switch transitioned
-		EXTI->PR = OverrunSwes_NO_Pin; // Reset request
-		/* Notification goes here. */
 	}
 
 	return;
@@ -271,6 +257,7 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
 void levelwind_switches_error_check(void)
 {
 	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+	//	Revist: When and how is this function used?
 
 /* === Illegal combinations */
 	/* 1: Open cable, or missing ground. */

@@ -926,19 +926,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Stepper_MF_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ManualSw_MSN_NO_Pin ManualSw_MS_NO_Pin LimitSw_MSN_NO_Pin LimitSw_MSN_NC_Pin
-                           LimitSw_MS_NO_Pin LimitSw_MS_NC_Pin OverrunSwes_NO_Pin */
-  GPIO_InitStruct.Pin = ManualSw_MSN_NO_Pin|ManualSw_MS_NO_Pin|LimitSw_MSN_NO_Pin|LimitSw_MSN_NC_Pin
-                          |LimitSw_MS_NO_Pin|LimitSw_MS_NC_Pin|OverrunSwes_NO_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  /*Configure GPIO pins : ManualSw_MSN_NO_Pin ManualSw_MS_NO_Pin ManualSw_NO_Pin OverrunSwes_NO_Pin */
+  GPIO_InitStruct.Pin = ManualSw_MSN_NO_Pin|ManualSw_MS_NO_Pin|ManualSw_NO_Pin|OverrunSwes_NO_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : ManualSw_NO_Pin */
-  GPIO_InitStruct.Pin = ManualSw_NO_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pins : LimitSw_MSN_NO_Pin LimitSw_MSN_NC_Pin LimitSw_MS_NO_Pin LimitSw_MS_NC_Pin */
+  GPIO_InitStruct.Pin = LimitSw_MSN_NO_Pin|LimitSw_MSN_NC_Pin|LimitSw_MS_NO_Pin|LimitSw_MS_NC_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(ManualSw_NO_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_GREEN_Pin LED_ORANGE_Pin LED_RED_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = LED_GREEN_Pin|LED_ORANGE_Pin|LED_RED_Pin|LED_BLUE_Pin;

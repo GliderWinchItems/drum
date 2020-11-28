@@ -274,8 +274,8 @@ extern CAN_HandleTypeDef hcan1;
                // clear error flag and status if LW mode is set to Off
                if (p->mode == LW_MODE_OFF) p->status = LW_STATUS_GOOD; 
                
-               if ((p->mc_state == MC_PREP) && (p->status == LW_STATUS_GOOD)) 
-                  //&& !(GPIOE->IDR & ManualSw_MS_NO_Pin)) // last condition temporary for early development
+               if ((p->mc_state == MC_PREP) && (p->status == LW_STATUS_GOOD) 
+                  && !(GPIOE->IDR & ManualSw_MS_NO_Pin)) // last condition temporary for early development
                {  // we are in MC Prep state on an operational drum with error flag clear  
                   p->sw[LIMITDBMS].flag2 = 0; // TEMPORARY: clear LS motorside latching flag
                   

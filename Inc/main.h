@@ -132,7 +132,6 @@ void Error_Handler(void);
 #define LimitSw_MS_NC_EXTI_IRQn EXTI15_10_IRQn
 #define OverrunSwes_NO_Pin GPIO_PIN_14
 #define OverrunSwes_NO_GPIO_Port GPIOE
-#define OverrunSwes_NO_EXTI_IRQn EXTI15_10_IRQn
 #define LED_GREEN_Pin GPIO_PIN_12
 #define LED_GREEN_GPIO_Port GPIOD
 #define LED_ORANGE_Pin GPIO_PIN_13
