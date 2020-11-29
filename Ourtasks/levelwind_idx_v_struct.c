@@ -30,7 +30,15 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
 */ 
 	//    my drum should be associated with whole node and not just the
    //    level-wind function. need to figure out where the parameters for 
-   //    the whole node should be placed       
+   //    the whole node should be placed 
+
+   /*
+      Need to have comments or compute parameters based on stepper setup
+      and CNC parameters Example: number of steps per revoltuion (2000) 
+      and the CNC ball screw lead (20 mm per revolution). All goes towards
+      makein parameters SI units based on things like drum working width in
+      millimeters.
+   */      
    p->mydrum      = 1;     // drum this node is assigned (1-7)  
 
    p->hbct_t      = 500;   // Heartbeat ct: milliseconds between sending 
@@ -42,8 +50,8 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->Lminus      =    0;  // Calibrated start of negative reversal region
 
    p->ocidx       = 21000; // Indexing increment for 250 ms (4 kHz)
-   p->Nswp        = 8;     // Sweeping increment
-   p->Nman        = 6;     // Sweeping increment
+   p->Nswp        = 8;     // Sweeping increment increase factor
+   p->Nman        = 6;     // Sweeping increment decrease factor
 
 
 // For development; these will likely not be in operational code

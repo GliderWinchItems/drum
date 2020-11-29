@@ -120,7 +120,8 @@ struct LEVELWINDFUNCTION
    int16_t  pos_prev;   // Previous posaccum integral portion 
    int32_t  Lplus32;    // 32-bit extended Lplus
    int32_t  Lminus32;   // 32-bit extended Lminus
-   int32_t  Ks;         // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
+   // Sweep rate 
+   int32_t  Ks;         // (Ks/65536)=levelwind pulses per encoder edge (<= 1)        
    int32_t  rvrsldx;    // Reversal Distance
    
    
@@ -131,6 +132,7 @@ struct LEVELWINDFUNCTION
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
+   uint8_t  indexflag;  // flag for indexing
    
    // states and flags
    uint8_t  state;         // level-wind state

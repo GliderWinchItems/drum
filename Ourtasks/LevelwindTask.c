@@ -89,7 +89,7 @@ void StartLevelwindTask(void const * argument)
 
 
    pcp->mode = LW_MODE_CENTER;   // CP LW Mode selection
-   p->status - LW_STATUS_GOOD; 
+   p->status = LW_STATUS_GOOD; 
  
 
  #if 1   // initial conditions for indexing demo
@@ -277,43 +277,68 @@ extern CAN_HandleTypeDef hcan1;
                if ((p->mc_state == MC_PREP) && (p->status == LW_STATUS_GOOD) 
                   && !(GPIOE->IDR & ManualSw_MS_NO_Pin)) // last condition temporary for early development
                {  // we are in MC Prep state on an operational drum with error flag clear  
-                  p->sw[LIMITDBMS].flag2 = 0; // TEMPORARY: clear LS motorside latching flag
-                  
-                  // indexing
-                  if ((GPIOE->IDR & (LimitSw_MSN_NO_Pin)) != 0)
-                  {  // starting with MSN switch not activated
+                  // begin indexing
+
+                  /*
+                     Indexing will all be done by detecting an activation of the
+                     MSN limit switch. In addition, it is required that the 
+                     activation be done at the nominal indexing speed set by
+                     ocidx. If the MS limit switch is set, the system will
+                     sweep away from the motor until the MSN switch activates. 
+                     In this case, it is gareenteed that the unit will be
+                     sweeping at full speed. If the MSN switch is closed at
+                     the beginning of indexing, the unit will move out until
+                     both the MSN switch clears and the unit is at full speed
+                     and then reverse and make its run towards the MSN limit
+                     switch. If however the mechanism is very close to the MSN
+                     limit switch it may not reach full speed. To preclude 
+                     this, if neither limit switch is activated we will treat
+                     this like the MSN switch is activated to move towards the
+                     motor initially enough to gareentee the index activatio
+                     is at nominal indexing speed.
+                  */
+
+                     // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
                      // these values are set up temporarily for development to make motorside position 0
                      // Need padding to provide margin for initial sweep
+                  // the commented values below are close to what is really needed
                      // Position accumulator initial value. Reference paper for the value employed.
                      // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
-                     p->posaccum.s32 = 0; // temporary to have it start at 0.
-                     p->pos_prev = p->posaccum.s32;
-                     // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
-                     // p->Lminus32 = p->lc.Lminus << 16;
-                     p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
-                     p->Lplus32  = p->Lminus32 
-                        + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks; 
-                     p->drbit = p->drbit_prev = 0; // move away from motor 
-                     p->sw[LIMITDBMS].flag1 = 0;   //REVIST: Likely not needed in production code
-                  }
-                  else
-                  {  // starting with MSN switch activated
-                     // these values are set up temporarily for development to make motorside position 0
-                     // Need padding to provide margin for initial sweep
-                     // Position accumulator initial value. Reference paper for the value employed.
-                     // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
-                     p->pos_prev = p->posaccum.s32;
-                     // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
                      // p->Lminus32 = p->lc.Lminus << 16;
                      p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
                      p->Lplus32  = p->Lminus32 
                         + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
-                     p->posaccum.s32 = p->Lplus32; // temporarily have it start at Lplus.
+                  
+                  if ((GPIOE->IDR & (LimitSw_MS_NO_Pin)) == 0)
+                  {  // starting with MS switch not activated
+                     /* 
+                        This must be set somewhat below Lminus to insure it
+                        reaches the MSN limit switch before it reverses. A test
+                        needs to be added monitor the position accumulator 
+                        during the indexing sweep. If it reaches the reversal 
+                        point before the switch activates that is an error.
+                     */
+
+                     /* 
+                        REVISIT: Make sure enough margin is provided for all the indexing sweeps
+                        and these are tied to parameters, not magic numbers.
+                     */
+
+                     p->posaccum.s32 = 0; // temporary to have it start at 0.
+                     p->pos_prev = p->posaccum.s32; 
+                     p->indexflag = 0;
+                     p->drbit = p->drbit_prev = 0; // move away from motor (postion accum increasing) 
+                  }
+                  else
+                  {  // starting with MSN switch activated or no switch activated
+                     p->posaccum.s32 = p->Lplus32 + p->rvrsldx; 
+                     p->pos_prev = p->posaccum.s32;
+                     p->indexflag = 1;
                      p->drbit = p->drbit_prev = 1; // move in negative direction (towards motor) 
                   }                
 
                   p->velaccum.s32 = 0; // Velocity accumulator initial value
-                  p->ocinc = p->lc.ocidx; // set oc  interrupt rate for indexing
+                  p->ocinc = p->lc.ocidx; // set oc interrupt rate for indexing
                   p->state = LW_INDEX;
                   p->status = LW_STATUS_INDEXING;
                   enable_stepper;

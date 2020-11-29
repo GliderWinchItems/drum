@@ -434,26 +434,37 @@ void levelwind_items_TIM2_IRQHandler(void)
 
          case (LW_ISR_INDEX):
          {  
-            if (p->drbit)
-            {  // moving towards motor
-               if (p->sw[LIMITDBMS].dbs)
-               {  // MS switch has activated
-                  p->posaccum.s32 = p->Lminus32 + (p->Ks * 1000); //  REVISIT: Parameter for 1000 magic number
+            if (p->indexflag != 0)
+            {  // moving towards motor (position accumulator is decreasing)               
+               if ((p->sw[LIMITDBMSN].dbs == 0) && (p->velaccum.s32 == -p->Ks))
+               {  // MSN switch has deactivated and at full speed towards stepper
+                  /*
+                     Reset position accumulator to cause a reversal to start
+                     moving back towards MSN limit switch. It will then index
+                     when it the MSN reactivates and will have enough distance
+                     to reach nominal speed.
+                  */
+                  p->posaccum.s32 = p->Lminus32 + (500 * p->Ks) ; //  REVISIT: Parameter for magic number
                   p->pos_prev = p->posaccum.s16[1];
-                  p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state
+                  p->indexflag = 0;
                }
             }
-            else if (p->sw[LIMITDBMSN].dbs)
-            {  // moving away from motor and it has activated
+            else if ((p->sw[LIMITDBMSN].dbs != 0) && (p->velaccum.s32 == p->Ks))
+            {
+              // moving away from motor and MSN switch has activated
                // switch to sweep state for limit switch testing
-               p->posaccum.s32 = p->Lplus32 - (p->Ks * 1000); //  REVISIT: Parameter for 1000 magic number
+               p->posaccum.s32 = p->Lplus32 - (p->Ks * 3000); //  REVISIT: Parameter needed for 1000 magic number
                p->pos_prev = p->posaccum.s16[1];
                p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state
 #if LEVELWINDDEBUG //   for development only
-               p->sw[LIMITDBMS].flag1 = 0; 
                p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
 #endif      
-            } 
+            }
+               else
+               {  // motor was not a full speed when MSN activation occured
+                  // need code here to deal with this rare situation
+                  // some sort of retry is needed
+               } 
             emulation_run = 1;
             break;
          }         
@@ -473,7 +484,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             }
 
             // temporary until termination criteria is established
-            if (p->sw[LIMITDBMS].flag1)
+            if (!(GPIOE->IDR & ManualSw_MS_NO_Pin))
                // transition to Arrest with next state Track 
                p->isr_state = LW_ISR_ARREST | (LW_ISR_TRACK >> 4);             
             
