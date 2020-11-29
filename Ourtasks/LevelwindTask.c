@@ -462,6 +462,11 @@ extern CAN_HandleTypeDef hcan1;
                      disable_stepper;
                   }                  
                }
+
+               if ((GPIOE->IDR & ManualSw_MS_NO_Pin) == 0)
+               {  // temporay demo trigger to move to center
+                  p->mc_state = MC_RETRIEVE;
+               }
                break;
             }
 
