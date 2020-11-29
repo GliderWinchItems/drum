@@ -52,11 +52,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->mydrumbit = (1 << (p->lc.mydrum-1)); // Convert drum number (1-7) to bit position (0-6)
 
    p->hbct_k = pdMS_TO_TICKS(p->lc.hbct_t);  // Convert ms to RTOS ticks: Heartbeat duration
- #if 0  
-   p->hbctmin_k = pdMS_TO_TICKS(p->lc.hbctmin_t); // Convert ms to RTOS ticks
- #endif
-
-		
+ 		
 	/* Add CAN Mailboxes                               CAN     CAN ID             TaskHandle,Notify bit,Skip, Paytype */
 //	p->pmbx_cid_gps_sync         =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,       NULL,LEVELWINDBIT06,0,U8);
 	p->pmbx_cid_drum_tst_stepcmd = MailboxTask_add(pctl0,p->lc.cid_drum_tst_stepcmd,NULL,LEVELWINDSWSNOTEBITCAN1,0,U8_FF);
@@ -121,10 +117,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->ocfauxinc   = 8400000;   // Default 1/10 sec duration
    p->cltimectr   = 0;
    
-#if 0
-   /* Convert levelwind_idx_v_struct times to timer ticks. */
-   p->keepalive_k = (p->lc.ka_levelwind_t); // keep-alive timeout (timeout delay ms)
-#endif
    /* Save base addresses of timers for faster use later. */
    pT2base  = htim2.Instance;
    pT5base  = htim5.Instance;

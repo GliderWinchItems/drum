@@ -35,9 +35,6 @@
 #define LEVELWINDSWSNOTEBITLIMOUTOVR (OVERRUNSWOUTSIDE)
 #define LEVELWINDSWSNOTEBITISR       (1<<16)    // Stepper ISR
 #define LEVELWINDSWSNOTEBITCAN1      (1<<17)    // CAN msg: cid_drum_tst_stepcmd; CANID_TST_STEPCMD: U8_FF DRUM1: U8:
-#if 0
-#define LEVELWINDSWSNOTEBITSWT1      (1<<18)    // Software timer #1
-#endif
 #define LEVELWINDSWSNOTEBITCAN2      (1<<19)    // CAN msg: cid_mc_state;         CANID_MC_STATE','26000000', 'MC', 'U8_U8'
 #define LEVELWINDSWSNOTEBITCAN3      (1<<20)    // CAN msg: cid_hb_cpswsv1_1;     CANID_HB_CPSWSV1_1'  ,'31000000''CPMC', 1,1,'S8_U8_7'
 #define LEVELWINDSWSNOTEBITCAN4      (1<<21)    // CAN msg: cid_hb_cpswsclv1_1;   CANID_HB_CPSWSCLV1_1','31800000','CPMC', 2,1,'S8_S16_FF_V'
@@ -171,16 +168,7 @@ struct LEVELWINDFUNCTION
    uint32_t ocfauxinc;  // OC register increment for CL faux encoder  
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
    uint32_t drflag;     // BSRR pin set/reset bit position: direction
-#if 0
-   uint32_t keepalive_k;// keep-alive duration (RTOS ticks) 
-   uint32_t hbctmin_k;  // Minimum duration: between heartbeats (RTOS ticks)
-   uint32_t hbct_k;     // Heartbeat ct: milliseconds between sending 
-
-
-   TimerHandle_t swtim1;  // RTOS Timer #1 handle
-   TickType_t hb_tick_ct; // RTOS tick count at time HB msg sent
-#endif
-   uint8_t  mydrumbit;   // mydrum number converted to bit position
+   uint8_t  mydrumbit;  // mydrum number converted to bit position
    uint8_t  cpmode;     // mode extracted from CAN msg cid_hb_cpswsv1_1
 
 /* Pointer into circular buffer for levelwind_items.c debugging. */

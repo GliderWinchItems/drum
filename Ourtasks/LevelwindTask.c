@@ -37,31 +37,18 @@
                         Stepper_MF_GPIO_Port->BSRR = p->enflag
                   
 
-/* Open Questions:
+/* Open Questions and things to do:
       Is a delay needed after stepper enable
       Is the variable indexed needed
+      Check HB message generation 
 
 */
 
-
 osThreadId LevelwindTaskHandle;
-#if 0
-uint32_t dbgEth;
-#endif
 
 struct LEVELWINDFUNCTION levelwindfunction;
 struct CONTROLPANELSTATE cp_state;
-#if 0
-/* *************************************************************************
- * void swtim1_callback(TimerHandle_t tm);
- * @brief	: Software timer 1 timeout callback
- * *************************************************************************/
-static void swtim1_callback(TimerHandle_t tm)
-{
-	xTaskNotify(LevelwindTaskHandle, LEVELWINDSWSNOTEBITSWT1, eSetBits);
-	return;
-}
-#endif
+
 /* *************************************************************************
  * void StartLevelwindTask(void const * argument);
  *	@brief	: Task startup
@@ -89,73 +76,11 @@ void StartLevelwindTask(void const * argument)
    levelwind_task_move_to_off(0);   
 
 
-   
-#if 0
-   p->status = LW_STATUS_GOOD; 
-#endif 
 
  #if 1   // initial conditions for indexing demo
    p->mc_state = MC_PREP;
-//   p->isr_state = LW_ISR_OFF;
    p->mode = LW_MODE_CENTER;
    pcp->mode = LW_MODE_CENTER;   // CP LW Mode selection
-   //p->status = LW_STATUS_GOOD; 
-#endif
-
-
-#if 0   
-#if 0 // intial conditions for testing centering operation
-   p->mc_state = MC_RETRIEVE;
-   p->state = LW_TRACK;
-   p->isr_state = LW_ISR_TRACK;   
-   enable_stepper;
-   
-   /* Move the position value around to simulate where the LW starts before 
-      centering operation. Center corresponds to 7500 with the current 
-      parameters. If it is within ~1500 microsteps of center (corresponding 
-      to about +/-15 mm), it says close enough and does nothing but disable 
-      the stepper (disabling the stepper happens in all cases. That limitation
-      is planned to be removed shortly.  */
-
-   p->posaccum.s32 = (7500 - 500) << 16;
-   p->velaccum.s32 = 0;
-#endif
-
-/* Manaual mode test. Close the manaul switch either with a acutal switch or 
-   by setting the test for that switch to true in the  code for it below. Either
-   use a real sensed switch or set the test for the desired switch direction
-   in levelwind_items to 1 in its Manual case. (Current code has the right switch
-   indicating asserted.)  */  
-
-#if 0  // initial condtions for exit Manual demo
-   p->mc_state = MC_PREP;
-   p->state = LW_MANUAL;
-   p->isr_state = LW_ISR_MANUAL;
-   p->mode = LW_MODE_CENTER;
-
-   /* When Manual switch test is Off in code below and the move_to_off error 
-   is not asserted, LW Manual case below should 
-   transition to Off and then start indexing demo */
-
-#endif
-
-#if 0 // Overrun test setup
-
-   p->mc_state = MC_PREP;
-   p->mode = LW_MODE_CENTER;
-   p->state = LW_TRACK;
-   p->isr_state = LW_ISR_TRACK;   
-   enable_stepper;
-
-   /* Assert Overrun switch and system should go to Off with stepper disabled.
-      Insufficient setup for track to actually run but stepper should be enabled
-      until Overrun switch is asserted.
-
-      When the overrun switch is cleared, the system should go back to Off. If 
-      the error flag is cleared, it should re-index.
-    */
-
-#endif
 #endif
    
 	/* Limit and overrun switches. */
@@ -168,18 +93,7 @@ void StartLevelwindTask(void const * argument)
 
     /* Levelwind ISR uses the following to trigger a notification */
   //NVIC_SetPendingIRQ(ETH_IRQn);
-#if 0
-    /* Create timer #1: hearbeat (2 per sec) */
-	levelwindfunction.swtim1 = xTimerCreate("swtim1",
-		   p->hbct_k, 
-		   pdTRUE, (void *) 0, 
-		   swtim1_callback);
-	if (levelwindfunction.swtim1 == NULL) {morse_trap(404);}
 
-	/* Start command/keep-alive timer */
-	BaseType_t bret = xTimerReset(p->swtim1, 10);
-	if (bret != pdPASS) {morse_trap(405);}
-#endif
 extern CAN_HandleTypeDef hcan1;
 	HAL_CAN_Start(&hcan1); // CAN1
 
@@ -189,22 +103,7 @@ extern CAN_HandleTypeDef hcan1;
          250 ms timeout insures Manual and Overrun switches get polled at least 
          4 times per second. */      
 		xTaskNotifyWait(0,0xffffffff, &noteval, pdMS_TO_TICKS(250));
-#if 0
-      if ((noteval & LEVELWINDSWSNOTEBITISR) != 0)
-		{ // Here levelwind_items.c triggered the ETH_IRQHandler
-         dbgEth += 1;
 
-         /* Code here to figure out which ISR initated the notification 
-            and accordingly do  any preliminary processing. It  is possible 
-            that a switch statement for each ISR would be used. Also, check
-            if an overrun switch has activated and do a state change to 
-            MANUAL instead of repeating that code everywhere.  */   
-
-         /* Send HB msg immediately upon isr notification of status and/or
-            state change. */
-         levelwind_items_CANsend_hb_levelwind_1();
-		}
-#endif
 		if ((noteval & LEVELWINDSWSNOTEBITCAN1) != 0) 
 		{   // CAN:  cid_drum_tst_stepcmd; CANID_TST_STEPCMD: U8_FF DRUM1: U8:
 		    // Received CAN msg with Control Lever position, direction and enable bits 
@@ -235,14 +134,7 @@ extern CAN_HandleTypeDef hcan1;
       {  // CAN: cid_cmd_levelwind_i1; CANID_CMD_LEVELWIND_I1','B1000014','GENCMD',1,23,'U8_U8_U8_X4'
          levelwind_CANrcv_cid_cmd_levelwind_i1(&p->pmbx_cid_cmd_levelwind_i1->ncan.can);
       }
-#if 0
-		if ((noteval & LEVELWINDSWSNOTEBITSWT1) != 0) 
-		{ // Software timer #1: Send heartbeat
-         /* Skip sending HB with duration from last msg is less than 16 ms. */
-         if ((int32_t)(xTaskGetTickCount() - (p->hb_tick_ct + p->hbctmin_k)) >= 0)
-			   levelwind_items_CANsend_hb_levelwind_1();
-		}
-#endif
+
       if (!(GPIOE->IDR & ManualSw_NO_Pin) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed; go to Manual state
          p->ocinc = p->ocman;
@@ -524,18 +416,6 @@ extern CAN_HandleTypeDef hcan1;
 
       /* see if status or super-state have changed or HB timer has expired
          and send appropriate status-state (HBX) message */
-#if 0
-      if ((p->state != p->state_prev) || (p->status != p->status_prev))
-      {  
-         p->state_prev = p->state;
-         p->status_prev = p->status;
-         // need  to initate an automonous status-state message
-      }
-      else if (0 && (p->hbctr >= xTaskGetTickCount()))
-      {
-         // need  to initate a HB status-state message
-      } 
-#endif
       if ((p->state != p->state_prev) || (p->status != p->status_prev)
             || (xTaskGetTickCount() >= p->hbctr))
       {  // send status-state message 

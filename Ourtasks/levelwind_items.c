@@ -121,10 +121,6 @@ void levelwind_items_timeout(void)
    
    /* Queue CAN msg to send. */
    xQueueSendToBack(CanTxQHandle,&p->canmsg[IDX_CID_HB_LEVELWIND_1],4);  
-#if 0
-   /* Save FreeRTOS tick count. */
-   p->hb_tick_ct = xTaskGetTickCount();
-#endif
    return;
  }
 /* *************************************************************************
@@ -506,13 +502,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             break;
          }
       }      
-   }
-
-// testing to see if this is needed anymore
-#if 0   // move this out of ISR at some point???
-      // Update enable i/o pin
-      Stepper_MF_GPIO_Port->BSRR = p->enflag;
-#endif     
+   }  
 
    /* reversing screw emulation code */
    if (emulation_run)
