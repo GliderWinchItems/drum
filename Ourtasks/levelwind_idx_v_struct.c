@@ -42,8 +42,9 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->mydrum      = 1;     // drum this node is assigned (1-7)  
 
    p->hbct_t      = 500;   // Heartbeat ct: milliseconds between sending 
-   
-   p->hbctmin_t   = 16;    // Minimum duration: between heartbeats (ms)
+#if 0   
+p->hbctmin_t   = 16;    // Minimum duration: between heartbeats (ms)
+#endif
    p->Ka          = 8;     // Reversal rate
    p->Nr          = 3500;  // Sweep rate to reversal rate ratio
    p->Lplus       = 15000; // Calibrated start of positive reversal region

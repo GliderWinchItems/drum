@@ -51,9 +51,10 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
    p->mydrumbit = (1 << (p->lc.mydrum-1)); // Convert drum number (1-7) to bit position (0-6)
 
-   p->hbct_k = pdMS_TO_TICKS(p->lc.hbct_t);     // Convert ms to RTOS ticks: Heartbeat duration
+   p->hbct_k = pdMS_TO_TICKS(p->lc.hbct_t);  // Convert ms to RTOS ticks: Heartbeat duration
+ #if 0  
    p->hbctmin_k = pdMS_TO_TICKS(p->lc.hbctmin_t); // Convert ms to RTOS ticks
- 
+ #endif
 
 		
 	/* Add CAN Mailboxes                               CAN     CAN ID             TaskHandle,Notify bit,Skip, Paytype */
@@ -98,24 +99,10 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 #endif   
 
    p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
-   
-   /* this initialization has been moved to the OFF case in LevelwindTask
-   // Position accumulator initial value. Reference paper for the value employed.
-   // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
-   p->posaccum.s32 = 0; // temporary to have it start at 0.
-   p->pos_prev = p->posaccum.s32;
-   // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
-   // p->Lminus32 = p->lc.Lminus << 16;
-   p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
-   p->Lplus32  = p->Lminus32 
-      + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
-   p->velaccum.s32 = 0;             // Velocity accumulator initial value  
-   
-   */
 
    p->drbit = p->drbit_prev = 0;    // Drum direction bit REVIST: Needed???   
 
-   p->hbctr      = xTaskGetTickCount();
+   p->hbctr = xTaskGetTickCount();
 
    // initialize state machines and status
    p->state = p->state_prev = LW_OFF;
@@ -126,7 +113,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
    p->mc_state = MC_SAFE;
 
-   
    // TIM2 output compare increments
    p->ocswp       = p->lc.ocidx/p->lc.Nswp;     // initalize sweep increment
    p->ocman       = p->lc.ocidx * p->lc.Nman;   // initalize manual increment 
@@ -135,10 +121,10 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->ocfauxinc   = 8400000;   // Default 1/10 sec duration
    p->cltimectr   = 0;
    
-
+#if 0
    /* Convert levelwind_idx_v_struct times to timer ticks. */
    p->keepalive_k = (p->lc.ka_levelwind_t); // keep-alive timeout (timeout delay ms)
-
+#endif
    /* Save base addresses of timers for faster use later. */
    pT2base  = htim2.Instance;
    pT5base  = htim5.Instance;

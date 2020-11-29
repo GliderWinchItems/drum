@@ -121,9 +121,10 @@ void levelwind_items_timeout(void)
    
    /* Queue CAN msg to send. */
    xQueueSendToBack(CanTxQHandle,&p->canmsg[IDX_CID_HB_LEVELWIND_1],4);  
-
+#if 0
    /* Save FreeRTOS tick count. */
    p->hb_tick_ct = xTaskGetTickCount();
+#endif
    return;
  }
 /* *************************************************************************
