@@ -42,21 +42,51 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->mydrum      = 1;     // drum this node is assigned (1-7)  
 
    p->hbct_t      = 500;   // Heartbeat ct: milliseconds between sending 
-   
+
    p->Ka          = 8;     // Reversal rate
    p->Nr          = 3500;  // Sweep rate to reversal rate ratio
    p->Lplus       = 15000; // Calibrated start of positive reversal region
    p->Lminus      =    0;  // Calibrated start of negative reversal region
 
    p->ocidx       = 21000; // Indexing increment for 250 ms (4 kHz)
-   p->Nswp        = 8;     // Sweeping increment increase factor
-   p->Nman        = 6;     // Sweeping increment decrease factor
+   p->Nswp        = 8;     // Test sweep speed increment increase factor
+   p->Nman        = 6;     // Manual sweep increment decrease factor
 
 
 // For development; these will likely not be in operational code
    p->clfactor    = 168E3; // CL scaling: 100% = 50 us
    p->ka_levelwind_t = 2555;  // keep-alive timeout (timeout delay ms)
    p->cltimemax   = 512;   // Number of software timeout ticks max
+
+/* 
+      New Friendly/SI external parameters
+         All distances in meters.
+         All masses in kg. 
+         All times in seconds. 
+         All factors dimensionless
+   */
+
+   p->LimitSwitchSpan = 260e-3;
+   p->CenterSpan = 0.0;
+   p->DrumWidth = 165e-3;
+   p->CableDiameter = 5e-3;
+   p->LevelWindFactor = 2.5;
+   p->ReversalFactor = 1.25;
+   p->IndexingSweepSpeed = 25e-3;
+   p->ManualSweepSpeed = 5e-3;
+   p->TestSweepSpeed = 50e-3;
+   p->NumberTestSweeps = 2;
+   p->LimitSwitchActivationTolerance = 3.0e-3;
+   p->LevelWindHBPeriod = 500e-3;
+   p->InstanceNumber = 1;   // 1:7
+   p->LimitOverrunSwitchDistance = 75e-3;
+   p->MicroStepsPerRevolution = 2000;
+   p->BallScrewLead = 20e-3;
+   p->EncoderPulsesPerRevolution = 360;
+   p->StepperVoltageScale = 25e-3;
+   p->StepperVoltageOffset = 0.0;
+   // TBA   CAN Ids
+
 
 
 // CAN ids levelwind sends

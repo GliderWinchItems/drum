@@ -35,6 +35,10 @@ extern TIM_TypeDef  *pT2base; // Register base address
 extern TIM_TypeDef  *pT5base; // Register base address 
 extern TIM_TypeDef  *pT9base; // Register base address 
 
+// #defines for computation of derivited parameters
+#define LSBS_PER_MICROSTEP (1 << 16)   // LSBs in the lower accumulator
+#define INTERRUPTS_PER_ENCODER_PULSE 2
+
 /* *************************************************************************
  * void levelwind_func_init_init(struct LEVELWINDFUNCTION* p);
  *	@brief	: Initialize working struct for Levelwind Task
@@ -44,15 +48,64 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 {
 	int i;
 
-   // Initialize hardcoded parameters (used in some computations below)
+   // Initialize hardcoded parameters (used in  computations below)
    levelwind_idx_v_struct_hardcode_params(&p->lc);
+
+#if 0 // enable to use new parameters
+   // level-wind delta x per microstep
+   float lwdxpermicrostep = p->lc.BallScrewLead // bipolar
+            / (p->lc.MicroStepsPerRevolution);
+   // level-wind delta x per position accumulator lsb
+   float lwdxperlsb = lwdxpermicrostep 
+            / (float) LSBS_PER_MICROSTEP;  // bipolar
+   // lateral cable motion per drum revolution
+   float cabledxperdrumrevolution = p->lc.LevelWindFactor 
+            * p->lc.CableDiameter;              // positve
+   // encoder interrupts per drum revolution
+   float interrupts_per_drum_revolution = INTERRUPTS_PER_ENCODER_PULSE
+            * p->lc.EncoderPulsesPerRevolution 
+            * p->lc.EncoderToDrumGearRatio;  // bipolar
+         // absolute value
+   if (interrupts_per_drum_revolution < 0.0f) 
+   {
+      interrupts_per_drum_revolution = -interrupts_per_drum_revolution;
+   }  // positive
+   
+   // tentative Ks
+   float fKs = cabledxperdrumrevolution
+      / (lwdxperlsb * interrupts_per_drum_revolution); // bipolar
+   fKs = (fKs >= 0.0f) ? fKs : -fKs; // absolute value
+      
+   // comute tentative Nr
+   float fNr = 2 * p->lc.ReversalFactor * p->lc.CableDiameter / fKs + 1.0f;
+      
+   
+   // round ratio of fKs/fNf to compute integer Ka 
+   p->Ka = fKs / fNr + 0.5f;
+   
+   // compute integer Nr to get as close to  fKs as possible
+   p->Nr = (fKs / (float) p->Ka) + 0.5f;
+
+   // compute resulting integer Ks value
+   p->Ks = p->Nr * p-> Ka;
+
+   p->mydrum = p->lc.InstanceNumber;
+   p->mydrumbit = (1 << (p->mydrum - 1)); // Convert drum number (1-7) to bit position (0-6)
+
+
+#else // use old parameter set to compute Ks
 
 	p->Ks = p->lc.Nr * p->lc.Ka; // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
 
-   p->mydrumbit = (1 << (p->lc.mydrum-1)); // Convert drum number (1-7) to bit position (0-6)
-
    p->hbct_k = pdMS_TO_TICKS(p->lc.hbct_t);  // Convert ms to RTOS ticks: Heartbeat duration
- 		
+
+   p->mydrumbit = (1 << (p->lc.mydrum-1)); // Convert drum number (1-7) to bit position (0-6)
+ #endif
+
+   
+
+
+
 	/* Add CAN Mailboxes                               CAN     CAN ID             TaskHandle,Notify bit,Skip, Paytype */
 //	p->pmbx_cid_gps_sync         =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,       NULL,LEVELWINDBIT06,0,U8);
 	p->pmbx_cid_drum_tst_stepcmd = MailboxTask_add(pctl0,p->lc.cid_drum_tst_stepcmd,NULL,LEVELWINDSWSNOTEBITCAN1,0,U8_FF);

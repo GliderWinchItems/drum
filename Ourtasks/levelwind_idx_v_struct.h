@@ -54,7 +54,41 @@ struct LEVELWINDLC
    // For development, these will likely not be needed in operational code
    float    clfactor;   // Constant to compute oc duration at CL = 100.0
    uint32_t cltimemax;  // Max timer count for shutdown 
-   uint32_t ka_levelwind_t; // keepalive from PC (ms)     
+   uint32_t ka_levelwind_t; // keepalive from PC (ms)
+
+   /* 
+      New Friendly/SI external parameters
+         All distances in meters.
+         All masses in kg. 
+         All times in seconds. 
+         All factors dimensionless
+         See Level-wind Parameters document for details
+   */
+
+   float    LimitSwitchSpan;
+   float    CenterSpan;
+   float    DrumWidth;
+   float    CableDiameter;
+   float    LevelWindFactor;
+   float    ReversalFactor;
+   float    IndexingSweepSpeed;
+   float    ManualSweepSpeed;
+   float    TestSweepSpeed;
+   int32_t  NumberTestSweeps;
+   float    LimitSwitchActivationTolerance;
+   float    LevelWindHBPeriod;
+   uint32_t InstanceNumber;   // 1:7
+   float    LimitOverrunSwitchDistance;
+   int32_t  MicroStepsPerRevolution;
+   float    BallScrewLead;
+   int32_t  EncoderPulsesPerRevolution;
+   float    EncoderToDrumGearRatio;
+   float    StepperVoltageScale;
+   float    StepperVoltageOffset;
+   // TBA   CAN Ids
+
+
+
 
  // CAN ids ...........................................................................
    //                                  CANID_NAME             CAN_MSG_FMT     DESCRIPTION

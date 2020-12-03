@@ -40,7 +40,7 @@
 /* Open Questions and things to do:
       Is a delay needed after stepper enable
       Is the variable indexed needed
-      Check HB message generation 
+      Check HBX message generation 
 
 */
 
@@ -74,8 +74,6 @@ void StartLevelwindTask(void const * argument)
 
    // move level-wind state machine to off with no error flag set
    levelwind_task_move_to_off(0);   
-
-
 
  #if 1   // initial conditions for indexing demo
    p->mc_state = MC_PREP;
@@ -156,7 +154,7 @@ extern CAN_HandleTypeDef hcan1;
          disable_stepper;
       }
 
-      // is this drum not enabled for operation on the control panel
+      // is this drum enabled for operation on the control panel
       else if  (!(pcp->op_drums & (0x01 << (p->lc.mydrum - 1))) 
          || ((pcp->mode == LW_MODE_OFF) && (pcp->active_drum == p->lc.mydrum)))
       {  // move level-wind state machine to off with error flag clear
@@ -277,6 +275,7 @@ extern CAN_HandleTypeDef hcan1;
                }               
                break;
             }
+            
             case (LW_TRACK):
             {
                if (p->mc_state == MC_SAFE) 
@@ -620,7 +619,6 @@ int levelwind_task_cp_state_update(struct CANRCVBUF* pcan)
    pcp->beeper = (pcan->cd.uc[BEEPER_BYTE] 
       & (BEEPER_MASK << BEEPER_BIT)) >> BEEPER_BIT; */
 #endif
-
    return 0;  
 }
 

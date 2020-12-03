@@ -120,7 +120,10 @@ struct LEVELWINDFUNCTION
    int32_t  Lplus32;    // 32-bit extended Lplus
    int32_t  Lminus32;   // 32-bit extended Lminus
    // Sweep rate 
-   int32_t  Ks;         // (Ks/65536)=levelwind pulses per encoder edge (<= 1)        
+   
+   uint16_t Nr;         // Reversal steps to 0 velocity  
+   uint16_t Ka;         // internal accelertion parameter
+   uint32_t Ks;         // (Ks/65536)=levelwind pulses per encoder edge (<= 1)        
    int32_t  rvrsldx;    // Reversal Distance
    
    
@@ -133,6 +136,8 @@ struct LEVELWINDFUNCTION
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
    uint8_t  indexflag;  // flag for indexing
+   uint8_t  mydrum;     // internal instance number
+   uint8_t  mydrumbit;  // mydrum number converted to bit position 0:6
    
    // states and flags
    uint8_t  state;         // level-wind state
@@ -168,7 +173,6 @@ struct LEVELWINDFUNCTION
    uint32_t ocfauxinc;  // OC register increment for CL faux encoder  
    uint8_t  pay0;       // canmsg.cd.uc[0] saved
    uint32_t drflag;     // BSRR pin set/reset bit position: direction
-   uint8_t  mydrumbit;  // mydrum number converted to bit position
    uint8_t  cpmode;     // mode extracted from CAN msg cid_hb_cpswsv1_1
 
 /* Pointer into circular buffer for levelwind_items.c debugging. */
