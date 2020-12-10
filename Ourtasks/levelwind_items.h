@@ -12,7 +12,7 @@
 #define __LEVELWIND_ITEMS
 
 /* Debug */
-#define LEVELWINDDEBUG  1  // True includes debugging code
+#define LEVELWINDDEBUG  0  // True includes debugging code
 #define LEVELWINDDBGBUFSIZE (360*4) // Circular buffer size
 
 #include "FreeRTOS.h"

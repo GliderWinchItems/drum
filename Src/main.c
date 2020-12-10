@@ -1056,12 +1056,29 @@ uint8_t ratepace = 0;
 
 	
 #ifdef STEPPERSHOW
+
+#if 0 //  1 old, 0 LW LS statistics support
 extern uint32_t dbsws1; // Debug
   if ((dbsws1-dbsws1_prev) != 0)
   {
       yprintf(&pbuf4,"\n\r%9i",dbsws1-dbsws1_prev);
       dbsws1_prev = dbsws1;
   }
+#else
+  struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+  if (p->sw[LIMITDBMS].flag1  == 1)
+  {
+    p->sw[LIMITDBMS].flag1  = 0;  //reset MS flag
+    yprintf(&pbuf4,"\n\r  %5i %10i %10i %10i %10i",
+      p->sw[LIMITDBMS].flag2,
+      p->sw[LIMITDBMS].posaccum_NO,
+      p->sw[LIMITDBMS].posaccum_NC,
+      p->sw[LIMITDBMSN].posaccum_NO,
+      p->sw[LIMITDBMSN].posaccum_NC );
+  }
+
+#endif
+
 
 /* Temporary so 'switches can do some yprintf from here w/o changing main.c */
 if (levelwind_switches_defaultTaskcall(pbuf1) == 0)
@@ -1091,7 +1108,7 @@ if (levelwind_switches_defaultTaskcall(pbuf1) == 0)
     }
   }while (pdbg != NULL);
 #else
-  yprintf(&pbuf4,"\n\r%9i LEVELWINDDEBUG: No debugging buffer %4i",stepctr++,levelwindfunction.dtwmax);
+  // yprintf(&pbuf4,"\n\r%9i LEVELWINDDEBUG: No debugging buffer %4i",stepctr++,levelwindfunction.dtwmax);
 #endif     
 }
 #endif      

@@ -53,8 +53,8 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
 #if 0 // enable to use new parameters
    // level-wind delta x per microstep
-   float lwdxpermicrostep = p->lc.BallScrewLead // bipolar
-            / (p->lc.MicroStepsPerRevolution);
+   float lwdxpermicrostep = p->lc.BallScrewLead 
+            / (p->lc.MicroStepsPerRevolution);  // bipolar
    // level-wind delta x per position accumulator lsb
    float lwdxperlsb = lwdxpermicrostep 
             / (float) LSBS_PER_MICROSTEP;  // bipolar
@@ -76,8 +76,9 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
       / (lwdxperlsb * interrupts_per_drum_revolution); // bipolar
    fKs = (fKs >= 0.0f) ? fKs : -fKs; // absolute value
       
-   // comute tentative Nr
-   float fNr = 2 * p->lc.ReversalFactor * p->lc.CableDiameter / fKs + 1.0f;
+   // compute tentative Nr
+   float fNr = 2 * p->lc.ReversalFactor * p->lc.CableDiameter 
+      / (lwdxperlsb * fKs) + 1.0f;
       
    
    // round ratio of fKs/fNf to compute integer Ka 

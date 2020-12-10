@@ -221,8 +221,8 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
 		{ // Here R-S flip-flop was reset
 			p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
 			p->sw[LIMITDBMS].posaccum_NO = p->posaccum.s32;
-			p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
-			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
+			//p->sw[LIMITDBMS].flag1  = 0; // Flag for stepper ISR  TEMPORARY  FOR STATISTICS CAPTURE
+			//p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)		  TEMPORARY  FOR STATISTICS CAPTURE
 			/* Notification goes here. */	
 			ptmp->sws |= LIMITDBMS;
 

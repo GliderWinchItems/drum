@@ -481,7 +481,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             }
 
             // temporary until termination criteria is established
-            if (!(GPIOE->IDR & ManualSw_MS_NO_Pin))
+            if (!(GPIOE->IDR & ManualSw_MS_NO_Pin)) // Test sweep continues forever
                // transition to Arrest with next state Track 
                p->isr_state = LW_ISR_ARREST | (LW_ISR_TRACK >> 4);             
             
