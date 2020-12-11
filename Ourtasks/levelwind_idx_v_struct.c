@@ -66,10 +66,11 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
          All factors dimensionless
    */
 
-   p->LimitSwitchSpan = 260e-3;
-   p->CenterSpan = 0.0;
+   p->LimitSwitchSpan = 260e-3;     // REVISIT: What is this used for???
+   p->CenterOffset = 7.0e-3;
    p->DrumWidth = 165e-3;
    p->CableDiameter = 5e-3;
+   p->ExcessRollerGap = 8e-3;
    p->LevelWindFactor = 2.5;
    p->ReversalFactor = 1.25;
    p->IndexingSweepSpeed = 25e-3;

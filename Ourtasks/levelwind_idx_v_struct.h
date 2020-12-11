@@ -66,9 +66,10 @@ struct LEVELWINDLC
    */
 
    float    LimitSwitchSpan;
-   float    CenterSpan;
+   float    CenterOffset;
    float    DrumWidth;
    float    CableDiameter;
+   float    ExcessRollerGap;
    float    LevelWindFactor;
    float    ReversalFactor;
    float    IndexingSweepSpeed;

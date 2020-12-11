@@ -1057,7 +1057,7 @@ uint8_t ratepace = 0;
 	
 #ifdef STEPPERSHOW
 
-#if 0 //  1 old, 0 LW LS statistics support
+#if 1 //  1 old, 0 LW LS statistics support
 extern uint32_t dbsws1; // Debug
   if ((dbsws1-dbsws1_prev) != 0)
   {
@@ -1108,7 +1108,7 @@ if (levelwind_switches_defaultTaskcall(pbuf1) == 0)
     }
   }while (pdbg != NULL);
 #else
-  // yprintf(&pbuf4,"\n\r%9i LEVELWINDDEBUG: No debugging buffer %4i",stepctr++,levelwindfunction.dtwmax);
+    yprintf(&pbuf4,"\n\r%9i LEVELWINDDEBUG: No debugging buffer %4i",stepctr++,levelwindfunction.dtwmax);
 #endif     
 }
 #endif      

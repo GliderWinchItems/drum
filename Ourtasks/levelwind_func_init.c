@@ -52,12 +52,10 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    levelwind_idx_v_struct_hardcode_params(&p->lc);
 
 #if 0 // enable to use new parameters
-   // level-wind delta x per microstep
-   float lwdxpermicrostep = p->lc.BallScrewLead 
-            / (p->lc.MicroStepsPerRevolution);  // bipolar
+   
    // level-wind delta x per position accumulator lsb
-   float lwdxperlsb = lwdxpermicrostep 
-            / (float) LSBS_PER_MICROSTEP;  // bipolar
+   float dxperlsb = p->lc.BallScrewLead 
+      / (p->lc.MicroStepsPerRevolution * (float) LSBS_PER_MICROSTEP);  // bipolar
    // lateral cable motion per drum revolution
    float cabledxperdrumrevolution = p->lc.LevelWindFactor 
             * p->lc.CableDiameter;              // positve
@@ -73,12 +71,12 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    
    // tentative Ks
    float fKs = cabledxperdrumrevolution
-      / (lwdxperlsb * interrupts_per_drum_revolution); // bipolar
+      / (dxperlsb * interrupts_per_drum_revolution); // bipolar
    fKs = (fKs >= 0.0f) ? fKs : -fKs; // absolute value
       
    // compute tentative Nr
    float fNr = 2 * p->lc.ReversalFactor * p->lc.CableDiameter 
-      / (lwdxperlsb * fKs) + 1.0f;
+      / (dxperlsb * fKs) + 1.0f;
       
    
    // round ratio of fKs/fNf to compute integer Ka 
@@ -92,6 +90,20 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
    p->mydrum = p->lc.InstanceNumber;
    p->mydrumbit = (1 << (p->mydrum - 1)); // Convert drum number (1-7) to bit position (0-6)
+
+   // compute width in meters of the linear sweep
+   p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
+   float linearsweepwidth = p->lc.DrumWidth - p->lc.CableDiameter
+      - ((float) ( 2 * p->rvrsldx) / dxperlsb) + p->lc.ExcessRollerGap;   
+
+   // calculate the offset corrected values for the 32 bit reversal values
+   p->Lplus32 = (linearsweepwidth + p->lc.CenterOffset) / ( 2.0f * dxperlsb);
+   p->Lplus32 = (p->Lplus32 / p->Ks) * p->Ks;   // round to multiple of Ks
+   p->Lminus32 = -(linearsweepwidth - p->lc.CenterOffset) / ( 2.0f * dxperlsb);
+   p->Lminus32 = (p->Lminus32 / p->Ks) * p->Ks; // round to multiple of Ks
+
+
+
 
 
 #else // use old parameter set to compute Ks
@@ -148,7 +160,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->ledbit2= (LED_ORANGE_Pin);
 #endif   
 
-   p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
+   p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2; //REVIST: This will be duplicated above when new parameters are used. Remove then.
 
    p->drbit = p->drbit_prev = 0;    // Drum direction bit REVIST: Needed???   
 
