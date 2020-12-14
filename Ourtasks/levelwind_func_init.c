@@ -51,17 +51,17 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    // Initialize hardcoded parameters (used in  computations below)
    levelwind_idx_v_struct_hardcode_params(&p->lc);
 
-#if 0 // enable to use new parameters
+#if 1 // enable to use new parameters
    
    // level-wind delta x per position accumulator lsb
    float dxperlsb = p->lc.BallScrewLead 
-      / (p->lc.MicroStepsPerRevolution * (float) LSBS_PER_MICROSTEP);  // bipolar
+      / (float) (p->lc.MicroStepsPerRevolution *  LSBS_PER_MICROSTEP);  // bipolar
    // lateral cable motion per drum revolution
    float cabledxperdrumrevolution = p->lc.LevelWindFactor 
             * p->lc.CableDiameter;              // positve
    // encoder interrupts per drum revolution
-   float interrupts_per_drum_revolution = INTERRUPTS_PER_ENCODER_PULSE
-            * p->lc.EncoderPulsesPerRevolution 
+   float interrupts_per_drum_revolution = (float) INTERRUPTS_PER_ENCODER_PULSE
+            * (float) p->lc.EncoderPulsesPerRevolution 
             * p->lc.EncoderToDrumGearRatio;  // bipolar
          // absolute value
    if (interrupts_per_drum_revolution < 0.0f) 
@@ -75,8 +75,8 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    fKs = (fKs >= 0.0f) ? fKs : -fKs; // absolute value
       
    // compute tentative Nr
-   float fNr = 2 * p->lc.ReversalFactor * p->lc.CableDiameter 
-      / (dxperlsb * fKs) + 1.0f;
+   float fNr = (2 * p->lc.CableDiameter * p->lc.ReversalFactor 
+      / (dxperlsb * fKs)) + 1.0f;
       
    
    // round ratio of fKs/fNf to compute integer Ka 
@@ -88,19 +88,22 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    // compute resulting integer Ks value
    p->Ks = p->Nr * p-> Ka;
 
-   p->mydrum = p->lc.InstanceNumber;
-   p->mydrumbit = (1 << (p->mydrum - 1)); // Convert drum number (1-7) to bit position (0-6)
-
    // compute width in meters of the linear sweep
-   p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2;
+   p->rvrsldx = (p->Nr - 1) * p->Ks / 2;
    float linearsweepwidth = p->lc.DrumWidth - p->lc.CableDiameter
-      - ((float) ( 2 * p->rvrsldx) / dxperlsb) + p->lc.ExcessRollerGap;   
+      - (float) (2 * p->rvrsldx) * dxperlsb + p->lc.ExcessRollerGap;   
 
    // calculate the offset corrected values for the 32 bit reversal values
-   p->Lplus32 = (linearsweepwidth + p->lc.CenterOffset) / ( 2.0f * dxperlsb);
-   p->Lplus32 = (p->Lplus32 / p->Ks) * p->Ks;   // round to multiple of Ks
-   p->Lminus32 = -(linearsweepwidth - p->lc.CenterOffset) / ( 2.0f * dxperlsb);
-   p->Lminus32 = (p->Lminus32 / p->Ks) * p->Ks; // round to multiple of Ks
+   p->Lplus32trk = (linearsweepwidth + p->lc.CenterOffset) / ( 2.0f * dxperlsb);
+   p->Lplus32trk = (p->Lplus32trk / p->Ks) * p->Ks;   // round to multiple of Ks
+   p->Lminus32trk = -(linearsweepwidth - p->lc.CenterOffset) / ( 2.0f * dxperlsb);
+   p->Lminus32trk = (p->Lminus32trk / p->Ks) * p->Ks; // round to multiple of Ks
+
+
+
+
+   p->mydrum = p->lc.InstanceNumber;
+   p->mydrumbit = (1 << (p->mydrum - 1)); // Convert drum number (1-7) to bit position (0-6)
 
 
 

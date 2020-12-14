@@ -117,8 +117,11 @@ struct LEVELWINDFUNCTION
    union    PAYFLT   velaccum;  // Stepper velocity accumulator
 
    int16_t  pos_prev;   // Previous posaccum integral portion 
-   int32_t  Lplus32;    // 32-bit extended Lplus
-   int32_t  Lminus32;   // 32-bit extended Lminus
+   int32_t  Lplus32;    // 32-bit extended working Lplus
+   int32_t  Lminus32;   // 32-bit extended workin Lminus
+   int32_t  Lminus32trk;// 32-bit Lminus for tracking
+   int32_t  Lplus32trk; // 32-bit Lplus for tracking
+
    // Sweep rate 
    
    uint16_t Nr;         // Reversal steps to 0 velocity  
