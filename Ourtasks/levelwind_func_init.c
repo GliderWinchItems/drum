@@ -94,10 +94,11 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
       - (float) (2 * p->rvrsldx) * dxperlsb + p->lc.ExcessRollerGap;   
 
    // calculate the offset corrected values for the 32 bit reversal values
-   p->Lplus32trk = (linearsweepwidth + p->lc.CenterOffset) / ( 2.0f * dxperlsb);
-   p->Lplus32trk = (p->Lplus32trk / p->Ks) * p->Ks;   // round to multiple of Ks
-   p->Lminus32trk = -(linearsweepwidth - p->lc.CenterOffset) / ( 2.0f * dxperlsb);
-   p->Lminus32trk = (p->Lminus32trk / p->Ks) * p->Ks; // round to multiple of Ks
+   // all rounding done with truncation of positive numbers
+   p->Lplus32trk = (linearsweepwidth + p->lc.CenterOffset) / ( 2.0f * dxperlsb) + 0.5f;
+   p->Lplus32trk = ((p->Lplus32trk + p->Ks/2) / p->Ks) * p->Ks;   // round to multiple of Ks
+   p->Lminus32trk = (linearsweepwidth - p->lc.CenterOffset) / ( 2.0f * dxperlsb) + 0.5f;
+   p->Lminus32trk = -(((p->Lminus32trk + p->Ks/2) / p->Ks) * p->Ks);   // round to multiple of Ks
 
 
 
