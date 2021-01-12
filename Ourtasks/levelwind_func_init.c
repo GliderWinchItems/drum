@@ -51,7 +51,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    // Initialize hardcoded parameters (used in  computations below)
    levelwind_idx_v_struct_hardcode_params(&p->lc);
 
-#if 1 // enable to use new parameters
+#if 0 // enable to use new parameters
    
    // level-wind delta x per position accumulator lsb
    float dxperlsb = p->lc.BallScrewLead 
