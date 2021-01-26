@@ -190,11 +190,11 @@ extern CAN_HandleTypeDef hcan1;
                      limit switch it may not reach full speed. To preclude 
                      this, if neither limit switch is activated we will treat
                      this like the MSN switch is activated to move towards the
-                     motor initially enough to gareentee the index activatio
+                     motor initially enough to gareentee the index activation
                      is at nominal indexing speed.
                   */
 
-                     // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
+                     // initialize 32-bit values for Lplus32 and Lminus32. Reference paper.
                      // these values are set up temporarily for development to make motorside position 0
                      // Need padding to provide margin for initial sweep
                   // the commented values below are close to what is really needed

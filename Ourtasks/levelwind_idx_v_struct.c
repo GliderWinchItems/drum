@@ -64,9 +64,9 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
          All masses in kg. 
          All times in seconds. 
          All factors dimensionless
-   */
+*/
 
-   p->LimitSwitchSpan = 260e-3;     
+   p->LimitSwitchSpan = 129.4e-3;     
    p->CenterOffset = 7.0e-3;
    p->DrumWidth = 165e-3;
    p->CableDiameter = 5e-3;
@@ -79,13 +79,14 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->NumberTestSweeps = 2;
    p->LimitSwitchActivationTolerance = 3.0e-3;
    p->LevelWindHBPeriod = 500e-3;
-   p->InstanceNumber = 1;   // 1:7
+   p->DrumInstance = 1;   // 1:7
    p->LimitOverrunSwitchDistance = 75e-3;
    p->MicroStepsPerRevolution = 2000;
    p->BallScrewLead = 20e-3;
    p->EncoderPulsesPerRevolution = 360;
    p->StepperVoltageScale = 25e-3;
    p->StepperVoltageOffset = 0.0;
+   
    // TBA   CAN Ids
 
 

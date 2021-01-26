@@ -78,7 +78,7 @@ struct LEVELWINDLC
    int32_t  NumberTestSweeps;
    float    LimitSwitchActivationTolerance;
    float    LevelWindHBPeriod;
-   uint32_t InstanceNumber;   // 1:7
+   uint32_t DrumInstance;   // 1:7
    float    LimitOverrunSwitchDistance;
    int32_t  MicroStepsPerRevolution;
    float    BallScrewLead;
@@ -86,6 +86,7 @@ struct LEVELWINDLC
    float    EncoderToDrumGearRatio;
    float    StepperVoltageScale;
    float    StepperVoltageOffset;
+   
    // TBA   CAN Ids
 
 

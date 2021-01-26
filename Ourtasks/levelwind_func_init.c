@@ -103,9 +103,9 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
 
 
-   p->mydrum = p->lc.InstanceNumber;
+   p->mydrum = p->lc.DrumInstance;
    p->mydrumbit = (1 << (p->mydrum - 1)); // Convert drum number (1-7) to bit position (0-6)
-
+   p->hbct_k = pdMS_TO_TICKS(p->lc.LevelWindHBPeriod * 1000);
 
 
 
