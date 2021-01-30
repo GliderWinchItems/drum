@@ -93,12 +93,17 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    float linearsweepwidth = p->lc.DrumWidth - p->lc.CableDiameter
       - (float) (2 * p->rvrsldx) * dxperlsb + p->lc.ExcessRollerGap;   
 
-   // calculate the offset corrected values for the 32 bit reversal values
+   // calculate the offset corrected values for the 32-bit values
    // all rounding done with truncation of positive numbers
-   p->Lplus32trk = (linearsweepwidth + p->lc.CenterOffset) / ( 2.0f * dxperlsb) + 0.5f;
-   p->Lplus32trk = ((p->Lplus32trk + p->Ks/2) / p->Ks) * p->Ks;   // round to multiple of Ks
-   p->Lminus32trk = (linearsweepwidth - p->lc.CenterOffset) / ( 2.0f * dxperlsb) + 0.5f;
-   p->Lminus32trk = -(((p->Lminus32trk + p->Ks/2) / p->Ks) * p->Ks);   // round to multiple of Ks
+   p->Lpos = (linearsweepwidth + p->lc.CenterOffset) / (2.0f * dxperlsb) + 0.5f;
+   p->Lpos = ((p->Lpos + p->Ks/2) / p->Ks) * p->Ks;    // round to multiple of Ks
+   p->Lneg = (linearsweepwidth - p->lc.CenterOffset) / (2.0f * dxperlsb) + 0.5f;
+   p->Lneg = -(((p->Lneg + p->Ks) / p->Ks) * p->Ks);  // round to multiple of Ks
+   
+   float Wsest = p->lc.LimitSwitchSpan / dxperlsb + 0.5f;
+   Wsest = ((Wsest + p->Ks/2) / p->Ks) * p->Ks;       // round to multiple of Ks
+   p->Ainitpos = p->Lpos - Wsest;
+   p->Ainitneg = p->Lneg + Wsest;
 
 
 

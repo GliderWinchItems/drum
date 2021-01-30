@@ -41,8 +41,11 @@ struct LEVELWINDLC
 	/* Timings in milliseconds. Converted later to 'swtim1' ticks. */
    uint32_t hbctmin_t;  // Minimum duration: between heartbeats (ms)
 
+   // REVISIT: these should go away
    int32_t  Lplus;      // start of positive reversal region 
    int32_t  Lminus;     // start of negative reversal region
+   
+
    int32_t  Ka;         // reversal rate
    int32_t  Nr;         // ratio of reversal rate to sweep rate
 
@@ -76,10 +79,10 @@ struct LEVELWINDLC
    float    ManualSweepSpeed;
    float    TestSweepSpeed;
    int32_t  NumberTestSweeps;
-   float    LimitSwitchActivationTolerance;
+   float    LimitSwitchTolerance;
    float    LevelWindHBPeriod;
    uint32_t DrumInstance;   // 1:7
-   float    LimitOverrunSwitchDistance;
+   float    OverrunSwitchSpan;
    int32_t  MicroStepsPerRevolution;
    float    BallScrewLead;
    int32_t  EncoderPulsesPerRevolution;

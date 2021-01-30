@@ -119,8 +119,16 @@ struct LEVELWINDFUNCTION
    int16_t  pos_prev;   // Previous posaccum integral portion 
    int32_t  Lplus32;    // 32-bit extended working Lplus
    int32_t  Lminus32;   // 32-bit extended workin Lminus
-   int32_t  Lminus32trk;// 32-bit Lminus for tracking
-   int32_t  Lplus32trk; // 32-bit Lplus for tracking
+   
+   // these are new based on SI parameters
+   int32_t  Lpos;       // accumulator postive reversal point     
+   int32_t  Lneg;       // accumulator negative reversal point 
+   int32_t  Wsest;      // limit switch span estimate
+   int32_t  Ainitpos;   // accumulator value to jamb on MSN activation
+   int32_t  Ainitneg;   // accumulator value to jamb on MS activation
+   int32_t  Lpad;       // pad for index sweep
+
+   
 
    // Sweep rate 
    

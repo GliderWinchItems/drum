@@ -450,7 +450,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             {
               // moving away from motor and MSN switch has activated
                // switch to sweep state for limit switch testing
-               p->posaccum.s32 = p->Lplus32 - (p->Ks * 3000); //  REVISIT: Parameter needed for 1000 magic number
+               p->posaccum.s32 = p->Lplus32 - (p->Ks * 3000); //  REVISIT: Parameter needed for magic number
                p->pos_prev = p->posaccum.s16[1];
                p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state
 #if LEVELWINDDEBUG //   for development only

@@ -66,7 +66,8 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
          All factors dimensionless
 */
 
-   p->LimitSwitchSpan = 129.4e-3;     
+   p->LimitSwitchSpan = 230e-3;
+   p->OverrunSwitchSpan = 330e-3;     
    p->CenterOffset = 7.0e-3;
    p->DrumWidth = 165e-3;
    p->CableDiameter = 5e-3;
@@ -77,10 +78,9 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->ManualSweepSpeed = 5e-3;
    p->TestSweepSpeed = 50e-3;
    p->NumberTestSweeps = 2;
-   p->LimitSwitchActivationTolerance = 3.0e-3;
+   p->LimitSwitchTolerance = 3.0e-3;
    p->LevelWindHBPeriod = 500e-3;
    p->DrumInstance = 1;   // 1:7
-   p->LimitOverrunSwitchDistance = 75e-3;
    p->MicroStepsPerRevolution = 2000;
    p->BallScrewLead = 20e-3;
    p->EncoderPulsesPerRevolution = 360;
