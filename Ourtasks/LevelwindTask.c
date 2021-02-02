@@ -155,8 +155,8 @@ extern CAN_HandleTypeDef hcan1;
       }
 
       // is this drum enabled for operation on the control panel
-      else if  (!(pcp->op_drums & (0x01 << (p->lc.mydrum - 1))) 
-         || ((pcp->mode == LW_MODE_OFF) && (pcp->active_drum == p->lc.mydrum)))
+      else if  (!(pcp->op_drums & (0x01 << (p->mydrum - 1))) 
+         || ((pcp->mode == LW_MODE_OFF) && (pcp->active_drum == p->mydrum)))
       {  // move level-wind state machine to off with error flag clear
          levelwind_task_move_to_off(0);           
       }
@@ -202,7 +202,6 @@ extern CAN_HandleTypeDef hcan1;
                   if (GPIOE->IDR & LimitSw_MS_NO_Pin) 
                   {  // starting with MSN switch activated or no switch activated
                      p->posaccum.s32 = p->Lplus32 + p->rvrsldx; 
-                     // p->pos_prev = p->posaccum.s32;   // suspected error: this should have used upper 16 bits
                      p->pos_prev = p->posaccum.s16[1];
                      p->indexphase = 0;
                      p->drbit = p->drbit_prev = 1; // move in negative direction (towards motor) 
@@ -275,15 +274,12 @@ extern CAN_HandleTypeDef hcan1;
                }
                else if ((p->mc_state == MC_RETRIEVE) && (p->mode == LW_MODE_CENTER))                  
                {  /* setup to center for retrieve and transition to Center  */    
-                  // int32_t center = (p->lc.Lplus + p->lc.Lminus) << 15; // calculate center position
-                  // int32_t distance = center - p->posaccum.s32;   // signed distance to center
-                  int32_t distance = ((p->Lpos - p->Lneg) >> 1) - p->posaccum.s32; // signed distance to center
+                  int32_t distance = ((p->Lpos + p->Lneg) >> 1) - p->posaccum.s32; // signed distance to center
                   if (distance > (2 * p->rvrsldx))          
                   {  // move to increase posaccum  from 0 to distance                     
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST  */
-                     p->posaccum.s32 = p->lc.Ka;        
-                     p->velaccum.s32 = p->lc.Ka;
+                     p->posaccum.s32 = p->velaccum.s32 = p->Ka;        
                      p->Lminus32 = p->rvrsldx;
                      p->Lplus32  = p->rvrsldx
                         + ((distance - (2 * p->rvrsldx)) / p->Ks) * p->Ks;                     
@@ -296,8 +292,7 @@ extern CAN_HandleTypeDef hcan1;
                   {  // move to decrease posaccum from 0 to -distance                                          
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST*/
-                     p->posaccum.s32 = -p->lc.Ka;        
-                     p->velaccum.s32 = -p->lc.Ka;
+                     p->posaccum.s32 = p->velaccum.s32 = -p->Ka;        
                      p->Lplus32  = -p->rvrsldx;
                      p->Lminus32 = -p->rvrsldx  
                         + ((distance + (2 * p->rvrsldx)) / p->Ks) * p->Ks;                     
@@ -309,13 +304,13 @@ extern CAN_HandleTypeDef hcan1;
                   else if (distance > ((int32_t) 2) << 16)          
                   {  // distance greater than 2 stepper steps
                      // compute truncated accell/deceration profile
-                     int16_t Nr = sqrtf((float)(distance / (p->lc.Ka)));
-                     int32_t rvrsldx = Nr * (Nr - 1) * p->lc.Ka / 2;
-                     int16_t Ks = Nr * p->lc.Ka;
+                     int16_t Nr = sqrtf((float)(distance / (p->Ka)));
+                     int32_t rvrsldx = Nr * (Nr - 1) * p->Ka / 2;
+                     int16_t Ks = Nr * p->Ka;
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST  */
-                     p->posaccum.s32 = p->lc.Ka;        
-                     p->velaccum.s32 = p->lc.Ka;
+                     p->posaccum.s32 = p->Ka;        
+                     p->velaccum.s32 = p->Ka;
                      p->Lminus32 = rvrsldx;
                      p->Lplus32  = rvrsldx
                         + ((distance - (2 * rvrsldx)) / Ks) * Ks;                     
@@ -327,13 +322,13 @@ extern CAN_HandleTypeDef hcan1;
                   else if (-distance > ((int32_t) 2) << 16)          
                   {  // distance greater than 2 stepper steps
                      // compute truncated accell/deceration profile
-                     int16_t Nr = sqrtf((float)(-distance / (p->lc.Ka)));
-                     int32_t rvrsldx = Nr * (Nr - 1) * p->lc.Ka / 2;
-                     int16_t Ks = Nr * p->lc.Ka;
+                     int16_t Nr = sqrtf((float)(-distance / (p->Ka)));
+                     int32_t rvrsldx = Nr * (Nr - 1) * p->Ka / 2;
+                     int16_t Ks = Nr * p->Ka;
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST  */
-                     p->posaccum.s32 = -p->lc.Ka;        
-                     p->velaccum.s32 = -p->lc.Ka;
+                     p->posaccum.s32 = -p->Ka;        
+                     p->velaccum.s32 = -p->Ka;
 
                      p->Lminus32 = -rvrsldx;
                      p->Lplus32  = -rvrsldx

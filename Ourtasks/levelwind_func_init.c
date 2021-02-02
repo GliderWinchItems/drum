@@ -104,6 +104,10 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->Windxswp = (p->lc.OverrunSwitchSpan) / (2.0f * dxperlsb) + 0.5f;
    p->Windxswp = ((p->Windxswp + p->Ks/2) / p->Ks) * p->Ks; // round to multiple of Ks
 
+   // limit switch span and tolerance used for error dectection only so not requiring rounding
+   p->LSSpan = p->lc.LimitSwitchSpan / dxperlsb;   // limit switch span
+   p->LSTol = p->lc.LimitSwitchTol / dxperlsb;     // limit switch tolerance
+
    // some misc values
    p->mydrum = p->lc.DrumInstance;
    p->mydrumbit = (1 << (p->mydrum - 1)); // Convert drum number (1-7) to bit position (0-6)

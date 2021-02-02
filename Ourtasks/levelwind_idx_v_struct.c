@@ -48,9 +48,16 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->Lplus       = 15000; // Calibrated start of positive reversal region
    p->Lminus      =    0;  // Calibrated start of negative reversal region
 
-   p->ocidx       = 21000; // Indexing increment for 250 us (4 kHz)
+   /* DEH ocidx
+   p->ocidx       = 21000; // Indexing increment for 250 us (4 kHz) This was from DEH)
    p->Nswp        = 8;     // Test sweep speed increment increase factor
    p->Nman        = 6;     // Manual sweep increment decrease factor
+   */
+
+   p->ocidx       = 10500; // Indexing increment for 125 us (8 kHz) This was from DEH)
+   p->Nswp        = 4;     // Test sweep speed increment increase factor
+   p->Nman        = 8;     // Manual sweep increment decrease factor
+
 
 
 // For development; these will likely not be in operational code
@@ -66,10 +73,10 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
          All factors dimensionless
 */
 
-   p->LimitSwitchSpan = 230e-3;
-   p->LimitSwitchTolerance = 100e-3;
-   p->OverrunSwitchSpan = 330e-3;     
-   p->CenterOffset = 7.0e-3;
+   p->LimitSwitchSpan = 230e-3;     // between activation points
+   p->LimitSwitchTol = 100e-3;
+   p->OverrunSwitchSpan = 330e-3;   // between activation points    
+   p->CenterOffset = 5.0e-3;
    p->DrumWidth = 165e-3;
    p->CableDiameter = 5e-3;
    p->ExcessRollerGap = 3e-3;
@@ -79,7 +86,6 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->ManualSweepSpeed = 5e-3;
    p->TestSweepSpeed = 50e-3;
    p->NumberTestSweeps = 2;
-   p->LimitSwitchTolerance = 3.0e-3;
    p->LevelWindHBPeriod = 500e-3;
    p->DrumInstance = 1;   // 1:7
    p->MicroStepsPerRevolution = 2000;

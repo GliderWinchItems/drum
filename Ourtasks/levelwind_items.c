@@ -331,6 +331,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    { // Yes, encoder channel Z transition
       pT2base->SR = ~(1 << 2);  // Reset CH2 flag
 
+      /* uncomment this overloaded use of orange LED to show index position is desired
       if ((GPIOB->IDR & (1 << 3)) == 0)
       {
          HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
@@ -339,6 +340,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       {
          HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
       }
+      */
       return;
    }
 #endif
@@ -433,12 +435,12 @@ void levelwind_items_TIM2_IRQHandler(void)
          {
             switch (p->indexphase)
             {
-               case(0):
+               case (0):
                {  // moving towards motor (position accumulator is decreasing)               
                   if ((p->sw[LIMITDBMSN].dbs == 0) && (p->velaccum.s32 == -p->Ks))
                   {  // MSN switch has deactivated and at full speed towards stepper motor
                      /*
-                        Reset position accumulator to cause a reversal to start
+                        Reset position accumulator to initiate a reversal to start
                         moving back towards MSN limit switch. It will then index
                         when it the MSN reactivates and will have enough distance
                         to reach nominal speed.
@@ -448,22 +450,66 @@ void levelwind_items_TIM2_IRQHandler(void)
                      p->indexphase = 1;
                      break;
                   }
+
+                  // REVISIT: test test and action here for posaccum <= Lminus32
+                  if (0)
+                  {
+
+                  }
+                  break; 
                }
-               case(1): // moving away from motor looking for MSN activation
-               {   
+               case (1): 
+               {  // moving away from motor looking for MSN activation 
                   if (p->sw[LIMITDBMSN].dbs != 0)
-                  {  // moving away from motor and MSN switch has now activated
-                     // switch to sweep state for limit switch testing
+                  {  // MSN switch has now activated
                      p->posaccum.s32 = p->Lpos;
                      p->pos_prev = p->posaccum.s16[1];
 
-                     // temporary until  indexing phase 2 is implemented
+                     /* temporary until  indexing phase 2 is implemented
+                     // switch to sweep state
                      p->Lminus32 = p->Lneg;
                      p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state
-   #if LEVELWINDDEBUG //   for development only
+                     */
+#if LEVELWINDDEBUG //   for development only
                      p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
-   #endif            break;
+#endif            
+                     p->indexphase = 2;
+                     break;
                   }
+                  
+                  // REVISIT: test and action here  here for posaccum >= Lplus32
+                  if (0)
+                  {
+
+                  }
+                  break;
+               }
+               case (2):
+               {  // moving towards motor looking for MS activation
+                  if (p->sw[LIMITDBMS].dbs != 0)
+                  {  // MS switch has activated
+                     // center position accumulator on limit switches' activation points
+                     p->Ws = p->Lpos - p->posaccum.s32;  // capture measureed LS span
+                     // REVIST: need test that span measured is within span tolerance and
+                     // mechanism to act on failures
+                     if (0)
+                     {
+                        break;
+                     }
+
+                     p->posaccum.s32 = -(((p->Ws + p->Ks) >> 1) / p->Ks) * p->Ks;
+                     p->pos_prev = p->posaccum.s16[1];
+                     p->Lminus32 = p->Lneg;
+                     p->isr_state = LW_ISR_SWEEP;
+                     break;  
+                  }
+                  
+                  // REVISIT: test and action here if posaccum32 <= Lminus32
+                  if (0)
+                  {
+
+                  }
+                  break;
                }
             }
             emulation_run = 1;
@@ -479,13 +525,14 @@ void levelwind_items_TIM2_IRQHandler(void)
             calibrating limit switches for speed dependent corrections in LOS recovery. */
 
             // exit to arrest when velocity goes through 0
+            
             if (p->velaccum.s32 == 0)  // when velocity == 0, speed up
             {
-               // p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
+               p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
             }
 
             // temporary until termination criteria is established
-            if (!(GPIOE->IDR & ManualSw_MS_NO_Pin)) // Test sweep continues forever
+            if (!(GPIOE->IDR & ManualSw_MS_NO_Pin)) 
                // transition to Arrest with next state Track 
                p->isr_state = LW_ISR_ARREST | (LW_ISR_TRACK >> 4);             
             
@@ -500,7 +547,7 @@ void levelwind_items_TIM2_IRQHandler(void)
                /* Transition to Track or Center when done. The state to transtion 
                to is held in the lower nibble of isr_state */
                p->isr_state = p->isr_state << 4;
-               p->ocinc = p->ocman; // reduce output compare interrupt rate
+               p->ocinc = p->ocman; // reduce output compare interrupt rate (recues processor load)
             }
             else  emulation_run = 1;
             break;

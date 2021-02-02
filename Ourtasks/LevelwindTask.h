@@ -112,25 +112,28 @@ union PAYFLT
 struct LEVELWINDFUNCTION
 {
    struct   LEVELWINDLC lc; // Parameters for level-wind function
+   
+   // union variables
    union    PAYFLT   pf; // For extracting float from payload
    union    PAYFLT   posaccum;  // Stepper position accumulator
    union    PAYFLT   velaccum;  // Stepper velocity accumulator
 
-   int16_t  pos_prev;   // Previous posaccum integral portion
+   int16_t  pos_prev;   // Previous position accumulator integral portion
    
    // these are the working reversal points 
    int32_t  Lplus32;    // 32-bit extended working Lplus
    int32_t  Lminus32;   // 32-bit extended workin Lminus
    
-   // these are new based on SI parameters in lc above
+   // 32-bit parameters mostly based on SI parameters in lc above
    int32_t  Lpos;       // accumulator postive reversal point     
    int32_t  Lneg;       // accumulator negative reversal point
-   int32_t  Windxswp;   // maximum indexing sweep width 
-   int32_t  Ws;         // measured limit switch span
+   int32_t  Windxswp;   // maximum indexing sweep width  
+   uint32_t Ws;        // measured limit switch span (not based on parameters)
+   uint32_t LSSpan;    // expected LS span
+   uint32_t LSTol;     // allowable tolerance for LS span
    
 
-   // Sweep rate 
-   
+   // Sweep and reversal parameters   
    uint16_t Nr;         // Reversal steps to 0 velocity  
    uint16_t Ka;         // internal accelertion parameter
    uint32_t Ks;         // (Ks/65536)=levelwind pulses per encoder edge (<= 1)        

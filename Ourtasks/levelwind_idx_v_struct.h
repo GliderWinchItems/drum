@@ -69,7 +69,7 @@ struct LEVELWINDLC
    */
 
    float    LimitSwitchSpan;
-   float    LimitSwitchTolerance;
+   float    LimitSwitchTol;
    float    OverrunSwitchSpan;
    float    CenterOffset;
    float    DrumWidth;
