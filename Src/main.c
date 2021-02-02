@@ -1061,7 +1061,7 @@ uint8_t ratepace = 0;
 extern uint32_t dbsws1; // Debug
   if ((dbsws1-dbsws1_prev) != 0)
   {
-      yprintf(&pbuf4,"\n\r%9i",dbsws1-dbsws1_prev);
+      //yprintf(&pbuf4,"\n\r%9i",dbsws1-dbsws1_prev);
       dbsws1_prev = dbsws1;
   }
 #else

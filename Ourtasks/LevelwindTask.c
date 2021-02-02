@@ -186,52 +186,43 @@ extern CAN_HandleTypeDef hcan1;
                      the beginning of indexing, the unit will move out until
                      both the MSN switch clears and the unit is at full speed
                      and then reverse and make its run towards the MSN limit
-                     switch. If however the mechanism is very close to the MSN
-                     limit switch it may not reach full speed. To preclude 
+                     switch. If however the mechanism were very close to the MSN
+                     limit switch, it might not reach full speed. To preclude 
                      this, if neither limit switch is activated we will treat
                      this like the MSN switch is activated to move towards the
                      motor initially enough to gareentee the index activation
                      is at nominal indexing speed.
                   */
 
-                     // initialize 32-bit values for Lplus32 and Lminus32. Reference paper.
-                     // these values are set up temporarily for development to make motorside position 0
-                     // Need padding to provide margin for initial sweep
-                  // the commented values below are close to what is really needed
-                     // Position accumulator initial value. Reference paper for the value employed.
-                     // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
-                     // p->Lminus32 = p->lc.Lminus << 16;
-                     p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
-                     p->Lplus32  = p->Lminus32 
-                        + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
-                  
-                  if ((GPIOE->IDR & (LimitSw_MS_NO_Pin)) == 0)
-                  {  // starting with MS switch not activated
+                  p->Lplus32  = p->Lpos;
+                  // make Lminus32 more negative to insure sweep will reach MSN
+                  // limit switch even if near negative overrun switch
+                  p->Lminus32 = -p->Windxswp;
+               
+                  if (GPIOE->IDR & LimitSw_MS_NO_Pin) 
+                  {  // starting with MSN switch activated or no switch activated
+                     p->posaccum.s32 = p->Lplus32 + p->rvrsldx; 
+                     // p->pos_prev = p->posaccum.s32;   // suspected error: this should have used upper 16 bits
+                     p->pos_prev = p->posaccum.s16[1];
+                     p->indexphase = 0;
+                     p->drbit = p->drbit_prev = 1; // move in negative direction (towards motor) 
+                  }  
+                  else
+                  {  // starting with MS switch activated
                      /* 
-                        This must be set somewhat below Lminus to insure it
+                        Position must be set somewhat below Lneg to insure it
                         reaches the MSN limit switch before it reverses. A test
                         needs to be added monitor the position accumulator 
                         during the indexing sweep. If it reaches the reversal 
                         point before the switch activates that is an error.
                      */
 
-                     /* 
-                        REVISIT: Make sure enough margin is provided for all the indexing sweeps
-                        and these are tied to parameters, not magic numbers.
-                     */
-
-                     p->posaccum.s32 = 0; // temporary to have it start at 0.
-                     p->pos_prev = p->posaccum.s32; 
-                     p->indexflag = 0;
+                     p->posaccum.s32 = p->Lminus32 - p->rvrsldx;
+                     p->pos_prev = p->posaccum.s16[1];
+                     p->indexphase = 1;
                      p->drbit = p->drbit_prev = 0; // move away from motor (postion accum increasing) 
                   }
-                  else
-                  {  // starting with MSN switch activated or no switch activated
-                     p->posaccum.s32 = p->Lplus32 + p->rvrsldx; 
-                     p->pos_prev = p->posaccum.s32;
-                     p->indexflag = 1;
-                     p->drbit = p->drbit_prev = 1; // move in negative direction (towards motor) 
-                  }                
+
 
                   p->velaccum.s32 = 0; // Velocity accumulator initial value
                   p->ocinc = p->lc.ocidx; // set oc interrupt rate for indexing
@@ -284,8 +275,9 @@ extern CAN_HandleTypeDef hcan1;
                }
                else if ((p->mc_state == MC_RETRIEVE) && (p->mode == LW_MODE_CENTER))                  
                {  /* setup to center for retrieve and transition to Center  */    
-                  int32_t center = (p->lc.Lplus + p->lc.Lminus) << 15; // calculate center position
-                  int32_t distance = center - p->posaccum.s32;   // signed distance to center
+                  // int32_t center = (p->lc.Lplus + p->lc.Lminus) << 15; // calculate center position
+                  // int32_t distance = center - p->posaccum.s32;   // signed distance to center
+                  int32_t distance = ((p->Lpos - p->Lneg) >> 1) - p->posaccum.s32; // signed distance to center
                   if (distance > (2 * p->rvrsldx))          
                   {  // move to increase posaccum  from 0 to distance                     
                      /* start 1 iteration in to avoid immediate zero velocity termination 
@@ -378,27 +370,23 @@ extern CAN_HandleTypeDef hcan1;
                {  // move to Index state with stepper driver enabled
                   
                   /* This code is essentially the same as is used in the Off state
-                  to start indexing. We could just move through Off but then that 
+                  to start indexing but knows mechanism is centered. 
+                  We could just move through Off but then that 
                   would generate two status-state messages. That could be circumvented
-                  with a trick but this is cleaner. */                  
-                  p->ocinc = p->lc.ocidx;
-                  p->isr_state = LW_ISR_INDEX;
-                  p->state = LW_INDEX;
-                  enable_stepper;
+                  with a trick but this is cleaner. This does assume neither limit switch is 
+                  activated. */
 
-                  // REVISIT: initialize trajectory integrators and associated values
-                  // these values are set up temporarily for development to make leftost position 0
-                  // Need padding for to provide margin for initial sweep
-                  // Position accumulator initial value. Reference paper for the value employed.
-                  // p->posaccum.s32 = (p->lc.Lminus << 16) - p->rvrsldx;
-                  p->posaccum.s32 = 0; // temporary to have it start at 0.
-                  p->pos_prev = p->posaccum.s32;
-                  // initialize 32-bit values for Lplus32 and Lminus32. Reference paper
-                  // p->Lminus32 = p->lc.Lminus << 16;
-                  p->Lminus32 = (p->lc.Lminus << 16) + p->rvrsldx;
-                  p->Lplus32  = p->Lminus32 
-                     + (((p->lc.Lplus - p->lc.Lminus) << 16) / p->Ks) * p->Ks;
-                  p->velaccum.s32 = 0;          // Velocity accumulator initial value      
+                  p->Lminus32 = -p->Windxswp;
+                  p->Lplus32  = p->Lpos;
+                  p->posaccum.s32 = -(p->Windxswp + p->rvrsldx);
+                  p->pos_prev = p->posaccum.s16[1];
+                  p->indexphase = 1;
+                  p->drbit = p->drbit_prev = 0; // move away from motor (postion accum increasing) 
+                  p->ocinc = p->lc.ocidx; // set oc interrupt rate for indexing
+                  p->state = LW_INDEX;
+                  p->status = LW_STATUS_INDEXING;
+                  enable_stepper;
+                  p->isr_state = LW_ISR_INDEX;     
                }
                break;
             }

@@ -69,6 +69,8 @@ struct LEVELWINDLC
    */
 
    float    LimitSwitchSpan;
+   float    LimitSwitchTolerance;
+   float    OverrunSwitchSpan;
    float    CenterOffset;
    float    DrumWidth;
    float    CableDiameter;
@@ -79,10 +81,9 @@ struct LEVELWINDLC
    float    ManualSweepSpeed;
    float    TestSweepSpeed;
    int32_t  NumberTestSweeps;
-   float    LimitSwitchTolerance;
+   float    LOSTolerance;
    float    LevelWindHBPeriod;
    uint32_t DrumInstance;   // 1:7
-   float    OverrunSwitchSpan;
    int32_t  MicroStepsPerRevolution;
    float    BallScrewLead;
    int32_t  EncoderPulsesPerRevolution;

@@ -51,7 +51,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    // Initialize hardcoded parameters (used in  computations below)
    levelwind_idx_v_struct_hardcode_params(&p->lc);
 
-#if 0 // enable to use new parameters
+#if 1 // enable to use new parameters
    
    // level-wind delta x per position accumulator lsb
    float dxperlsb = p->lc.BallScrewLead 
@@ -94,20 +94,17 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
       - (float) (2 * p->rvrsldx) * dxperlsb + p->lc.ExcessRollerGap;   
 
    // calculate the offset corrected values for the 32-bit values
-   // all rounding done with truncation of positive numbers
+   // all rounding done using truncation of positive numbers
    p->Lpos = (linearsweepwidth + p->lc.CenterOffset) / (2.0f * dxperlsb) + 0.5f;
    p->Lpos = ((p->Lpos + p->Ks/2) / p->Ks) * p->Ks;    // round to multiple of Ks
    p->Lneg = (linearsweepwidth - p->lc.CenterOffset) / (2.0f * dxperlsb) + 0.5f;
-   p->Lneg = -(((p->Lneg + p->Ks) / p->Ks) * p->Ks);  // round to multiple of Ks
+   p->Lneg = -(((p->Lneg + p->Ks/2) / p->Ks) * p->Ks); // round to multiple of Ks and negate
    
-   float Wsest = p->lc.LimitSwitchSpan / dxperlsb + 0.5f;
-   Wsest = ((Wsest + p->Ks/2) / p->Ks) * p->Ks;       // round to multiple of Ks
-   p->Ainitpos = p->Lpos - Wsest;
-   p->Ainitneg = p->Lneg + Wsest;
+   // Windxswp is about half the overrun switch span and a multiple of Ks
+   p->Windxswp = (p->lc.OverrunSwitchSpan) / (2.0f * dxperlsb) + 0.5f;
+   p->Windxswp = ((p->Windxswp + p->Ks/2) / p->Ks) * p->Ks; // round to multiple of Ks
 
-
-
-
+   // some misc values
    p->mydrum = p->lc.DrumInstance;
    p->mydrumbit = (1 << (p->mydrum - 1)); // Convert drum number (1-7) to bit position (0-6)
    p->hbct_k = pdMS_TO_TICKS(p->lc.LevelWindHBPeriod * 1000);
@@ -169,7 +166,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->ledbit2= (LED_ORANGE_Pin);
 #endif   
 
-   p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2; //REVIST: This will be duplicated above when new parameters are used. Remove then.
+   // p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2; //REVIST: This will be duplicated above when new parameters are used. Remove then.
 
    p->drbit = p->drbit_prev = 0;    // Drum direction bit REVIST: Needed???   
 

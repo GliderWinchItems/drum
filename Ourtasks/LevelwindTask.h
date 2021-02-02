@@ -116,18 +116,17 @@ struct LEVELWINDFUNCTION
    union    PAYFLT   posaccum;  // Stepper position accumulator
    union    PAYFLT   velaccum;  // Stepper velocity accumulator
 
-   int16_t  pos_prev;   // Previous posaccum integral portion 
+   int16_t  pos_prev;   // Previous posaccum integral portion
+   
+   // these are the working reversal points 
    int32_t  Lplus32;    // 32-bit extended working Lplus
    int32_t  Lminus32;   // 32-bit extended workin Lminus
    
-   // these are new based on SI parameters
+   // these are new based on SI parameters in lc above
    int32_t  Lpos;       // accumulator postive reversal point     
-   int32_t  Lneg;       // accumulator negative reversal point 
-   int32_t  Wsest;      // limit switch span estimate
-   int32_t  Ainitpos;   // accumulator value to jamb on MSN activation
-   int32_t  Ainitneg;   // accumulator value to jamb on MS activation
-   int32_t  Lpad;       // pad for index sweep
-
+   int32_t  Lneg;       // accumulator negative reversal point
+   int32_t  Windxswp;   // maximum indexing sweep width 
+   int32_t  Ws;         // measured limit switch span
    
 
    // Sweep rate 
@@ -146,7 +145,7 @@ struct LEVELWINDFUNCTION
    uint32_t enflag;     // BSRR pin set/reset bit position: enable
    uint8_t  drbit;      // Drum direction bit (0, forward|1, reverse)
    uint8_t  drbit_prev; // Previous Direction bit
-   uint8_t  indexflag;  // flag for indexing
+   uint8_t  indexphase; // indexing phase indicator
    uint8_t  mydrum;     // internal instance number
    uint8_t  mydrumbit;  // mydrum number converted to bit position 0:6
    

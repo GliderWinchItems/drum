@@ -12,7 +12,7 @@
 #define __LEVELWIND_ITEMS
 
 /* Debug */
-#define LEVELWINDDEBUG  0  // True includes debugging code
+#define LEVELWINDDEBUG  1  // True includes debugging code
 #define LEVELWINDDBGBUFSIZE (360*4) // Circular buffer size
 
 #include "FreeRTOS.h"
@@ -68,7 +68,8 @@
 // LW ISR mode definitions. Lower nibble reserved for sub-states
 #define LW_ISR_OFF    (0 << 4)
 #define LW_ISR_MANUAL (1 << 4)
-#define LW_ISR_INDEX  (2 << 4)
+#define LW_ISR_INDEX  (2 << 4)            // initial indexing state
+#define LW_ISR_INDEX1 (LW_ISR_INDEX | 1)  // second indexing state
 #define LW_ISR_SWEEP  (3 << 4)
 #define LW_ISR_ARREST (4 << 4)
 #define LW_ISR_TRACK  (5 << 4)

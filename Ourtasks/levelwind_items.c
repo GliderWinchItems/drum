@@ -178,7 +178,7 @@ void levelwind_items_timeout(void)
 
    /* Applicable to us? */
    if (!(((pcan->cd.uc[2] & 0x7) == 0) ||
-         ((pcan->cd.uc[2] & 0x7) == p->lc.mydrum))) return;
+         ((pcan->cd.uc[2] & 0x7) == p->mydrum))) return;
 
    /* Mode command from CAN msg. */
    p->mode = pcp->mode;
@@ -409,7 +409,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       // Duration increment computed from CL CAN msg (during development)
       pT2base->CCR1 += p->ocinc; // Schedule next indexing interrupt
      
-      switch (p->isr_state & 0xF0)   // deal with interrupts based on lw isr_state
+      switch (p->isr_state & 0xF0)   // deal with oc compare interrupts based on lw isr_state
       {
          case (LW_ISR_MANUAL):
          {            
@@ -430,38 +430,42 @@ void levelwind_items_TIM2_IRQHandler(void)
          }
 
          case (LW_ISR_INDEX):
-         {  
-            if (p->indexflag != 0)
-            {  // moving towards motor (position accumulator is decreasing)               
-               if ((p->sw[LIMITDBMSN].dbs == 0) && (p->velaccum.s32 == -p->Ks))
-               {  // MSN switch has deactivated and at full speed towards stepper
-                  /*
-                     Reset position accumulator to cause a reversal to start
-                     moving back towards MSN limit switch. It will then index
-                     when it the MSN reactivates and will have enough distance
-                     to reach nominal speed.
-                  */
-                  p->posaccum.s32 = p->Lminus32 + (500 * p->Ks) ; //  REVISIT: Parameter for magic number
-                  p->pos_prev = p->posaccum.s16[1];
-                  p->indexflag = 0;
+         {
+            switch (p->indexphase)
+            {
+               case(0):
+               {  // moving towards motor (position accumulator is decreasing)               
+                  if ((p->sw[LIMITDBMSN].dbs == 0) && (p->velaccum.s32 == -p->Ks))
+                  {  // MSN switch has deactivated and at full speed towards stepper motor
+                     /*
+                        Reset position accumulator to cause a reversal to start
+                        moving back towards MSN limit switch. It will then index
+                        when it the MSN reactivates and will have enough distance
+                        to reach nominal speed.
+                     */
+                     p->posaccum.s32 = p->Lminus32;
+                     p->pos_prev = p->posaccum.s16[1];
+                     p->indexphase = 1;
+                     break;
+                  }
+               }
+               case(1): // moving away from motor looking for MSN activation
+               {   
+                  if (p->sw[LIMITDBMSN].dbs != 0)
+                  {  // moving away from motor and MSN switch has now activated
+                     // switch to sweep state for limit switch testing
+                     p->posaccum.s32 = p->Lpos;
+                     p->pos_prev = p->posaccum.s16[1];
+
+                     // temporary until  indexing phase 2 is implemented
+                     p->Lminus32 = p->Lneg;
+                     p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state
+   #if LEVELWINDDEBUG //   for development only
+                     p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
+   #endif            break;
+                  }
                }
             }
-            else if ((p->sw[LIMITDBMSN].dbs != 0) && (p->velaccum.s32 == p->Ks))
-            {
-              // moving away from motor and MSN switch has activated
-               // switch to sweep state for limit switch testing
-               p->posaccum.s32 = p->Lplus32 - (p->Ks * 3000); //  REVISIT: Parameter needed for magic number
-               p->pos_prev = p->posaccum.s16[1];
-               p->isr_state = LW_ISR_SWEEP; // move to sweep ISR state
-#if LEVELWINDDEBUG //   for development only
-               p->tim5cnt_offset = -pT5base->CNT; // reset odometer to 0 for testing only
-#endif      
-            }
-               else
-               {  // motor was not a full speed when MSN activation occured
-                  // need code here to deal with this rare situation
-                  // some sort of retry is needed
-               } 
             emulation_run = 1;
             break;
          }         
@@ -477,7 +481,7 @@ void levelwind_items_TIM2_IRQHandler(void)
             // exit to arrest when velocity goes through 0
             if (p->velaccum.s32 == 0)  // when velocity == 0, speed up
             {
-               p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
+               // p->ocinc = p->ocswp;  // speed up interrupt rate for test sweep
             }
 
             // temporary until termination criteria is established
@@ -518,11 +522,11 @@ void levelwind_items_TIM2_IRQHandler(void)
       }
       else if (p->posaccum.s32 >= p->Lplus32)   // in positive level-wind region ?
       {
-         p->velaccum.s32 -= p->lc.Ka;  // apply negative acceleration 
+         p->velaccum.s32 -= p->Ka;  // apply negative acceleration 
       }      
       else if (p->posaccum.s32 <= p->Lminus32)  // in negative level-wind region ?
       {
-         p->velaccum.s32 += p->lc.Ka;  // apply positive acceleration
+         p->velaccum.s32 += p->Ka;  // apply positive acceleration
       }
       
       // update position integrator
@@ -534,12 +538,15 @@ void levelwind_items_TIM2_IRQHandler(void)
    /* p->dbg1 = p->velaccum.s32;
       p->dbg2 = p->posaccum.s16[1];
       p->dbg3 = p->posaccum.u16[0]; */
-#if 0
+#if 1
    // Store vars in buffer location. 
    p->pdbgadd->intcntr   = p->intcntr;
    p->pdbgadd->dbg1      = p->velaccum.s32;
    p->pdbgadd->dbg2      = p->posaccum.s16[1];
    p->pdbgadd->dbg3      = p->posaccum.u16[0];
+   /*p->pdbgadd->dbg1      = p->Ka;
+   p->pdbgadd->dbg2      = p->Nr;
+   p->pdbgadd->dbg3      = p->Ks;*/
    p->pdbgadd += 1;    // Advance add pointer
    if (p->pdbgadd >= p->pdbgend) p->pdbgadd = p->pdbgbegin;
 #else
