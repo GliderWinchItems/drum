@@ -77,21 +77,6 @@ static uint32_t alert;
 
 
 /* *************************************************************************
- * int levelwind_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1);
- * @brief       : Call from main.c defaultTAsk jic
- * @return      : 0 = use yprintf in main.c; not 0 = skip yprintf in main
- * *************************************************************************/
-#include "yprintf.h"
-
-int levelwind_switches_defaultTaskcall(struct SERIALSENDTASKBCB* pbuf1)
-{
-	return 0;
-extern uint32_t dbgEth;
-	yprintf(&pbuf1,"\n\rswitches %i",dbgEth);
-	return 0;
-}
-
-/* *************************************************************************
  * void levelwind_switches_init(void);
  * @brief       : Initialization
  * *************************************************************************/
@@ -124,11 +109,7 @@ extern TIM_HandleTypeDef htim5;
 		p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
 	}
 
-//	EXTI->RTSR |=  0x0000fc00;  // Trigger on rising edge
-//	EXTI->RTSR &=  ~0x0000fc00;  // Trigger on rising edge not
-//	EXTI->FTSR |=  0x0000fc00;  // Trigger on falling edge
-	EXTI->IMR  |=  0x00003c00;  // Interrupt mask reg: 10:13
-	EXTI->EMR  |=  0x00003c00;  // Event mask reg: enable 10:13
+//	MX sets up switches for falling edge and enables
 	EXTI->PR   |=  0x00003c00;  // Clear any pending
 
 	return;
@@ -173,12 +154,14 @@ dbsws1 += 1;
 	/* Here, one or more PE10-PE13 inputs changed. */
 	p->swbits = GPIOE->IDR & 0x7f80; // Save latest switch bits 09:15
 
+#if LEVELWINDDEBUG 
 	padd->sws = p->swbits;		// Save all switch contact bits
 	padd->tim = pT2base->CNT;   // 32b timer time
 	padd->cnt = pT5base->CNT;   // Encoder counter
    ptmp = padd;  // Save in case R-S change
 	padd += 1;    // Advance in circular buffer
 	if (padd >= pend) padd = pbegin; // Wrap-around
+#endif
 
 	/* Do R-S flip-flop type switch debouncing for limit switches. */
 	if ((EXTI->PR & (LimitSw_MSN_NO_Pin)) != 0)
@@ -210,7 +193,6 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);				
 
 		}
-
 		return;
 	}
 
@@ -221,8 +203,8 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
 		{ // Here R-S flip-flop was reset
 			p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
 			p->sw[LIMITDBMS].posaccum_NO = p->posaccum.s32;
-			//p->sw[LIMITDBMS].flag1  = 0; // Flag for stepper ISR  TEMPORARY  FOR STATISTICS CAPTURE
-			//p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)		  TEMPORARY  FOR STATISTICS CAPTURE
+			p->sw[LIMITDBMS].flag1  = 0; // Flag for stepper ISR  
+			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)		  
 			/* Notification goes here. */	
 			ptmp->sws |= LIMITDBMS;
 
@@ -246,7 +228,6 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);
 		}
 		return;
 	}
-
 	return;
 }
 

@@ -976,7 +976,7 @@ osDelay(0); // Debugging HardFault
 //#define DISPLAYSTACKUSAGEFORTASKS
 //#define ADCSHOW
 //#define SHOWADCCOMMONCOMPUTATIONS
-#define STEPPERSHOW
+#define STEPPERSHOW 1
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1045,74 +1045,75 @@ uint8_t ratepace = 0;
 		if ((noteval & DEFAULTTSKBIT00) != 0)
 		{
 			noteused |= DEFAULTTSKBIT00;
-// ================= Higest rate =======================================
 
-    
+// ================= Higest rate =======================================
+  
     ratepace += 1;
-    if (ratepace > 0) // Slow down LCD output rate if desired
+    if (ratepace > 32) // Slow down LCD output rate if desired
     {
       ratepace = 0; 
 
 
 	
-#ifdef STEPPERSHOW
-
-#if 1 //  1 old, 0 LW LS statistics support
-extern uint32_t dbsws1; // Debug
-  if ((dbsws1-dbsws1_prev) != 0)
-  {
-      //yprintf(&pbuf4,"\n\r%9i",dbsws1-dbsws1_prev);
-      dbsws1_prev = dbsws1;
-  }
-#else
-  struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
-  if (p->sw[LIMITDBMS].flag1  == 1)
-  {
-    p->sw[LIMITDBMS].flag1  = 0;  //reset MS flag
-    yprintf(&pbuf4,"\n\r  %5i %10i %10i %10i %10i",
-      p->sw[LIMITDBMS].flag2,
-      p->sw[LIMITDBMS].posaccum_NO,
-      p->sw[LIMITDBMS].posaccum_NC,
-      p->sw[LIMITDBMSN].posaccum_NO,
-      p->sw[LIMITDBMSN].posaccum_NC );
-  }
-
-#endif
+  #ifdef STEPPERSHOW
 
 
-/* Temporary so 'switches can do some yprintf from here w/o changing main.c */
-if (levelwind_switches_defaultTaskcall(pbuf1) == 0)
-{
-#if LEVELWINDDEBUG 
-  struct LEVELWINDDBGBUF* pdbg;
-  struct SERIALSENDTASKBCB** ppbuf;
-  do
-  {
-    pdbg = levelwind_items_getdbg();
-    if (pdbg != NULL)
-    {
-      // Alternated buffers to overlap 'printf with uart output      
-      if ((stepctr & 1) == 0)
-        ppbuf = &pbuf4;
-      else
-        ppbuf = &pbuf3;
+    #if STEPPERSHOW == 1
+    //  print number of switch interrupts since last print 
+      extern uint32_t dbsws1; // Debug
+      if ((dbsws1-dbsws1_prev) != 0)
+      {
+          yprintf(&pbuf4,"\n\r%9i",dbsws1-dbsws1_prev);
+          dbsws1_prev = dbsws1;
+      }
 
-      yprintf(ppbuf,"\n\r%7u %7i %7i %7i %7i %7i %4i",
-      stepctr++, 
-      pdbg->intcntr,
-      pdbg->tim5cnt,
-      pdbg->dbg1,
-      pdbg->dbg2,
-      pdbg->dbg3,
-      levelwindfunction.dtwmax);
-    }
-  }while (pdbg != NULL);
-#else
-    yprintf(&pbuf4,"\n\r%9i LEVELWINDDEBUG: No debugging buffer %4i",stepctr++,levelwindfunction.dtwmax);
-#endif     
-}
+    #elif STEPPERSHOW == 2
+      //  print data for limit swithc activation point statistics capture
+      //  needs modification in levelwind_switches
+      struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+      if (p->sw[LIMITDBMS].flag1  == 1)
+      {
+        p->sw[LIMITDBMS].flag1  = 0;  //reset MS flag
+        yprintf(&pbuf4,"\n\r  %5i %10i %10i %10i %10i",
+          p->sw[LIMITDBMS].flag2,
+          p->sw[LIMITDBMS].posaccum_NO,
+          p->sw[LIMITDBMS].posaccum_NC,
+          p->sw[LIMITDBMSN].posaccum_NO,
+          p->sw[LIMITDBMSN].posaccum_NC );
+      }
+
+    #elif STEPPERSHOW == 3
+      //  print encoder and velocity and postion accumulator data
+      //  LEVELWINDDEBUG must be set to 1
+      struct LEVELWINDDBGBUF* pdbg;
+      struct SERIALSENDTASKBCB** ppbuf;
+      do
+      {
+        pdbg = levelwind_items_getdbg();
+        if (pdbg != NULL)
+        {
+          // Alternated buffers to overlap 'printf with uart output      
+          if ((stepctr & 1) == 0)
+            ppbuf = &pbuf4;
+          else
+            ppbuf = &pbuf3;
+
+          yprintf(ppbuf,"\n\r%7u %7i %7i %7i %7i %7i %4i",
+          stepctr++, 
+          pdbg->intcntr,
+          pdbg->tim5cnt,
+          pdbg->dbg1,
+          pdbg->dbg2,
+          pdbg->dbg3,
+          levelwindfunction.dtwmax);
+        }
+      } while (pdbg != NULL);
+    #else
+          yprintf(&pbuf4,"\n\r%9i LEVELWINDDEBUG: No debugging buffer %4i",stepctr++,levelwindfunction.dtwmax);
+    #endif     
+
 #endif      
-    }
+}
 
 	
 // ================== SLOW ==============================================

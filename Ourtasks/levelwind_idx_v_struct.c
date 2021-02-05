@@ -54,7 +54,7 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->Nman        = 6;     // Manual sweep increment decrease factor
    */
 
-   p->ocidx       = 10500; // Indexing increment for 125 us (8 kHz) This was from DEH)
+   p->ocidx       = 15000; // Indexing increment (compare with DEH above)
    p->Nswp        = 4;     // Test sweep speed increment increase factor
    p->Nman        = 8;     // Manual sweep increment decrease factor
 
