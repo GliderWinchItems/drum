@@ -362,8 +362,9 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
     PC6     ------> TIM3_CH1
     PC7     ------> TIM3_CH2
     PC8     ------> TIM3_CH3
+    PC9     ------> TIM3_CH4
     */
-    GPIO_InitStruct.Pin = LimitSw_MSN_NOC6_Pin|LimitSw_MSN_NCC7_Pin|LimitSw_MS_NOC8_Pin;
+    GPIO_InitStruct.Pin = LimitSw_MSN_NOC6_Pin|LimitSw_MSN_NCC7_Pin|LimitSw_MS_NOC8_Pin|LimitSw_MS_NCC9_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -538,8 +539,9 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
     PC6     ------> TIM3_CH1
     PC7     ------> TIM3_CH2
     PC8     ------> TIM3_CH3
+    PC9     ------> TIM3_CH4
     */
-    HAL_GPIO_DeInit(GPIOC, LimitSw_MSN_NOC6_Pin|LimitSw_MSN_NCC7_Pin|LimitSw_MS_NOC8_Pin);
+    HAL_GPIO_DeInit(GPIOC, LimitSw_MSN_NOC6_Pin|LimitSw_MSN_NCC7_Pin|LimitSw_MS_NOC8_Pin|LimitSw_MS_NCC9_Pin);
 
   /* USER CODE BEGIN TIM3_MspDeInit 1 */
 

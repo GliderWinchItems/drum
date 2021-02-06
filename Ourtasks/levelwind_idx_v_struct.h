@@ -86,7 +86,7 @@ struct LEVELWINDLC
    uint32_t DrumInstance;   // 1:7
    int32_t  MicroStepsPerRevolution;
    float    BallScrewLead;
-   int32_t  EncoderPulsesPerRevolution;
+   int16_t  EncoderPulsesPerRevolution;
    float    EncoderToDrumGearRatio;
    float    StepperVoltageScale;
    float    StepperVoltageOffset;

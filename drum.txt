@@ -1,6 +1,6 @@
 Configuration	drum
 STM32CubeMX 	6.1.0
-Date	11/29/2020
+Date	02/05/2021
 MCU	STM32F407VGTx
 
 
@@ -26,6 +26,7 @@ TIM3	Internal Clock	TIM3_VS_ClockSourceINT	VP_TIM3_VS_ClockSourceINT
 TIM3	Input Capture direct mode	TIM3_CH1	PC6
 TIM3	Input Capture direct mode	TIM3_CH2	PC7
 TIM3	Input Capture direct mode	TIM3_CH3	PC8
+TIM3	Input Capture direct mode	TIM3_CH4	PC9
 TIM5	Encoder Mode	TIM5_CH1	PA0-WKUP
 TIM5	Encoder Mode	TIM5_CH2	PA1
 TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
@@ -67,6 +68,7 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 63	PC6	TIM3_CH1	LimitSw_MSN_NO
 64	PC7	TIM3_CH2	LimitSw_MSN_NC
 65	PC8	TIM3_CH3	LimitSw_MS_NO
+66	PC9	TIM3_CH4	LimitSw_MS_NC
 72	PA13	SYS_JTMS-SWDIO	
 76	PA14	SYS_JTCK-SWCLK	
 78	PC10	USART3_TX	
@@ -95,6 +97,7 @@ TIM3	Internal Clock	TIM3_VS_ClockSourceINT	VP_TIM3_VS_ClockSourceINT
 TIM3	Input Capture direct mode	TIM3_CH1	PC6
 TIM3	Input Capture direct mode	TIM3_CH2	PC7
 TIM3	Input Capture direct mode	TIM3_CH3	PC8
+TIM3	Input Capture direct mode	TIM3_CH4	PC9
 TIM5	Encoder Mode	TIM5_CH1	PA0-WKUP
 TIM5	Encoder Mode	TIM5_CH2	PA1
 TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
@@ -136,6 +139,7 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 63	PC6	TIM3_CH1	LimitSw_MSN_NO
 64	PC7	TIM3_CH2	LimitSw_MSN_NC
 65	PC8	TIM3_CH3	LimitSw_MS_NO
+66	PC9	TIM3_CH4	LimitSw_MS_NC
 72	PA13	SYS_JTMS-SWDIO	
 76	PA14	SYS_JTCK-SWCLK	
 78	PC10	USART3_TX	

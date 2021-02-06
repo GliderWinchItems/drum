@@ -146,6 +146,8 @@ void Error_Handler(void);
 #define LimitSw_MSN_NCC7_GPIO_Port GPIOC
 #define LimitSw_MS_NOC8_Pin GPIO_PIN_8
 #define LimitSw_MS_NOC8_GPIO_Port GPIOC
+#define LimitSw_MS_NCC9_Pin GPIO_PIN_9
+#define LimitSw_MS_NCC9_GPIO_Port GPIOC
 #define encodertimeZ_Pin GPIO_PIN_3
 #define encodertimeZ_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */

@@ -141,14 +141,14 @@ LimitSw_MSN_NC_Pin    GPIO_PIN_11
 LimitSw_MS_NO_Pin   GPIO_PIN_12
 LimitSw_MS_NC_Pin   GPIO_PIN_13
 */
-uint32_t dbsws1; // Debug
+uint32_t dbsws1[5]; // Debug
 
 void Stepper_EXTI15_10_IRQHandler(void)
 {
 	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 	struct SWITCHXITION* ptmp;
 //HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
-dbsws1 += 1;
+dbsws1[0] += 1;
 /*	Name is from time when switches beyond 10:13 were interrupt driven	*/
 
 	/* Here, one or more PE10-PE13 inputs changed. */
@@ -167,6 +167,7 @@ dbsws1 += 1;
 	if ((EXTI->PR & (LimitSw_MSN_NO_Pin)) != 0)
 	{ // Here NSN_NO switch closed
 		EXTI->PR = LimitSw_MSN_NO_Pin; // Reset request
+		dbsws1[1] += 1;
 		if (p->sw[0].dbs != 1)
 		{ // Here R-S flip-flop was reset
 			p->sw[LIMITDBMSN].dbs = 1; // Set debounced R-S
@@ -182,6 +183,7 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
 	if ((EXTI->PR & (LimitSw_MSN_NC_Pin)) != 0)
 	{ // Here MSN_NO switch closed
 		EXTI->PR = LimitSw_MSN_NC_Pin; // Reset request
+		dbsws1[2] += 1;
 		if (p->sw[LIMITDBMSN].dbs != 0)
 		{ // Here R-S flip-flop was set
 			p->sw[LIMITDBMSN].dbs = 0; // Reset debounced R-S
@@ -198,7 +200,8 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
 
 	if ((EXTI->PR & (LimitSw_MS_NO_Pin)) != 0)
 	{ // Here Here MS_NO switch closed
-		EXTI->PR = LimitSw_MS_NO_Pin; // Reset request		
+		EXTI->PR = LimitSw_MS_NO_Pin; // Reset request
+		dbsws1[3] += 1;		
 		if (p->sw[LIMITDBMS].dbs != 1)
 		{ // Here R-S flip-flop was reset
 			p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
@@ -215,6 +218,7 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
 	if ((EXTI->PR & (LimitSw_MS_NC_Pin)) != 0)
 	{ // Here MS_NC switch closed
 		EXTI->PR = LimitSw_MS_NC_Pin; // Reset request
+		dbsws1[4] += 1;
 		if (p->sw[LIMITDBMS].dbs != 0)
 		{ // Here R-S flip-flop was set
 			p->sw[LIMITDBMS].dbs = 0; // Reset debounced R-S

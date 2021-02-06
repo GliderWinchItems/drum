@@ -660,10 +660,10 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0;
+  sConfigIC.ICFilter = 15;
   if (HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
@@ -673,6 +673,10 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
   if (HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1034,7 +1038,7 @@ uint8_t ratepace = 0;
 
 #ifdef STEPPERSHOW
   uint32_t stepctr = 1;
-  uint32_t dbsws1_prev = 0;
+  uint32_t dbsws1_prev[5];
 #endif  
 // ===== BEGIN FOR LOOP ==============================
 
@@ -1060,11 +1064,20 @@ uint8_t ratepace = 0;
 
     #if STEPPERSHOW == 1
     //  print number of switch interrupts since last print 
-      extern uint32_t dbsws1; // Debug
-      if ((dbsws1-dbsws1_prev) != 0)
+      extern uint32_t dbsws1[5]; // Debug
+      if ((dbsws1[0]-dbsws1_prev[0]) != 0)
       {
-          yprintf(&pbuf4,"\n\r%9i",dbsws1-dbsws1_prev);
-          dbsws1_prev = dbsws1;
+          yprintf(&pbuf4,"\n\r%9i  %9i  %9i  %9i  %9i  ",
+            dbsws1[0]-dbsws1_prev[0],
+            dbsws1[1]-dbsws1_prev[1],
+            dbsws1[2]-dbsws1_prev[2],
+            dbsws1[3]-dbsws1_prev[3],
+            dbsws1[4]-dbsws1_prev[4]);
+          dbsws1_prev[0] = dbsws1[0];
+          dbsws1_prev[1] = dbsws1[1];
+          dbsws1_prev[2] = dbsws1[2];
+          dbsws1_prev[3] = dbsws1[3];
+          dbsws1_prev[4] = dbsws1[4];
       }
 
     #elif STEPPERSHOW == 2
