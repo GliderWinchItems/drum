@@ -1062,7 +1062,7 @@ uint8_t ratepace = 0;
   #ifdef STEPPERSHOW
 
 
-    #if STEPPERSHOW == 1
+    #if (STEPPERSHOW == 1)
     //  print number of switch interrupts since last print 
       extern uint32_t dbsws1[5]; // Debug
       if ((dbsws1[0]-dbsws1_prev[0]) != 0)
@@ -1080,8 +1080,8 @@ uint8_t ratepace = 0;
           dbsws1_prev[4] = dbsws1[4];
       }
 
-    #elif STEPPERSHOW == 2
-      //  print data for limit swithc activation point statistics capture
+    #elif (STEPPERSHOW == 2)
+      //  print data for limit switch activation point statistics capture
       //  needs modification in levelwind_switches
       struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
       if (p->sw[LIMITDBMS].flag1  == 1)
@@ -1092,10 +1092,10 @@ uint8_t ratepace = 0;
           p->sw[LIMITDBMS].posaccum_NO,
           p->sw[LIMITDBMS].posaccum_NC,
           p->sw[LIMITDBMSN].posaccum_NO,
-          p->sw[LIMITDBMSN].posaccum_NC );
+          p->sw[LIMITDBMSN].posaccum_NC);
       }
 
-    #elif STEPPERSHOW == 3
+    #elif (STEPPERSHOW == 3)
       //  print encoder and velocity and postion accumulator data
       //  LEVELWINDDEBUG must be set to 1
       struct LEVELWINDDBGBUF* pdbg;
