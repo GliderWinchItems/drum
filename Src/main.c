@@ -933,13 +933,13 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : ManualSw_MSN_NO_Pin ManualSw_MS_NO_Pin ManualSw_NO_Pin OverrunSwes_NO_Pin */
   GPIO_InitStruct.Pin = ManualSw_MSN_NO_Pin|ManualSw_MS_NO_Pin|ManualSw_NO_Pin|OverrunSwes_NO_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LimitSw_MSN_NO_Pin LimitSw_MSN_NC_Pin LimitSw_MS_NO_Pin LimitSw_MS_NC_Pin */
   GPIO_InitStruct.Pin = LimitSw_MSN_NO_Pin|LimitSw_MSN_NC_Pin|LimitSw_MS_NO_Pin|LimitSw_MS_NC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_GREEN_Pin LED_ORANGE_Pin LED_RED_Pin LED_BLUE_Pin */
@@ -1042,7 +1042,7 @@ uint8_t ratepace = 0;
 #endif  
 // ===== BEGIN FOR LOOP ==============================
 
-	for ( ;; )
+	for (;;)
 	{
 		xTaskNotifyWait(noteused, 0, &noteval, portMAX_DELAY);
 		noteused = 0;
@@ -1065,9 +1065,10 @@ uint8_t ratepace = 0;
     #if (STEPPERSHOW == 1)
     //  print number of switch interrupts since last print 
       extern uint32_t dbsws1[5]; // Debug
-      if ((dbsws1[0]-dbsws1_prev[0]) != 0)
+      if (1)//((dbsws1[0]-dbsws1_prev[0]) != 0)
       {
-          yprintf(&pbuf4,"\n\r%9i  %9i  %9i  %9i  %9i  ",
+          yprintf(&pbuf4,"\n\r%7i  %7i  %7i  %7i  %7i  %7i  ",
+            stepctr++,
             dbsws1[0]-dbsws1_prev[0],
             dbsws1[1]-dbsws1_prev[1],
             dbsws1[2]-dbsws1_prev[2],
