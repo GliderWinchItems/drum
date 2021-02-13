@@ -1038,7 +1038,7 @@ uint8_t ratepace = 0;
 
 #ifdef STEPPERSHOW
   uint32_t stepctr = 1;
-  uint32_t dbsws1_prev[5];
+  uint32_t dbsws1_prev[5] = {0};
 #endif  
 // ===== BEGIN FOR LOOP ==============================
 

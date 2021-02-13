@@ -141,14 +141,14 @@ LimitSw_MSN_NC_Pin    GPIO_PIN_11
 LimitSw_MS_NO_Pin   GPIO_PIN_12
 LimitSw_MS_NC_Pin   GPIO_PIN_13
 */
-uint32_t dbsws1[5]; // Debug
+uint32_t dbsws1[5] = {0}; // Debug
 
 void Stepper_EXTI15_10_IRQHandler(void)
 {
 	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 	struct SWITCHXITION* ptmp;
 //HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
-dbsws1[0] += 1;
+dbsws1[0]++;
 /*	Name is from time when switches beyond 10:13 were interrupt driven	*/
 
 	/* Here, one or more PE10-PE13 inputs changed. */
@@ -156,10 +156,10 @@ dbsws1[0] += 1;
 
 #if LEVELWINDDEBUG 
 	padd->sws = p->swbits;		// Save all switch contact bits
-	padd->tim = pT2base->CNT;   // 32b timer time
-	padd->cnt = pT5base->CNT;   // Encoder counter
-   ptmp = padd;  // Save in case R-S change
-	padd += 1;    // Advance in circular buffer
+	padd->tim = pT2base->CNT;  // 32b timer time
+	padd->cnt = pT5base->CNT;  // Encoder counter
+   ptmp = padd;  					// Save in case R-S change
+	padd++;    						// Advance in circular buffer
 	if (padd >= pend) padd = pbegin; // Wrap-around
 #endif
 
@@ -167,13 +167,15 @@ dbsws1[0] += 1;
 	if ((EXTI->PR & (LimitSw_MSN_NO_Pin)) != 0)
 	{ // Here NSN_NO switch closed
 		EXTI->PR = LimitSw_MSN_NO_Pin; // Reset request
-		dbsws1[1] += 1;
-		if (p->sw[0].dbs != 1)
+		dbsws1[1]++;
+		if (p->sw[LIMITDBMSN].dbs != 1)
 		{ // Here R-S flip-flop was reset
 			p->sw[LIMITDBMSN].dbs = 1; // Set debounced R-S
 			p->sw[LIMITDBMSN].posaccum_NO = p->posaccum.s32;
 			p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
+			EXTI->IMR &= 0xFFFFFBFF;	//	diasble MSN_NO interrupts
+			EXTI->IMR |= 0x00000800;	//	enable MSN_NC interrupts
 			/* Notification goes here. */
 			ptmp->sws |= LIMITDBMSN;
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);				
@@ -183,13 +185,15 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
 	if ((EXTI->PR & (LimitSw_MSN_NC_Pin)) != 0)
 	{ // Here MSN_NO switch closed
 		EXTI->PR = LimitSw_MSN_NC_Pin; // Reset request
-		dbsws1[2] += 1;
+		dbsws1[2]++;
 		if (p->sw[LIMITDBMSN].dbs != 0)
 		{ // Here R-S flip-flop was set
 			p->sw[LIMITDBMSN].dbs = 0; // Reset debounced R-S
 			p->sw[LIMITDBMSN].posaccum_NC = p->posaccum.s32;
 			p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
+			EXTI->IMR &= 0xFFFFF7FF;	//	diasble MSN_NO interrupts
+			EXTI->IMR |= 0x00000400;	//	enable MSN_NC interrupts
 			/* Notification goes here. */
 			ptmp->sws |= LIMITDBMSN;
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);				
@@ -201,13 +205,15 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
 	if ((EXTI->PR & (LimitSw_MS_NO_Pin)) != 0)
 	{ // Here Here MS_NO switch closed
 		EXTI->PR = LimitSw_MS_NO_Pin; // Reset request
-		dbsws1[3] += 1;		
+		dbsws1[3]++;		
 		if (p->sw[LIMITDBMS].dbs != 1)
 		{ // Here R-S flip-flop was reset
 			p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
 			p->sw[LIMITDBMS].posaccum_NO = p->posaccum.s32;
 			p->sw[LIMITDBMS].flag1  = 0; // Flag for stepper ISR  
-			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)		  
+			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
+			EXTI->IMR &= 0xFFFFEFFF;	//	diasble MS_NO interrupts
+			EXTI->IMR |= 0x00002000;	//	enable MS_NC interrupts	  
 			/* Notification goes here. */	
 			ptmp->sws |= LIMITDBMS;
 
@@ -218,13 +224,15 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
 	if ((EXTI->PR & (LimitSw_MS_NC_Pin)) != 0)
 	{ // Here MS_NC switch closed
 		EXTI->PR = LimitSw_MS_NC_Pin; // Reset request
-		dbsws1[4] += 1;
+		dbsws1[4]++;
 		if (p->sw[LIMITDBMS].dbs != 0)
 		{ // Here R-S flip-flop was set
 			p->sw[LIMITDBMS].dbs = 0; // Reset debounced R-S
 			p->sw[LIMITDBMS].posaccum_NC = p->posaccum.s32;
 			p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
+			EXTI->IMR &= 0xFFFFDFFF;	//	diasble MS_NC interrupts
+			EXTI->IMR |= 0x00001000;	//	enable MS_NC interrupts
 			/* Notification goes here. */			
 			ptmp->sws |= LIMITDBMS;
 
