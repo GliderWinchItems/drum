@@ -163,6 +163,11 @@ dbsws1[0]++;
 	if (padd >= pend) padd = pbegin; // Wrap-around
 #endif
 
+/*	REVIST: the inner if statements below should be able to be elminated when the 
+	interrupts are selectively enabled or disabled based on state. This will probably
+	require adding selective enable/disable to the _init function. This needs to be
+	thought out and tested carefully for startup conditions.*/
+
 	/* Do R-S flip-flop type switch debouncing for limit switches. */
 	if ((EXTI->PR & (LimitSw_MSN_NO_Pin)) != 0)
 	{ // Here NSN_NO switch closed
@@ -174,9 +179,9 @@ dbsws1[0]++;
 			p->sw[LIMITDBMSN].posaccum_NO = p->posaccum.s32;
 			p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
-			EXTI->IMR &= 0xFFFFFBFF;	//	diasble MSN_NO interrupts
+			EXTI->IMR &= 0xFFFFFBFF;	//	disable MSN_NO interrupts
 			EXTI->IMR |= 0x00000800;	//	enable MSN_NC interrupts
-			/* Notification goes here. */
+			
 			ptmp->sws |= LIMITDBMSN;
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);				
 		}
@@ -192,9 +197,9 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);
 			p->sw[LIMITDBMSN].posaccum_NC = p->posaccum.s32;
 			p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
-			EXTI->IMR &= 0xFFFFF7FF;	//	diasble MSN_NO interrupts
+			EXTI->IMR &= 0xFFFFF7FF;	//	disable MSN_NO interrupts
 			EXTI->IMR |= 0x00000400;	//	enable MSN_NC interrupts
-			/* Notification goes here. */
+			
 			ptmp->sws |= LIMITDBMSN;
 HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);				
 
@@ -212,9 +217,9 @@ HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);
 			p->sw[LIMITDBMS].posaccum_NO = p->posaccum.s32;
 			p->sw[LIMITDBMS].flag1  = 0; // Flag for stepper ISR  
 			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
-			EXTI->IMR &= 0xFFFFEFFF;	//	diasble MS_NO interrupts
+			EXTI->IMR &= 0xFFFFEFFF;	//	disable MS_NO interrupts
 			EXTI->IMR |= 0x00002000;	//	enable MS_NC interrupts	  
-			/* Notification goes here. */	
+			
 			ptmp->sws |= LIMITDBMS;
 
 HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);			
@@ -231,9 +236,9 @@ HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
 			p->sw[LIMITDBMS].posaccum_NC = p->posaccum.s32;
 			p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
-			EXTI->IMR &= 0xFFFFDFFF;	//	diasble MS_NC interrupts
+			EXTI->IMR &= 0xFFFFDFFF;	//	disable MS_NC interrupts
 			EXTI->IMR |= 0x00001000;	//	enable MS_NC interrupts
-			/* Notification goes here. */			
+			
 			ptmp->sws |= LIMITDBMS;
 
 HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);							

@@ -168,12 +168,12 @@ struct LEVELWINDFUNCTION
    uint8_t  ocicbit;       
    uint8_t  ocicbit_prev;  
 
-   struct   STEPPERSWCONTACT ctk[6];  // Measured switch contact open/close posaccum
-   struct   EXTISWITCHSTATUS sw[6];   // Limit & overrun switches
-   
+// REVIST: May not need 6 instances for the below. Only 2 are now processed as interrupts
+   struct   STEPPERSWCONTACT ctk[6];   // Measured switch contact open/close posaccum
+   struct   EXTISWITCHSTATUS sw[6];    // Limit & overrun switches
+   uint16_t swbits;                    // Port E switch bits (10:15)
 
-   // debug and characterization, potentially removable for operational code
-   uint16_t swbits;     // Port E switch bits (10:15)
+   // debug and characterization, potentially removable for operational cod
    uint32_t cltimectr;  // Counter for loss of CL msgs
    uint32_t speedcmdi;  // Commanded speed (integer)
    float    speedcmdf;  // Speed command (float)
