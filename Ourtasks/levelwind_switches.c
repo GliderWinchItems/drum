@@ -89,6 +89,12 @@ extern TIM_HandleTypeDef htim5;
    pT2base  = htim2.Instance;
    pT5base  = htim5.Instance;
 
+   //	MX sets up switches for falling edge and (may) enable
+   // EXTI->IMR &= ~0x00003c00; //disable all limit switches JIC
+   //disable all limit switches JIC
+   EXTI->IMR &= ~(LimitSw_MSN_NO_Pin | LimitSw_MSN_NC_Pin
+   	| LimitSw_MS_NO_Pin | LimitSw_MS_NC_Pin); 
+
    /* Circular buffer pointers. */
    pbegin = &switchxtion[0];
    padd   = &switchxtion[0];
@@ -102,31 +108,30 @@ extern TIM_HandleTypeDef htim5;
 	{ // Here NO contact is now closed.
 		p->sw[LIMITDBMSN].dbs = 1; // Set debounced R-S
 		p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
-		EXTI->IMR &= 0xFFFFFBFF;	//	disable MSN_NO interrupts
-		EXTI->IMR |= 0x00000800;	//	enable MSN_NC interrupts
+		// EXTI->IMR |= 0x00000800;	//	enable MSN_NC interrupts
+		EXTI->IMR |= LimitSw_MSN_NC_Pin;	//	enable MSN_NC interrupts
 		HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);	
 	}
 	else
 	{
-		EXTI->IMR &= 0xFFFFF7FF;	//	disable MSN_NC interrupts
-		EXTI->IMR |= 0x00000400;	//	enable MSN_NO interrupts
+		// EXTI->IMR |= 0x00000400;	//	enable MSN_NO interrupts
+		EXTI->IMR |= LimitSw_MSN_NO_Pin;	//	enable MSN_NO interrupts
 	}
 
 	if ((p->swbits & LimitSw_MS_NO_Pin) == 0)
 	{ // Here NO contact is now closed.
 		p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
 		p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
-		EXTI->IMR &= 0xFFFFEFFF;	//	disable MS_NO interrupts
-		EXTI->IMR |= 0x00002000;	//	enable MS_NC interrupts	 
+		// EXTI->IMR |= 0x00002000;	//	enable MS_NC interrupt
+		EXTI->IMR |= LimitSw_MS_NC_Pin;	//	enable MS_NC interrupts 
 		HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);
 	}
 	else
 	{
-		EXTI->IMR &= 0xFFFFDFFF;	//	disable MS_NC interrupts
-		EXTI->IMR |= 0x00001000;	//	enable MS_NO interrupts
+		// EXTI->IMR |= 0x00001000;	//	enable MS_NO interrupts
+		EXTI->IMR |= LimitSw_MS_NO_Pin;	//	enable MS_NO interrupts
 	}
 
-//	MX sets up switches for falling edge and enables
 	EXTI->PR   |=  0x00003c00;  // Clear any pending
 
 	return;
@@ -190,14 +195,16 @@ dbsws1[0]++;
 	{ // Here NSN_NO switch closed
 		EXTI->PR = LimitSw_MSN_NO_Pin; // Reset request
 		dbsws1[1]++;
-		if (p->sw[LIMITDBMSN].dbs != 1)
+		if (1) // (p->sw[LIMITDBMSN].dbs != 1)
 		{ // Here R-S flip-flop was reset
 			p->sw[LIMITDBMSN].dbs = 1; // Set debounced R-S
 			p->sw[LIMITDBMSN].posaccum_NO = p->posaccum.s32;
 			p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
-			EXTI->IMR &= 0xFFFFFBFF;	//	disable MSN_NO interrupts
-			EXTI->IMR |= 0x00000800;	//	enable MSN_NC interrupts
+			// EXTI->IMR &= 0xFFFFFBFF;	//	disable MSN_NO interrupts
+			// EXTI->IMR |= 0x00000800;	//	enable MSN_NC interrupts
+			EXTI->IMR &= ~LimitSw_MSN_NO_Pin;	//	disable MSN_NO interrupts
+			EXTI->IMR |= LimitSw_MSN_NC_Pin;		//	enable MSN_NC interrupts
 	
 			ptmp->sws |= LIMITDBMSN;
 			HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_SET);				
@@ -208,14 +215,16 @@ dbsws1[0]++;
 	{ // Here MSN_NO switch closed
 		EXTI->PR = LimitSw_MSN_NC_Pin; // Reset request
 		dbsws1[2]++;
-		if (p->sw[LIMITDBMSN].dbs != 0)
+		if (1)	//	(p->sw[LIMITDBMSN].dbs != 0)
 		{ // Here R-S flip-flop was set
 			p->sw[LIMITDBMSN].dbs = 0; // Reset debounced R-S
 			p->sw[LIMITDBMSN].posaccum_NC = p->posaccum.s32;
 			p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBMSN].flag2 += 1; // Flag for task(?)
-			EXTI->IMR &= 0xFFFFF7FF;	//	disable MSN_NC interrupts
-			EXTI->IMR |= 0x00000400;	//	enable MSN_NO interrupts
+			// EXTI->IMR &= 0xFFFFF7FF;	//	disable MSN_NC interrupts
+			// EXTI->IMR |= 0x00000400;	//	enable MSN_NO interrupts
+			EXTI->IMR &= ~LimitSw_MSN_NC_Pin;	//	disable MSN_NC interrupts
+			EXTI->IMR |= LimitSw_MSN_NO_Pin;		//	enable MSN_NO interrupts
 			
 			ptmp->sws |= LIMITDBMSN;
 			HAL_GPIO_WritePin(GPIOD,LED_ORANGE_Pin,GPIO_PIN_RESET);				
@@ -228,14 +237,16 @@ dbsws1[0]++;
 	{ // Here Here MS_NO switch closed
 		EXTI->PR = LimitSw_MS_NO_Pin; // Reset request
 		dbsws1[3]++;		
-		if (p->sw[LIMITDBMS].dbs != 1)
+		if (1)	//  (p->sw[LIMITDBMS].dbs != 1)
 		{ // Here R-S flip-flop was reset
 			p->sw[LIMITDBMS].dbs = 1; // Set debounced R-S
 			p->sw[LIMITDBMS].posaccum_NO = p->posaccum.s32;
 			p->sw[LIMITDBMS].flag1  = 0; // Flag for stepper ISR  
 			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
-			EXTI->IMR &= 0xFFFFEFFF;	//	disable MS_NO interrupts
-			EXTI->IMR |= 0x00002000;	//	enable MS_NC interrupts	  
+			// EXTI->IMR &= 0xFFFFEFFF;	//	disable MS_NO interrupts
+			// EXTI->IMR |= 0x00002000;	//	enable MS_NC interrupts
+			EXTI->IMR &= ~LimitSw_MS_NO_Pin;	// disable MS_NO interrupts
+			EXTI->IMR |= LimitSw_MS_NC_Pin;	//	enable MS_NC interrupts	  	  
 			
 			ptmp->sws |= LIMITDBMS;
 			HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_SET);			
@@ -246,14 +257,16 @@ dbsws1[0]++;
 	{ // Here MS_NC switch closed
 		EXTI->PR = LimitSw_MS_NC_Pin; // Reset request
 		dbsws1[4]++;
-		if (p->sw[LIMITDBMS].dbs != 0)
+		if (1) 	// (p->sw[LIMITDBMS].dbs != 0)
 		{ // Here R-S flip-flop was set
 			p->sw[LIMITDBMS].dbs = 0; // Reset debounced R-S
 			p->sw[LIMITDBMS].posaccum_NC = p->posaccum.s32;
 			p->sw[LIMITDBMS].flag1  = 1; // Flag for stepper ISR
 			p->sw[LIMITDBMS].flag2 += 1; // Flag for task(?)
-			EXTI->IMR &= 0xFFFFDFFF;	//	disable MS_NC interrupts
-			EXTI->IMR |= 0x00001000;	//	enable MS_NO interrupts
+			// EXTI->IMR &= 0xFFFFDFFF;	//	disable MS_NC interrupts
+			// EXTI->IMR |= 0x00001000;	//	enable MS_NO interrupts
+			EXTI->IMR &= ~LimitSw_MS_NC_Pin;	//	disable MS_NC interrupts
+			EXTI->IMR |= LimitSw_MS_NO_Pin;	//	enable MS_NO interrupts
 			
 			ptmp->sws |= LIMITDBMS;
 			HAL_GPIO_WritePin(GPIOD,LED_RED_Pin,GPIO_PIN_RESET);							
