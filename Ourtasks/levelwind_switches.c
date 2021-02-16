@@ -148,10 +148,10 @@ struct SWITCHXITION* levelwind_switches_get(void)
  * CH2 = OC faux encoder interrupts
  *####################################################################################### */
 /*
-LimitSw_MSN_NO_Pin    GPIO_PIN_10
-LimitSw_MSN_NC_Pin    GPIO_PIN_11
-LimitSw_MS_NO_Pin   GPIO_PIN_12
-LimitSw_MS_NC_Pin   GPIO_PIN_13
+LimitSw_MSN_NO_Pin	GPIO_PIN_10
+LimitSw_MSN_NC_Pin	GPIO_PIN_11
+LimitSw_MS_NO_Pin   	GPIO_PIN_12
+LimitSw_MS_NC_Pin   	GPIO_PIN_13
 */
 uint32_t dbsws1[5] = {0}; // Debug
 
@@ -201,7 +201,7 @@ dbsws1[0]++;
 	{ // Here MSN_NO switch closed while R-S flip-flop was set
 		EXTI->PR = LimitSw_MSN_NC_Pin; // Reset request
 		dbsws1[2]++;
-		
+
 		p->sw[LIMITDBMSN].dbs = 0; // Reset debounced R-S
 		p->sw[LIMITDBMSN].posaccum_NC = p->posaccum.s32;
 		p->sw[LIMITDBMSN].flag1  = 1; // Flag for stepper ISR
