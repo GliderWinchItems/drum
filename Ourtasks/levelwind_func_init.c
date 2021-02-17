@@ -221,8 +221,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    pT2base->CR1 |= 1;  // TIM2: CH1 oc, CH3 ic/oc
    pT5base->CR1 |= 1;  // TIM5: encoder CH1 CH2 (no interrupt)
 
-   /* Enable limit and overrun switch interrupts EXTI15_10. */
-   EXTI->IMR  |= 0xf000;  // Interrupt mask reg: enable 10:15
    return;
 }
 /* *************************************************************************

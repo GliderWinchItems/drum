@@ -242,6 +242,10 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
+  //  override the enabling of the EXTI10-15 bits by MX above
+  EXTI->IMR &= ~0xfc00; // disable the interrupts  
+  EXTI->PR &= 0xfc00;   // clear any pending JIC
+
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */

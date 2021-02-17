@@ -89,10 +89,18 @@ extern TIM_HandleTypeDef htim5;
    pT2base  = htim2.Instance;
    pT5base  = htim5.Instance;
 
-   //	MX sets up switches for falling edge and (may) enable
-   //disable all limit switches JIC
+   /*	MX sets up switches for falling edge and enables interrupts
+   	We were unable to keep it from immediately enableing interrupts
+   	so disable all limit swithc interupts to prevent a possible
+   	race condtion 
    EXTI->IMR &= ~(LimitSw_MSN_NO_Pin | LimitSw_MSN_NC_Pin
    	| LimitSw_MS_NO_Pin | LimitSw_MS_NC_Pin); 
+
+
+   // Clear any pending (may not be needed)
+   EXTI->PR   |=  (LimitSw_MSN_NO_Pin | LimitSw_MSN_NC_Pin
+   	| LimitSw_MS_NO_Pin | LimitSw_MS_NC_Pin); 
+   	*/ 
 
    /* Circular buffer pointers. */
    pbegin = &switchxtion[0];
@@ -121,8 +129,6 @@ extern TIM_HandleTypeDef htim5;
 	}
 	else EXTI->IMR |= LimitSw_MS_NO_Pin;	//	enable MS_NO interrupts
 
-
-	EXTI->PR   |=  0x00003c00;  // Clear any pending
 
 	return;
 }
@@ -174,11 +180,6 @@ dbsws1[0]++;
 	padd++;    						// Advance in circular buffer
 	if (padd >= pend) padd = pbegin; // Wrap-around
 #endif
-
-/*	REVIST: the inner if statements below should be able to be elminated when the 
-	interrupts are selectively enabled or disabled based on state. This will probably
-	require adding selective enable/disable to the _init function. This needs to be
-	thought out and tested carefully for startup conditions.*/
 
 	/* Do R-S flip-flop type switch debouncing for limit switches. */
 	if ((EXTI->PR & (LimitSw_MSN_NO_Pin)) != 0)
