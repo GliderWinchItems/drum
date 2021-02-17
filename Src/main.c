@@ -244,8 +244,7 @@ int main(void)
 
   //  override the enabling of the EXTI10-15 bits by MX above
   EXTI->IMR &= ~0xfc00; // disable the interrupts  
-  EXTI->PR &= 0xfc00;   // clear any pending JIC
-
+  
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -1069,10 +1068,11 @@ uint8_t ratepace = 0;
     #if (STEPPERSHOW == 1)
     //  print number of switch interrupts since last print 
       extern uint32_t dbsws1[5]; // Debug
-      if (1)//((dbsws1[0]-dbsws1_prev[0]) != 0)
+      stepctr++;
+      if ((dbsws1[0]-dbsws1_prev[0]) != 0)
       {
           yprintf(&pbuf4,"\n\r%7i  %7i  %7i  %7i  %7i  %7i  ",
-            stepctr++,
+            stepctr,
             dbsws1[0]-dbsws1_prev[0],
             dbsws1[1]-dbsws1_prev[1],
             dbsws1[2]-dbsws1_prev[2],

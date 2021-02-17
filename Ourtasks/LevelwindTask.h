@@ -143,6 +143,7 @@ struct LEVELWINDFUNCTION
    uint32_t ocinc;      // OC register increment for current level-wind state
    uint32_t ocswp;      // OC register increment for sweeping
    uint32_t ocman;      // OC register increment for manual motion
+   uint8_t  stpprdiri;  // stepper direction indicator (0 normal, 1 inverted)
    uint32_t hbctr;      // Count ticks for sending heartbeat CAN msg
    uint32_t hbct_k;     // RTOS ticks between Heartbeat messages
    uint32_t enflag;     // BSRR pin set/reset bit position: enable

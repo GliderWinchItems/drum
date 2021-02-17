@@ -52,34 +52,32 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    levelwind_idx_v_struct_hardcode_params(&p->lc);
 
 #if 1 // enable to use new parameters
+   // Revist: Paramter range tests need to be added
    
    // level-wind delta x per position accumulator lsb
    float dxperlsb = p->lc.BallScrewLead 
-      / (float) (p->lc.MicroStepsPerRevolution *  LSBS_PER_MICROSTEP);  // bipolar
+      / (float) (p->lc.MicroStepsPerRevolution *  LSBS_PER_MICROSTEP);
+   
    // lateral cable motion per drum revolution
    float cabledxperdrumrevolution = p->lc.LevelWindFactor 
-            * p->lc.CableDiameter;              // positve
+            * p->lc.CableDiameter;              
+   
    // encoder interrupts per drum revolution
    float interrupts_per_drum_revolution = (float) INTERRUPTS_PER_ENCODER_PULSE
             * (float) p->lc.EncoderPulsesPerRevolution 
-            * p->lc.EncoderToDrumGearRatio;  // bipolar
-         // absolute value
-   if (interrupts_per_drum_revolution < 0.0f) 
-   {
-      interrupts_per_drum_revolution = -interrupts_per_drum_revolution;
-   }  // positive
-   
+            * p->lc.EncoderToDrumGearRatio;  
+      
    // tentative Ks
    float fKs = cabledxperdrumrevolution
-      / (dxperlsb * interrupts_per_drum_revolution); // bipolar
-   fKs = (fKs >= 0.0f) ? fKs : -fKs; // absolute value
+      / (dxperlsb * interrupts_per_drum_revolution);
+   
       
    // compute tentative Nr
    float fNr = (2 * p->lc.CableDiameter * p->lc.ReversalFactor 
       / (dxperlsb * fKs)) + 1.0f;
       
    
-   // round ratio of fKs/fNf to compute integer Ka 
+   // round ratio of fKs/fNr to compute integer Ka 
    p->Ka = fKs / fNr + 0.5f;
    
    // compute integer Nr to get as close to  fKs as possible
@@ -108,14 +106,15 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->LSSpan = p->lc.LimitSwitchSpan / dxperlsb;   // limit switch span
    p->LSTol = p->lc.LimitSwitchTol / dxperlsb;     // limit switch tolerance
 
+   // stepper direction indicator
+   p->stpprdiri = (p->lc.StepperDirection == 1) ? 0 : 1;
+
    // some misc values
    p->mydrum = p->lc.DrumInstance;
    p->mydrumbit = (1 << (p->mydrum - 1)); // Convert drum number (1-7) to bit position (0-6)
    p->hbct_k = pdMS_TO_TICKS(p->lc.LevelWindHBPeriod * 1000);
 
-
-
-
+   
 #else // use old parameter set to compute Ks
 
 	p->Ks = p->lc.Nr * p->lc.Ka; // Sweep rate (Ks/65536) = levelwind pulses per encoder edge
@@ -220,6 +219,8 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    /* Start counters. */
    pT2base->CR1 |= 1;  // TIM2: CH1 oc, CH3 ic/oc
    pT5base->CR1 |= 1;  // TIM5: encoder CH1 CH2 (no interrupt)
+   // if encoder direction is -1, reverse count
+   if ( p->lc.EncoderDirection == -1  ) pT5base->CCER |= 0x2;
 
    return;
 }

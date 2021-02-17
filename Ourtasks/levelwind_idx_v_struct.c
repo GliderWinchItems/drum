@@ -89,8 +89,10 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->LevelWindHBPeriod = 500e-3;
    p->DrumInstance = 1;   // 1:7
    p->MicroStepsPerRevolution = 2000;
+   p->StepperDirection = 1;
    p->BallScrewLead = 20e-3;
    p->EncoderPulsesPerRevolution = 360;
+   p->EncoderDirection = 1;
    p->EncoderToDrumGearRatio = 35.0f/9.0f;
    p->StepperVoltageScale = 25e-3;
    p->StepperVoltageOffset = 0.0;
