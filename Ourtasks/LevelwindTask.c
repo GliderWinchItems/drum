@@ -201,7 +201,7 @@ extern CAN_HandleTypeDef hcan1;
                
                   if (GPIOE->IDR & LimitSw_MS_NO_Pin) 
                   {  // starting with MSN switch activated or no switch activated
-                     p->posaccum.s32 = p->Lplus32 + p->rvrsldx; 
+                     p->posaccum.s32 = p->Lplus32 + p->rvrsl; 
                      p->pos_prev = p->posaccum.s16[1];
                      p->indexphase = 0;
                      p->drbit = p->drbit_prev = 1; // move in negative direction (towards motor) 
@@ -216,7 +216,7 @@ extern CAN_HandleTypeDef hcan1;
                         point before the switch activates that is an error.
                      */
 
-                     p->posaccum.s32 = p->Lminus32 - p->rvrsldx;
+                     p->posaccum.s32 = p->Lminus32 - p->rvrsl;
                      p->pos_prev = p->posaccum.s16[1];
                      p->indexphase = 1;
                      p->drbit = p->drbit_prev = 0; // move away from motor (postion accum increasing) 
@@ -275,27 +275,27 @@ extern CAN_HandleTypeDef hcan1;
                else if ((p->mc_state == MC_RETRIEVE) && (p->mode == LW_MODE_CENTER))                  
                {  /* setup to center for retrieve and transition to Center  */    
                   int32_t distance = ((p->Lpos + p->Lneg) >> 1) - p->posaccum.s32; // signed distance to center
-                  if (distance > (2 * p->rvrsldx))          
+                  if (distance > (2 * p->rvrsl))          
                   {  // move to increase posaccum  from 0 to distance                     
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST  */
                      p->posaccum.s32 = p->velaccum.s32 = p->Ka;        
-                     p->Lminus32 = p->rvrsldx;
-                     p->Lplus32  = p->rvrsldx
-                        + ((distance - (2 * p->rvrsldx)) / p->Ks) * p->Ks;                     
+                     p->Lminus32 = p->rvrsl;
+                     p->Lplus32  = p->rvrsl
+                        + ((distance - (2 * p->rvrsl)) / p->Ks) * p->Ks;                     
                      p->ocinc = p->ocswp; // center at sweep speed
                      p->state = LW_CENTER;
                      // transition to Arrest with next isr state Off
                      p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4);                             
                   }
-                  else if (-distance > (2 * p->rvrsldx))
+                  else if (-distance > (2 * p->rvrsl))
                   {  // move to decrease posaccum from 0 to -distance                                          
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST*/
                      p->posaccum.s32 = p->velaccum.s32 = -p->Ka;        
-                     p->Lplus32  = -p->rvrsldx;
-                     p->Lminus32 = -p->rvrsldx  
-                        + ((distance + (2 * p->rvrsldx)) / p->Ks) * p->Ks;                     
+                     p->Lplus32  = -p->rvrsl;
+                     p->Lminus32 = -p->rvrsl  
+                        + ((distance + (2 * p->rvrsl)) / p->Ks) * p->Ks;                     
                      // transition to Arrest with next isr state Off
                      p->isr_state = LW_ISR_ARREST | (LW_ISR_OFF >> 4); 
                      p->state = LW_CENTER;
@@ -305,15 +305,15 @@ extern CAN_HandleTypeDef hcan1;
                   {  // distance greater than 2 stepper steps
                      // compute truncated accell/deceration profile
                      int16_t Nr = sqrtf((float)(distance / (p->Ka)));
-                     int32_t rvrsldx = Nr * (Nr - 1) * p->Ka / 2;
+                     int32_t rvrsl = Nr * (Nr - 1) * p->Ka / 2;
                      int16_t Ks = Nr * p->Ka;
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST  */
                      p->posaccum.s32 = p->Ka;        
                      p->velaccum.s32 = p->Ka;
-                     p->Lminus32 = rvrsldx;
-                     p->Lplus32  = rvrsldx
-                        + ((distance - (2 * rvrsldx)) / Ks) * Ks;                     
+                     p->Lminus32 = rvrsl;
+                     p->Lplus32  = rvrsl
+                        + ((distance - (2 * rvrsl)) / Ks) * Ks;                     
                      p->ocinc = p->ocswp; // center at sweep speed
                      p->state = LW_CENTER;
                      // transition to Arrest with next isr state Off
@@ -323,16 +323,16 @@ extern CAN_HandleTypeDef hcan1;
                   {  // distance greater than 2 stepper steps
                      // compute truncated accell/deceration profile
                      int16_t Nr = sqrtf((float)(-distance / (p->Ka)));
-                     int32_t rvrsldx = Nr * (Nr - 1) * p->Ka / 2;
+                     int32_t rvrsl = Nr * (Nr - 1) * p->Ka / 2;
                      int16_t Ks = Nr * p->Ka;
                      /* start 1 iteration in to avoid immediate zero velocity termination 
                         in LW_ISR_ARREST  */
                      p->posaccum.s32 = -p->Ka;        
                      p->velaccum.s32 = -p->Ka;
 
-                     p->Lminus32 = -rvrsldx;
-                     p->Lplus32  = -rvrsldx
-                        + ((distance + (2 * rvrsldx)) / Ks) * Ks;                     
+                     p->Lminus32 = -rvrsl;
+                     p->Lplus32  = -rvrsl
+                        + ((distance + (2 * rvrsl)) / Ks) * Ks;                     
                      p->ocinc = p->ocswp; // center at sweep speed
                      p->state = LW_CENTER;
                      // transition to Arrest with next isr state Off
@@ -373,7 +373,7 @@ extern CAN_HandleTypeDef hcan1;
 
                   p->Lminus32 = -p->Windxswp;
                   p->Lplus32  = p->Lpos;
-                  p->posaccum.s32 = -(p->Windxswp + p->rvrsldx);
+                  p->posaccum.s32 = -(p->Windxswp + p->rvrsl);
                   p->pos_prev = p->posaccum.s16[1];
                   p->indexphase = 1;
                   p->drbit = p->drbit_prev = 0; // move away from motor (postion accum increasing) 

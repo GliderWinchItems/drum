@@ -1068,10 +1068,11 @@ uint8_t ratepace = 0;
     #if (STEPPERSHOW == 1)
     //  print number of switch interrupts since last print 
       extern uint32_t dbsws1[5]; // Debug
+      struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
       stepctr++;
       if ((dbsws1[0]-dbsws1_prev[0]) != 0)
       {
-          yprintf(&pbuf4,"\n\r%7i  %7i  %7i  %7i  %7i  %7i  ",
+          yprintf(&pbuf4,"\n\r%7i  %7i  %7i  %7i  %7i  %7i",
             stepctr,
             dbsws1[0]-dbsws1_prev[0],
             dbsws1[1]-dbsws1_prev[1],

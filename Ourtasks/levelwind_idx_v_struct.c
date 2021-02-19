@@ -97,7 +97,7 @@ void levelwind_idx_v_struct_hardcode_params(struct LEVELWINDLC* p)
    p->StepperVoltageScale = 25e-3;
    p->StepperVoltageOffset = 0.0;
    
-   // TBA   CAN Ids
+   // TBA   CAN Ids, see below
 
 
 

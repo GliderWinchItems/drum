@@ -37,6 +37,7 @@ extern TIM_TypeDef  *pT9base; // Register base address
 
 // #defines for computation of derivited parameters
 #define LSBS_PER_MICROSTEP (1 << 16)   // LSBs in the lower accumulator
+#define MICROSTEP_RANGE (1 << 16)      // Upper accumulator LSBs 
 #define INTERRUPTS_PER_ENCODER_PULSE 2
 
 /* *************************************************************************
@@ -47,9 +48,64 @@ extern TIM_TypeDef  *pT9base; // Register base address
 void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 {
 	int i;
+   int error_code = 0;
 
    // Initialize hardcoded parameters (used in  computations below)
    levelwind_idx_v_struct_hardcode_params(&p->lc);
+
+   // validate external parameters' ranges
+   // note, error code is only for first out of range parameter identified
+   if (p->lc.LimitSwitchSpan <= 0.0f || p->lc.LimitSwitchSpan > 1.0f)
+      error_code = 100;
+   else if (p->lc.LimitSwitchTol <= 0.0f || p->lc.LimitSwitchTol > 100e-3f)
+      error_code = 101;
+   else if (p->lc.CenterOffset <= 0.0f || p->lc.CenterOffset > 500e-3f)
+      error_code = 102;
+   else if (p->lc.DrumWidth <= 0.0f || p->lc.DrumWidth > 1.0f)
+      error_code = 103;
+   else if (p->lc.CableDiameter <= 0.0f || p->lc.CableDiameter > 100e-3f)
+      error_code = 104;
+   else if (p->lc.ExcessRollerGap <= 0.0f || p->lc.ExcessRollerGap > 150e-3f)
+      error_code = 105;
+   else if (p->lc.LevelWindFactor <= 0.0f || p->lc.LevelWindFactor > 10.0f)
+      error_code = 106;
+   else if (p->lc.ReversalFactor <= 0.0f || p->lc.ReversalFactor > 10.0f)
+      error_code = 107;
+   else if (p->lc.IndexingSweepSpeed <= 0.0f || p->lc.IndexingSweepSpeed > 1.0f)
+      error_code = 108;
+   else if (p->lc.ManualSweepSpeed <= 0.0f || p->lc.ManualSweepSpeed > 100.0e-3f)
+      error_code = 109;
+   else if (p->lc.TestSweepSpeed <= 0.0f || p->lc.TestSweepSpeed > 1.0f)
+      error_code = 110;
+   else if (p->lc.NumberTestSweeps <= -1 || p->lc.NumberTestSweeps > 100)
+      error_code = 111;
+   else if (p->lc.LevelWindHBPeriod <= 0.0f || p->lc.LevelWindHBPeriod > 100.0f)
+      error_code = 112;
+   else if (p->lc.DrumInstance < 1 || p->lc.DrumInstance > 7)
+      error_code = 113;
+   else if (p->lc.MicroStepsPerRevolution < 100 || p->lc.MicroStepsPerRevolution > 100000)
+      error_code = 114;
+   else if (!(p->lc.StepperDirection == 1 || p->lc.StepperDirection == -1))
+      error_code = 115;
+   else if (p->lc.BallScrewLead <= 0.0f || p->lc.BallScrewLead > 100e-3f)
+      error_code = 116;
+   else if (p->lc.EncoderPulsesPerRevolution <= 50 || p->lc.EncoderPulsesPerRevolution > 20000)
+      error_code = 117;
+   else if (!(p->lc.EncoderDirection == 1 || p->lc.EncoderDirection == -1))
+      error_code = 118;
+   else if (p->lc.EncoderToDrumGearRatio <= 0.0f || p->lc.EncoderToDrumGearRatio > 10.0f)
+      error_code = 119;
+   else if (p->lc.StepperVoltageScale <= 0.0f || p->lc.StepperVoltageScale > 5.0f)
+      error_code = 120;
+   else if (p->lc.StepperVoltageOffset <= -100.0f || p->lc.StepperVoltageOffset > 100.0f)
+      error_code = 121;
+
+   if (error_code != 0)
+   {
+      // generate some error condition and inform operator
+      morse_trap(error_code);
+   }
+
 
 #if 1 // enable to use new parameters
    // Revist: Paramter range tests need to be added
@@ -85,18 +141,23 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
    // compute resulting integer Ks value
    p->Ks = p->Nr * p-> Ka;
+   if (p->Ks > LSBS_PER_MICROSTEP)
+      error_code = 200; // max speed is too large for lower accumulator size
 
    // compute width in meters of the linear sweep
-   p->rvrsldx = (p->Nr - 1) * p->Ks / 2;
+   p->rvrsl = (p->Nr - 1) * p->Ks / 2;
    float linearsweepwidth = p->lc.DrumWidth - p->lc.CableDiameter
-      - (float) (2 * p->rvrsldx) * dxperlsb + p->lc.ExcessRollerGap;   
+      - (float) (2 * p->rvrsl) * dxperlsb + p->lc.ExcessRollerGap;   
 
    // calculate the offset corrected values for the 32-bit values
    // all rounding done using truncation of positive numbers
    p->Lpos = (linearsweepwidth + p->lc.CenterOffset) / (2.0f * dxperlsb) + 0.5f;
    p->Lpos = ((p->Lpos + p->Ks/2) / p->Ks) * p->Ks;    // round to multiple of Ks
    p->Lneg = (linearsweepwidth - p->lc.CenterOffset) / (2.0f * dxperlsb) + 0.5f;
-   p->Lneg = -(((p->Lneg + p->Ks/2) / p->Ks) * p->Ks); // round to multiple of Ks and negate
+   p->Lneg = -(((p->Lneg + p->Ks/2) / p->Ks) * p->Ks); // round to multiple of Ks and negate   
+   if (((((long) p->Lpos + p->rvrsl) / LSBS_PER_MICROSTEP) > (MICROSTEP_RANGE / 2 - 1))
+      || ((-((long) p->Lneg - p->rvrsl) / LSBS_PER_MICROSTEP) > (MICROSTEP_RANGE / 2)))
+         error_code = 201; // upper accumulator not long enough for drum width
    
    // Windxswp is about half the overrun switch span and a multiple of Ks
    p->Windxswp = (p->lc.OverrunSwitchSpan) / (2.0f * dxperlsb) + 0.5f;
@@ -105,6 +166,9 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    // limit switch span and tolerance used for error dectection only so not requiring rounding
    p->LSSpan = p->lc.LimitSwitchSpan / dxperlsb;   // limit switch span
    p->LSTol = p->lc.LimitSwitchTol / dxperlsb;     // limit switch tolerance
+   /* REVIST: Could check if expected limit switch activation points are beyond the 
+      reversal points using LSSpan 
+   */
 
    // stepper direction indicator
    p->stpprdiri = (p->lc.StepperDirection == 1) ? 0 : 1;
@@ -169,7 +233,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->ledbit2= (LED_ORANGE_Pin);
 #endif   
 
-   // p->rvrsldx = (p->lc.Nr * (p->lc.Nr - 1) * p->lc.Ka) / 2; //REVIST: This will be duplicated above when new parameters are used. Remove then.
+   
 
    p->drbit = p->drbit_prev = 0;    // Drum direction bit REVIST: Needed???   
 

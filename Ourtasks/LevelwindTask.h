@@ -111,7 +111,7 @@ union PAYFLT
 
 struct LEVELWINDFUNCTION
 {
-   struct   LEVELWINDLC lc; // Parameters for level-wind function
+   struct   LEVELWINDLC lc; // external parameters for level-wind function
    
    // union variables
    union    PAYFLT   pf; // For extracting float from payload
@@ -137,7 +137,7 @@ struct LEVELWINDFUNCTION
    uint16_t Nr;         // Reversal steps to 0 velocity  
    uint16_t Ka;         // internal accelertion parameter
    uint32_t Ks;         // (Ks/65536)=levelwind pulses per encoder edge (<= 1)        
-   int32_t  rvrsldx;    // Reversal Distance
+   int32_t  rvrsl;      // Reversal Distance in LSBs
    
    
    uint32_t ocinc;      // OC register increment for current level-wind state
