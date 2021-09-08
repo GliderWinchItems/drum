@@ -4,7 +4,7 @@
 * Description        : Brake function w STM32CubeMX w FreeRTOS
 *******************************************************************************/
 
-#ifndef __BRAKEASK
+#ifndef __BRAKETASK
 #define __BRAKETASK
 
 #include <stdint.h>

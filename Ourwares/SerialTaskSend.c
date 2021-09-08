@@ -225,9 +225,13 @@ void StartSerialTaskSend(void* argument1)
 			{		
    	   /* If HAL for this uart/usart is busy nothing happens. */
 				if (ptmp->dmaflag == 0) // send buffer via char-by-char or dma 
+				{
 		 			HAL_UART_Transmit_IT((UART_HandleTypeDef*)pssb->phuart,pssb->pbuf,pssb->size);
-				else		
+				}
+				else
+				{		
  					HAL_UART_Transmit_DMA((UART_HandleTypeDef*)pssb->phuart,pssb->pbuf,pssb->size);
+				}
 			}
 		}
 	}
@@ -291,7 +295,9 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *phuart)
 		if (ptmp1->dmaflag == 0)
 			HAL_UART_Transmit_IT (pbcb->phuart,pbcb->pbuf,pbcb->size);
 		else
+		{
 			HAL_UART_Transmit_DMA(pbcb->phuart,pbcb->pbuf,pbcb->size);
+		}
 	}
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 	return;
