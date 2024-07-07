@@ -1,6 +1,6 @@
 /******************************************************************************
-* File Name          : MasterControllerState.h
-* Date First Issued  : 10/113/2020
+* File Name          : mastercontroller_states.h
+* Date First Issued  : 10/11/2020
 * Description        : Defines (super-) states for Master Controller
 *******************************************************************************/
 
