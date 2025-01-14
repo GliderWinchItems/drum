@@ -54,7 +54,7 @@ void StartBrakeTask(void const * argument)
  * *************************************************************************/
 osThreadId xBrakeTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(BrakeTask, StartBrakeTask, osPriorityNormal, 0, (192));
+ 	osThreadDef(BrakeTask, StartBrakeTask, osPriorityNormal, 0, (128));
 	BrakeTaskHandle = osThreadCreate(osThread(BrakeTask), NULL);
 	vTaskPrioritySet( BrakeTaskHandle, taskpriority );
 	return BrakeTaskHandle;

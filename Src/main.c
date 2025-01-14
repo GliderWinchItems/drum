@@ -77,8 +77,9 @@
 #include "BrakeTask.h"
 #include "ADCTask.h"
 #include "adcparams.h"
-
-
+#include "tim2tim5common_init.h"
+#include "OdometerTask.h"
+#include "odometer_items.h"
 
 /* USER CODE END Includes */
 
@@ -140,6 +141,7 @@ CAN_HandleTypeDef hcan1;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim9;
 TIM_HandleTypeDef htim13;
@@ -166,6 +168,7 @@ static void MX_TIM9_Init(void);
 static void MX_TIM13_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_TIM4_Init(void);
 void StartDefaultTask(void const * argument);
 void CallbackdefaultTaskTimer(void const * argument);
 
@@ -184,6 +187,7 @@ void CallbackdefaultTaskTimer(void const * argument);
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 	BaseType_t ret;	   // Used for returns from function calls
 	osMessageQId Qidret; // Function call return
@@ -240,6 +244,7 @@ int main(void)
   MX_TIM13_Init();
   MX_TIM3_Init();
   MX_ADC1_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
   //  override the enabling of the EXTI10-15 bits by MX above
@@ -291,18 +296,18 @@ int main(void)
 
 	/* Create serial task (priority) */
 	// Task handle "osThreadId SerialTaskHandle" is global
-	Thrdret = xSerialTaskSendCreate(1);	// Create task and set Task priority
+	Thrdret = xSerialTaskSendCreate(osPriorityNormal);	// Create task and set Task priority
 	if (Thrdret == NULL) morse_trap(225);
 
 	/* Create serial receiving task. */
-	ret = xSerialTaskReceiveCreate(1);
+	ret = xSerialTaskReceiveCreate(osPriorityNormal);
 	if (ret != pdPASS) morse_trap(224);
 
 	/* Setup semaphore for yprint and sprintf et al. */
 	yprintf_init();
 
   /* definition and creation of CanTxTask - CAN driver TX interface. */
-  Qidret = xCanTxTaskCreate(1, 64); // CanTask priority, Number of msgs in queue
+  Qidret = xCanTxTaskCreate(osPriorityNormal+1, 64); // CanTask priority, Number of msgs in queue
 	if (Qidret < 0) morse_trap(220); // Panic LED flashing
 
   /* definition and creation of CanRxTask - CAN driver RX interface. */
@@ -324,7 +329,7 @@ int main(void)
 	// See canfilter_setup.h
 
 	/* Create MailboxTask */
-	xMailboxTaskCreate(2); // (arg) = priority
+	xMailboxTaskCreate(osPriorityNormal+1); // (arg) = priority
 
 	/* Create Mailbox control block w 'take' pointer for each CAN module. */
 	struct MAILBOXCANNUM* pmbxret;
@@ -339,18 +344,22 @@ int main(void)
 #endif
 
   /* ADC summing, calibration, etc. */
-  xADCTaskCreate(1); // (arg) = priority
+  xADCTaskCreate(osPriorityNormal+1); // (arg) = priority
+
+  /* Odometer (line speed and line out) task. */
+  Thrdret = xOdometerTaskCreate(osPriorityNormal+2); // (arg) = priority
+  if (Thrdret == NULL) morse_trap(2164); 
 
   /* Levelwind (stepper) task */
-  Thrdret = xLevelwindTaskCreate(5); // (arg) = priority
+  Thrdret = xLevelwindTaskCreate(osPriorityNormal+2); // (arg) = priority
   if (Thrdret == NULL) morse_trap(2161); 
 
   /* Drum task */
-  Thrdret = xDrumTaskCreate(4); // (arg) = priority
+  Thrdret = xDrumTaskCreate(osPriorityNormal); // (arg) = priority
   if (Thrdret == NULL) morse_trap(2162); 
 
   /* Brake task */
-  Thrdret = xBrakeTaskCreate(1); // (arg) = priority
+  Thrdret = xBrakeTaskCreate(osPriorityNormal); // (arg) = priority
   if (Thrdret == NULL) morse_trap(2163); 
 
 	/* Further initialization of mailboxes takes place when tasks start */
@@ -377,6 +386,7 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -401,6 +411,7 @@ void SystemClock_Config(void)
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
@@ -416,6 +427,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
@@ -448,6 +460,7 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 1 */
 
   /* USER CODE END ADC1_Init 1 */
+
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
@@ -466,6 +479,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_4;
@@ -475,6 +489,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_7;
@@ -483,6 +498,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_14;
@@ -491,6 +507,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
@@ -499,6 +516,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_VREFINT;
@@ -686,6 +704,64 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 13125;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 65535;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
 
 }
 
@@ -904,6 +980,8 @@ static void MX_DMA_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOE_CLK_ENABLE();
@@ -956,6 +1034,8 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -983,7 +1063,9 @@ osDelay(0); // Debugging HardFault
 //#define DISPLAYSTACKUSAGEFORTASKS
 //#define ADCSHOW
 //#define SHOWADCCOMMONCOMPUTATIONS
-#define STEPPERSHOW 1
+//#define STEPPERSHOW 1
+//#define ENCODERSHOW
+#define SHOWENTIMCT
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1005,6 +1087,8 @@ osDelay(0); // Debugging HardFault
 
 	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);	
 	if (pbuf4 == NULL) morse_trap(12);
+
+  yprintf(&pbuf4,"\n\rDRUM REPO defaultTask starts 01/14/2025 #3\n\r");
 
   
 #ifdef DISPLAYSTACKUSAGEFORTASKS
@@ -1049,6 +1133,25 @@ uint8_t ratepace = 0;
 	{
 		xTaskNotifyWait(noteused, 0, &noteval, portMAX_DELAY);
 		noteused = 0;
+
+    if ((noteval & DEFAULTTSKBIT01) != 0)
+    {
+
+#ifdef SHOWENTIMCT      
+      struct ODOMETERFUNCTION* pe = &odometerfunction; // Convenience pointer
+
+      yprintf(&pbuf1,"\n\r%7d %4d", pe->odotimct_int_diff[0].tim, pe->odotimct_int_diff[0].ct);
+      yprintf(&pbuf2," %7d %4d",    pe->odotimct_int_diff[1].tim, pe->odotimct_int_diff[1].ct);
+      yprintf(&pbuf3," %7d %4d",    pe->odotimct_int_diff[2].tim, pe->odotimct_int_diff[2].ct);
+      yprintf(&pbuf4," %7d %4d %4d",pe->odotimct_int_diff[3].tim, pe->odotimct_int_diff[3].ct, pe->en_cnt_diff);
+      yprintf(&pbuf1," %9.3f", pe->odo_speed_ave_motor);
+      yprintf(&pbuf2," %9.3f", pe->accel_ave_motor);
+      yprintf(&pbuf3," %9.3f", pe->en_cnt_speed);
+      yprintf(&pbuf4," %9.3f", pe->en_cnt_accel_motor);
+
+#endif      
+      }
+
 		if ((noteval & DEFAULTTSKBIT00) != 0)
 		{
 			noteused |= DEFAULTTSKBIT00;
@@ -1060,15 +1163,12 @@ uint8_t ratepace = 0;
     {
       ratepace = 0; 
 
-
-	
   #ifdef STEPPERSHOW
-
 
     #if (STEPPERSHOW == 1)
     //  print number of switch interrupts since last print 
       extern uint32_t dbsws1[5]; // Debug
-      struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+ //     struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
       stepctr++;
       if ((dbsws1[0]-dbsws1_prev[0]) != 0)
       {
@@ -1138,7 +1238,8 @@ uint8_t ratepace = 0;
 // ================== SLOW ==============================================
 /* Countdown timer notifications. */
 			slowtimectr += 1;
-			if (slowtimectr >= 16)
+//			if (slowtimectr >= 16)
+      if (slowtimectr >= 128)        
 			{
 				slowtimectr = 0;
 
@@ -1160,22 +1261,22 @@ uint8_t ratepace = 0;
 t1_DSUFT = DTWTIME;
 			showctr += 1; 
 /* 'for' is to test doing all scans at one timer tick. */
-for (showctr = 0; showctr < 10; showctr++)
+for (showctr = 0; showctr < 11; showctr++)
 {
 				switch (showctr)
 				{
 /* Cycle through the tasks. */
-case  0: stackwatermark_show(defaultTaskHandle,&pbuf1,"defaultTask--");break;
-case  1: stackwatermark_show(SerialTaskHandle ,&pbuf2,"SerialTask---");break;
-case  2: stackwatermark_show(CanTxTaskHandle  ,&pbuf3,"CanTxTask----");break;
-case  3: stackwatermark_show(MailboxTaskHandle,&pbuf4,"MailboxTask--");break;
+case  0: stackwatermark_show(defaultTaskHandle,  &pbuf1,"defaultTask--");break;
+case  1: stackwatermark_show(SerialTaskHandle ,  &pbuf2,"SerialTask---");break;
+case  2: stackwatermark_show(CanTxTaskHandle  ,  &pbuf3,"CanTxTask----");break;
+case  3: stackwatermark_show(MailboxTaskHandle,  &pbuf4,"MailboxTask--");break;
 case  4: stackwatermark_show(SerialTaskReceiveHandle,&pbuf1,"SerialRcvTask");break;
 case  5: stackwatermark_show(LevelwindTaskHandle,&pbuf2,"LevelwindTask");break;
-case  6: stackwatermark_show(DrumTaskHandle,   &pbuf3,"DrumTask-----");break;
-case  7: stackwatermark_show(BrakeTaskHandle,  &pbuf3,"BrakeTask----");break;
-case  8: stackwatermark_show(ADCTaskHandle,    &pbuf4,"ADCTask------");break;
-
-case 9:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
+case  6: stackwatermark_show(DrumTaskHandle,     &pbuf3,"DrumTask-----");break;
+case  7: stackwatermark_show(BrakeTaskHandle,    &pbuf3,"BrakeTask----");break;
+case  8: stackwatermark_show(ADCTaskHandle,      &pbuf4,"ADCTask------");break;
+case  9: stackwatermark_show(OdometerTaskHandle, &pbuf4,"OdometerTask-");break;
+case 10:	heapsize = xPortGetFreeHeapSize(); // Heap usage (and test fp working.
 			yprintf(&pbuf1,"\n\rGetFreeHeapSize: total: %i free %i %3.1f%% used: %i",configTOTAL_HEAP_SIZE, heapsize,\
 				100.0*(float)heapsize/configTOTAL_HEAP_SIZE,(configTOTAL_HEAP_SIZE-heapsize)); break;
 default: showctr=0; yprintf(&pbuf1,"\n\r%4i Unused Task stack space--", ctr++); break;
@@ -1222,7 +1323,7 @@ void CallbackdefaultTaskTimer(void const * argument)
   /* USER CODE END CallbackdefaultTaskTimer */
 }
 
- /**
+/**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM12 interrupt took place, inside
   * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
@@ -1273,5 +1374,3 @@ morse_trap(222);
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

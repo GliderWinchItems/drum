@@ -56,7 +56,7 @@ Temp(degree) = (V_sense - V_25)/Avg_slope + 25
 
 */
 
-#define VREFINT_CAL_ADDR 
+//#define VREFINT_CAL_ADDR 
 
 /* Calibration values common to all ADC modules. */
 struct ADCCALCOMMON adcommon;

@@ -21,18 +21,15 @@
 #include "levelwind_idx_v_struct.h"
 #include "levelwind_items.h"
 #include "../../../GliderWinchCommons/embed/svn_common/trunk/db/gen_db.h"
+#include "tim2tim5common_init.h"
 
 /* From 'main.c' */
 extern struct CAN_CTLBLOCK* pctl0;	// Pointer to CAN1 control block
 extern CAN_HandleTypeDef hcan1; //
 
-extern TIM_HandleTypeDef htim2; // Timer FreeRTOS handle
-extern TIM_HandleTypeDef htim5; // Timer FreeRTOS handle
 extern TIM_HandleTypeDef htim9; // Timer FreeRTOS handle
 
 /* From levelwind_items.c. */
-extern TIM_TypeDef  *pT2base; // Register base address 
-extern TIM_TypeDef  *pT5base; // Register base address 
 extern TIM_TypeDef  *pT9base; // Register base address 
 
 // #defines for computation of derivited parameters
@@ -105,7 +102,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
       // generate some error condition and inform operator
       morse_trap(error_code);
    }
-
 
 #if 1 // enable to use new parameters
    // Revist: Paramter range tests need to be added
@@ -188,10 +184,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->mydrumbit = (1 << (p->lc.mydrum-1)); // Convert drum number (1-7) to bit position (0-6)
  #endif
 
-   
-
-
-
 	/* Add CAN Mailboxes                               CAN     CAN ID             TaskHandle,Notify bit,Skip, Paytype */
 //	p->pmbx_cid_gps_sync         =  MailboxTask_add(pctl0,p->lc.cid_gps_sync,       NULL,LEVELWINDBIT06,0,U8);
 	p->pmbx_cid_drum_tst_stepcmd = MailboxTask_add(pctl0,p->lc.cid_drum_tst_stepcmd,NULL,LEVELWINDSWSNOTEBITCAN1,0,U8_FF);
@@ -233,8 +225,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->ledbit2= (LED_ORANGE_Pin);
 #endif   
 
-   
-
    p->drbit = p->drbit_prev = 0;    // Drum direction bit REVIST: Needed???   
 
    p->hbctr = xTaskGetTickCount();
@@ -257,9 +247,10 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    p->cltimectr   = 0;
    
    /* Save base addresses of timers for faster use later. */
-   pT2base  = htim2.Instance;
-   pT5base  = htim5.Instance;
    pT9base  = htim9.Instance;
+
+   /* Initialize TIM2 & TIM5 for odometer, levelwind, levelwind_switches. */
+   tim2tim5common_init();
 
 /* ### NOTE ### These might override STM32CubeMX settings. ### */
    /* Generate pulse for levelwind controller (PU line) */
@@ -268,17 +259,6 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    pT9base->ARR  = (TIM9PWMCYCLE - 1); // (10 us)
    pT9base->CCER = 0x3; // OC active high; signal on pin
 
-/* ### NOTE ### These might override STM32CubeMX settings. ### */
-
-   /* TIM2 Shaft encoder input capture times & output caputre indexing interrupts. */
-   pT2base->CCER |= 0x1110; // Input capture active: CH2,3,4
-#if LEVELWINDDEBUG   
-   pT2base->DIER  = 0xE;    // CH1,2,3 interrupt enable
-#else   
-   pT2base->DIER  = 0xA;    // CH1,3 interrupt enable
-#endif   
-   pT2base->CCR1  = pT2base->CNT + 1000; // 1 short delay
-   pT2base->ARR   = 0xffffffff; // (Max count - 1)
 
    /* Start counters. */
    pT2base->CR1 |= 1;  // TIM2: CH1 oc, CH3 ic/oc
@@ -289,12 +269,12 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
    return;
 }
 /* *************************************************************************
- * static void canfilt(uint16_t mm, struct MAILBOXCAN* p);
+ * void canfilt(uint16_t mm, struct MAILBOXCAN* p);
  * @brief	: Setup CAN hardware filter with CAN addresses to receive
  * @param	: p    = pointer to ContactorTask
  * @param   : mm = morse_trap numeric number
  * *************************************************************************/
-static void canfilt(uint16_t mm, struct MAILBOXCAN* p)
+void canfilt(uint16_t mm, struct MAILBOXCAN* p)
 {
 /*	HAL_StatusTypeDef canfilter_setup_add32b_id(uint8_t cannum, CAN_HandleTypeDef *phcan, \
     uint32_t id,   \

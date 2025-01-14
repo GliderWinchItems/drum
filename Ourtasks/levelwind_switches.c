@@ -60,9 +60,7 @@ PC9 - PE13
 #include "drum_items.h"
 #include "levelwind_switches.h"
 #include "LevelwindTask.h"
-
-static TIM_TypeDef  *pT2base; // Register base address 
-static TIM_TypeDef  *pT5base; // Register base address 
+#include "tim2tim5common_init.h"
 
 /* Circular buffer for processing switch transitions. */
 #define SWITCHXITIONSIZE 16
@@ -84,10 +82,8 @@ void levelwind_switches_init(void)
 {
 	struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 
-extern TIM_HandleTypeDef htim2;
-extern TIM_HandleTypeDef htim5;
-   pT2base  = htim2.Instance;
-   pT5base  = htim5.Instance;
+	/* Initialize TIM2 & TIM5 for odometer, levelwind, levelwind_switches. */
+	tim2tim5common_init();
 
    /*	MX sets up switches for falling edge and enables interrupts
    	We were unable to keep it from immediately enableing interrupts
@@ -129,7 +125,6 @@ extern TIM_HandleTypeDef htim5;
 	}
 	else EXTI->IMR |= LimitSw_MS_NO_Pin;	//	enable MS_NO interrupts
 
-
 	return;
 }
 
@@ -154,10 +149,10 @@ struct SWITCHXITION* levelwind_switches_get(void)
  * CH2 = OC faux encoder interrupts
  *####################################################################################### */
 /*
-LimitSw_MSN_NO_Pin	GPIO_PIN_10
-LimitSw_MSN_NC_Pin	GPIO_PIN_11
-LimitSw_MS_NO_Pin   	GPIO_PIN_12
-LimitSw_MS_NC_Pin   	GPIO_PIN_13
+LimitSw_MSN_NO_Pin  GPIO_PIN_10
+LimitSw_MSN_NC_Pin  GPIO_PIN_11
+LimitSw_MS_NO_Pin   GPIO_PIN_12
+LimitSw_MS_NC_Pin   GPIO_PIN_13
 */
 uint32_t dbsws1[5] = {0}; // Debug
 

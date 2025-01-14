@@ -18,6 +18,12 @@ void levelwind_func_init_canfilter(struct LEVELWINDFUNCTION* p);
 /*	@brief	: Setup CAN hardware filter with CAN addresses to receive
  * @param	: p    = pointer to ContactorTask
  * *************************************************************************/
+void canfilt(uint16_t mm, struct MAILBOXCAN* p);
+/* @brief	: Setup CAN hardware filter with CAN addresses to receive
+ * @param	: p    = pointer to ContactorTask
+ * @param   : mm = morse_trap numeric number
+ * *************************************************************************/
+
 
 #endif
 

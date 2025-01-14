@@ -1,3 +1,42 @@
+#!/bin/bash -e
+echo "################ COMPILE ##################"
+if make ; then
+	echo "################ SUCCESS ##################"
+else
+	echo "################ FAIL ##################"
+	exit 1;
+fi	
+
+cd build
+
+#/$ARM_PREFIX/bin/arm-none-eabi-objdump -S $1.elf | tee $1.list
+$ARM_PREFIX/bin/arm-none-eabi-objdump -S $1.elf > $1.list
+
+$ARM_PREFIX/bin/arm-none-eabi-objcopy -O srec $1.elf $1.srec
+
+echo
+echo "################# ADD CRC & CHECKSUM #################"
+# Compile so that latest for this OS version
+cd ~/G*ems/CANloader1/PC/crc-srec/
+gcc -Wall crc-srec.c crc-32_nib.c -o crc-srec
+cd -
+# Execute crc-srec
+~/G*ems/CANloader1/PC/crc-srec/crc-srec $1 $2
+
+echo "################# SAVE & MOVE FILE   #################"
+cp $1.srec $1.srec.save
+cp $1.srec-crc $1.srec
+chmod 775 $1.srec
+ls -l *srec* 
+ls -l *bin*
+
+#echo "################# SCRIPT-FLASH #################"
+#../script-flash $1
+
+exit 0;
+
+
+
 #!/bin/bash
 
 make

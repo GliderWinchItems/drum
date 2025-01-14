@@ -44,7 +44,7 @@ void StartDrumTask(void const * argument)
  * *************************************************************************/
 osThreadId xDrumTaskCreate(uint32_t taskpriority)
 {
- 	osThreadDef(DrumTask, StartDrumTask, osPriorityNormal, 0, (192));
+ 	osThreadDef(DrumTask, StartDrumTask, osPriorityNormal, 0, (128));
 	DrumTaskHandle = osThreadCreate(osThread(DrumTask), NULL);
 	vTaskPrioritySet( DrumTaskHandle, taskpriority );
 	return DrumTaskHandle;

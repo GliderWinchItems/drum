@@ -1,6 +1,6 @@
 Configuration	drum
-STM32CubeMX 	6.1.0
-Date	02/15/2021
+STM32CubeMX 	6.12.1
+Date	01/14/2025
 MCU	STM32F407VGTx
 
 
@@ -27,6 +27,8 @@ TIM3	Input Capture direct mode	TIM3_CH1	PC6
 TIM3	Input Capture direct mode	TIM3_CH2	PC7
 TIM3	Input Capture direct mode	TIM3_CH3	PC8
 TIM3	Input Capture direct mode	TIM3_CH4	PC9
+TIM4	Internal Clock	TIM4_VS_ClockSourceINT	VP_TIM4_VS_ClockSourceINT
+TIM4	Output Compare No Output	TIM4_VS_no_output1	VP_TIM4_VS_no_output1
 TIM5	Encoder Mode	TIM5_CH1	PA0-WKUP
 TIM5	Encoder Mode	TIM5_CH2	PA1
 TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
@@ -98,6 +100,8 @@ TIM3	Input Capture direct mode	TIM3_CH1	PC6
 TIM3	Input Capture direct mode	TIM3_CH2	PC7
 TIM3	Input Capture direct mode	TIM3_CH3	PC8
 TIM3	Input Capture direct mode	TIM3_CH4	PC9
+TIM4	Internal Clock	TIM4_VS_ClockSourceINT	VP_TIM4_VS_ClockSourceINT
+TIM4	Output Compare No Output	TIM4_VS_no_output1	VP_TIM4_VS_no_output1
 TIM5	Encoder Mode	TIM5_CH1	PA0-WKUP
 TIM5	Encoder Mode	TIM5_CH2	PA1
 TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
@@ -154,9 +158,9 @@ SOFTWARE PROJECT
 
 Project Settings : 
 Project Name : drum
-Project Folder : /home/gsm/GliderWinchItems/drum
+Project Folder : /home/deh/GliderWinchItems/drum
 Toolchain / IDE : Makefile
-Firmware Package Name and Version : STM32Cube FW_F4 V1.25.2
+Firmware Package Name and Version : STM32Cube FW_F4 V1.28.1
 
 
 Code Generation Settings : 

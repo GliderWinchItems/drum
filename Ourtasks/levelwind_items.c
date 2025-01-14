@@ -23,9 +23,16 @@ PE5  - TIM9CH1 Stepper Pulse: PU (TIM1 Break shared interrupt vector)
 PB0  - Direction: DR 
 PB1  - Enable: EN  - High = enable (drive FET ON)
 
-Drum encoder: TIM2CH1. Pullup resistors
-PA0 - Encoder channel A
-PA1 - Encoder channel B
+Drum encoder: 
+TIM5 configured for encoder A, B, Z
+TIM2 congifured for input capture, encoder A, B, Z
+
+Encoder channels connect to TIM2 and TIM5
+TIM2 generates interrupts for encoder input capture of time.
+TIM5 increments/decrements encoder counter
+
+TIM5 PA0 = TIM2 PA2 - Encoder channel A Pullup resistors
+TIM5 PA1 = TIM2 PA3 - Encoder channel B Pullup resistors
 
 TIM2 32b (84 MHz) capture mode (interrupt)
    CH3 PA2 input capture: encoder A (TIM5 PA0)
@@ -63,6 +70,7 @@ TIM13 (84 MHz) Solenoid FET drive (no interrupt)
 #include "DTW_counter.h"
 #include "drum_items.h"
 #include "levelwind_switches.h"
+#include "tim2tim5common_init.h"
 
 #define DTW 1  // True to keep DTW timing Code
 
@@ -78,8 +86,6 @@ union X4
 
 struct LEVELWINDDBGBUF levelwinddbgbuf[LEVELWINDDBGBUFSIZE];
 
-TIM_TypeDef  *pT2base; // Register base address 
-TIM_TypeDef  *pT5base; // Register base address 
 TIM_TypeDef  *pT9base; // Register base address 
 
 /* Struct with all you want to know. */
@@ -313,6 +319,7 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
 }
 
 /*#######################################################################################
+ * void levelwind_items_TIM2_IRQHandler(void);
  * ISR routine for TIM2
  * CH1 - OC timed interrupts  indexing interrupts
  * CH2 - OC timed interrupts  or, FreeRTOS task forces this interrupt?

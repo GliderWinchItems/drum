@@ -114,6 +114,15 @@ void levelwind_items_rcv_cid_hb_cpswsclv1_1(struct CANRCVBUF* pcan);
  * @return  : NULL = no new data; otherwise ptr struct with data
  * *************************************************************************/
 
+/*#######################################################################################*/
+ void levelwind_items_TIM2_IRQHandler(void);
+/* ISR routine for TIM2
+ * CH1 - OC timed interrupts  indexing interrupts
+ * CH2 - OC timed interrupts  or, FreeRTOS task forces this interrupt?
+ * CH3 - IC encoder channel A or, OC generates faux encoder interrupts
+ * CH4 - IC encoder channel B not used in this version
+ *####################################################################################### */
+
  extern struct LEVELWINDSTUFF levelwindstuff;
 
 #if LEVELWINDDEBUG 

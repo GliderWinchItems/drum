@@ -150,6 +150,7 @@ void Error_Handler(void);
 #define LimitSw_MS_NCC9_GPIO_Port GPIOC
 #define encodertimeZ_Pin GPIO_PIN_3
 #define encodertimeZ_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 // ===============================================================================
 // USART/UART assignments
@@ -174,5 +175,3 @@ extern struct CAN_CTLBLOCK* pctl0;  // Pointer to CAN1 control block
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

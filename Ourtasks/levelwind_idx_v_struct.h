@@ -95,9 +95,6 @@ struct LEVELWINDLC
    
    // TBA   CAN Ids
 
-
-
-
  // CAN ids ...........................................................................
    //                                  CANID_NAME             CAN_MSG_FMT     DESCRIPTION
     // Levelwind sends; PC receives
