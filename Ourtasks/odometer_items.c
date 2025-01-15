@@ -64,27 +64,21 @@ void odometer_items_init(struct ODOMETERFUNCTION* p)
    // Zero line_out
    p->line_out = 0;
    p->line_out_ctr = 0; // encoder counter
-
    // Initial circumference of loaded rope (meters)
-   tmpf = (p->lc.drum_outer_dia - (p->lc.rim_to_rope_default * 0.002f));
+   tmpf = (p->lc.drum_outer_dia - (p->lc.rim_to_rope_default * 0.002));
    if (tmpf < 0) morse_trap(732);
-
    // Diameter to circumference
-   p->initial_circum = tmpf * 3.14159265f;
-   p->working_circum = p->initial_circum;
-   
+   p->initial_circum *= 3.14159265f;
    // Number of revs per layer
-   p->drum_rev_per_layer = (p->lc.drum_width / (p->lc.rope_dia * 0.001f));
-   
-   p->en_drum_ratio  = (float)(1/(p->lc.encoder_ratio * 360.0f)); // Line out counting
-
+   p->drum_rev_per_layer = p->lc.drum_width / (p->lc.rope_dia * 0.001f);
    // Average layer thickness per rev
-   p->drum_dia_change_per_rev = (p->lc.rope_dia * 0.002f) / p->drum_rev_per_layer;
-   p->drum_cir_change_per_rev = (p->drum_dia_change_per_rev * 3.14159265f);
-   p->en_cnts_per_drum_rev = ((float)1440 * p->lc.encoder_ratio);
-   p->drum_cir_change_per_rev /= p->drum_rev_per_layer;
-   p->drum_cir_change_per_encoder_ct = (p->drum_cir_change_per_rev / p->en_cnts_per_drum_rev);
-   
+   p->drum_dia_change_per_rev = (p->lc.rope_dia * 0.001f) / p->drum_rev_per_layer;
+   p->drum_cir_change_per_rev = p->drum_dia_change_per_rev * 3.14159265f;
+   p->en_drum_ratio  = (1/(p->lc.encoder_ratio * 360.0f)); // Line out counting
+   p->line_out       = 0;
+   p->drum_rev_ctr   = 0;
+   p->working_circum = 0;
+ 
    p->line_out       = 0;
    p->drum_rev_ctr   = 0;
 
@@ -265,7 +259,6 @@ void odometer_items_send_speed_lineout_msg(struct ODOMETERFUNCTION* p)
    p->line_out += (ftmp * p->working_circum);
    // Adjust working circumference
    p->working_circum -= ((float)p->odotimct_int_diff[0].ct * p->drum_cir_change_per_encoder_ct);
-
    /* Set up payload and send, if msg enabled. */
    if (p->lc.msg_enable[0] != 0)
       send_msg1(p);
