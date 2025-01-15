@@ -21,6 +21,8 @@
 #include "odometer_items.h"
 #include "levelwind_items.h"
 #include "tim2tim5common_init.h"
+
+#include "DTW_counter.h"
 /*
 Encoder transitions step the encoder counter (TIM 5) + or -,
 and also trigger Input Capture (TIM 2).
@@ -67,23 +69,27 @@ void odometer_items_init(struct ODOMETERFUNCTION* p)
    tmpf = (p->lc.drum_outer_dia - (p->lc.rim_to_rope_default * 0.002));
    if (tmpf < 0) morse_trap(732);
    // Diameter to circumference
-   p->initial_circum *= 3.14159265f;
+   p->initial_circum = tmpf * 3.14159265f;
+   p->working_circum = p->initial_circum;
    // Number of revs per layer
    p->drum_rev_per_layer = p->drum_width / (p->lc.rope_dia * 0.001f);
    // Average layer thickness per rev
    p->drum_dia_change_per_rev = (p->lc.rope_dia * 0.001f) / p->drum_rev_per_layer;
    p->drum_cir_change_per_rev = p->drum_dia_change_per_rev * 3.14159265f;
-   p->en_drum_ratio  = (1/(p->lc.encoder_ratio * 360.0f)); // Line out counting
+   p->en_drum_ratio  = (float)(1/(p->lc.encoder_ratio * 360.0f)); // Line out counting
    p->line_out       = 0;
    p->drum_rev_ctr   = 0;
-   p->working_circum = 0;
 
     /* Heartbeat counter. */
-    p->hbct = p->lc.hb_t/100; // ms to hb ticks
-    if (p->hbct == 0) morse_trap(731);
-    p->zspdct = (p->lc.zspd_t * 64) / 1000; // ms to 1/64s cts
+    p->hboct = (p->lc.hb_t*64)/1000; // ms to hb ticks
+    if (p->hboct == 0) morse_trap(731);
+//p->hboct = 64*4;
+
+    p->zspdct = (p->lc.zspd_t*64)/1000; // ms to 1/64s cts
     if (p->zspdct == 0) morse_trap(732);
-    p->hbctr   = 1; // First HB soon
+//p->zspdct = 64/2;
+
+    p->hboctr   = 1; // First HB soon
     p->zspdctr = 0; // Zero speed detection
     p->hbstate = 1;
 
@@ -139,11 +145,11 @@ static void send_msg1(struct ODOMETERFUNCTION* p)
       uint32_t ui;
    }uf;
 
-   uf.f = p->odo_speed_ave_drum;
-   pcan->cd.ui[1] = uf.ui;
-
    uf.f = p->line_out;
    pcan->cd.ui[0] = uf.ui;
+
+   uf.f = p->odo_speed_ave_drum;
+   pcan->cd.ui[1] = uf.ui;
 
    // Place CAN msg on CanTask queue
    xQueueSendToBack(CanTxQHandle,&p->canmsg[ODOCANMSG_MSG1],4);
@@ -151,7 +157,7 @@ static void send_msg1(struct ODOMETERFUNCTION* p)
 }
 /* *************************************************************************
  * static void send_msg2(struct ODOMETERFUNCTION* p);
- * @brief   : Send CAN msg: acceleration, encoder ctr (FF_S32)
+ * @brief   : Send CAN msg: acceleration, speed ave drum (FF_FF)
  * *************************************************************************/
 static void send_msg2(struct ODOMETERFUNCTION* p)
 {
@@ -237,7 +243,7 @@ void odometer_items_compute(void)
  * @brief   : Send speed & line-out CAN msg timing
  * *************************************************************************/
 extern osThreadId defaultTaskHandle;
-#define DEFAULTTSKBIT01 (1 << 1)  // Task notification bit for sw timer: something else
+#define DEFAULTTSKBIT01 (1 << 1)  // Task notification bit for main
 
 void odometer_items_send_speed_lineout_msg(struct ODOMETERFUNCTION* p)
 {
@@ -245,8 +251,10 @@ void odometer_items_send_speed_lineout_msg(struct ODOMETERFUNCTION* p)
    p->odo_speed_ave_motor = p->speed_sum * p->lc.scale_en_mtr; // Scale raw->motor rpm
    p->odo_speed_ave_drum  = p->odo_speed_ave_motor * p->lc.scale_mtr_drum;  // Scale motor rpm->drum rpm
 
-   p->line_out += ((float)p->odotimct_int_diff[0].ct * p->working_circum * p->en_drum_ratio);
-   p->working_circum -= p->drum_cir_change_per_rev;
+   float ftmp = (p->odotimct_int_diff[0].ct * p->en_drum_ratio * p->working_circum);
+   p->line_out += ftmp;
+
+//TODO adjust working_circum 
 
    /* Set up payload and send, if msg enabled. */
    if (p->lc.msg_enable[0] != 0)
@@ -271,7 +279,7 @@ void odometer_items_hearbeat(void)
    /* Whenever the speed is not zero the speed & line-out a CAN msg is sent every
 duration measurement (determined by ODOMETER_T2C1_DUR).
       When the speed is essentially zero, the msgs are sent every duration
-meausrement until the hbct duration expires, after which the msgs are sent
+meausrement until the hboct duration expires, after which the msgs are sent
 at the heatbeat duration.
    This avoids flooding the logs with speed & line-out CAN msgs when the 
 drum is sitting idle.
@@ -279,7 +287,6 @@ drum is sitting idle.
 provides a +/- window around zero, for detecting idle drum and 
 switching to the slow heartbeat rate.   
    */   
-
    struct ODOMETERFUNCTION* p = &odometerfunction; // Convenience pointer
 
    /* Check if sufficiently slow to switch to slow CAN msg sending. */
@@ -301,14 +308,15 @@ switching to the slow heartbeat rate.
          return;
       }
       p->hbstate = 1;
-      p->hbctr = p->hbct; // Reset HB duration counter
+      p->hboctr = p->hboct; // Reset HB duration counter
       break;
 
    case 1: 
-      if (p->hbctr == 0)
+      p->hboctr -= 1;
+      if (p->hboctr == 0)
       {
          odometer_items_send_speed_lineout_msg(p);
-         p->hbctr = p->hbct; // Reset HB duration counter
+         p->hboctr = p->hboct; // Reset HB duration counter 2
       }
       break;
     }
@@ -320,7 +328,7 @@ switching to the slow heartbeat rate.
  * CH1 - OC measurement duration for encoder measurement
  *####################################################################################### */
 void odometer_items_TIM4_IRQHandler(void)
-{
+{   
    struct ODOMETERFUNCTION* p = &odometerfunction; // Convenience pointer
 
      // TIM4CH1 OC: End of measurement duration (1/64 sec)
@@ -340,7 +348,6 @@ void odometer_items_TIM4_IRQHandler(void)
       p->odotimct_buff[2] = p->odotimct[2];
       p->odotimct_buff[3] = p->odotimct[3];
    }      
-
       // Cause interrupt for lower FreeRTOS ISR level handling
       HAL_NVIC_SetPendingIRQ(I2C3_ER_IRQn);
 

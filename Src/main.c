@@ -1073,9 +1073,6 @@ osDelay(0); // Debugging HardFault
 	/* A notification copies the internal notification word to this. */
 	uint32_t noteval = 0;    // Receives notification word upon an API notify
 
-	/* notification bits processed after a 'Wait. */
-	uint32_t noteused = 0;
-
 	struct SERIALSENDTASKBCB* pbuf1 = getserialbuf(&HUARTMON,96);
 	if (pbuf1 == NULL) morse_trap(11);
 
@@ -1127,12 +1124,12 @@ uint8_t ratepace = 0;
   uint32_t stepctr = 1;
   uint32_t dbsws1_prev[5] = {0};
 #endif  
+
 // ===== BEGIN FOR LOOP ==============================
 
 	for (;;)
 	{
-		xTaskNotifyWait(noteused, 0, &noteval, portMAX_DELAY);
-		noteused = 0;
+	  xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
 
     if ((noteval & DEFAULTTSKBIT01) != 0)
     {
@@ -1148,13 +1145,11 @@ uint8_t ratepace = 0;
       yprintf(&pbuf2," %9.3f", pe->accel_ave_motor);
       yprintf(&pbuf3," %9.3f", pe->en_cnt_speed);
       yprintf(&pbuf4," %9.3f", pe->en_cnt_accel_motor);
-
-#endif      
-      }
+#endif
+    }
 
 		if ((noteval & DEFAULTTSKBIT00) != 0)
 		{
-			noteused |= DEFAULTTSKBIT00;
 
 // ================= Higest rate =======================================
   
@@ -1232,7 +1227,7 @@ uint8_t ratepace = 0;
     #endif     
 
 #endif      
-}
+    }
 
 	
 // ================== SLOW ==============================================

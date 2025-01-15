@@ -18,8 +18,8 @@
 #include "odometer_idx_v_struct.h"
 #include "odometer_items.h"
 
-/* TIM4 prescale = 13125; 84 MHz rate -> 6400 cts/sec */
-#define ODOMETER_T4C1_DUR 100 // TIM2 ticks for 1/64 sec duration
+/* TIM4 prescale = 13125; 42 MHz rate -> 3200 cts/sec */
+#define ODOMETER_T4C1_DUR 50 // TIM2 ticks for 1/64 sec duration
 
 // Task wait notification bits
 #define ODOMETERNOTBITSWT1 (1<<0) // Software timer1
@@ -52,8 +52,8 @@ struct ODOTIMCT_INT
 
 struct ODOMETERFUNCTION
 {
-   uint32_t hbct;    // Heartbeat duration count (swtim1 ticks)
-   uint32_t hbctr;   // Heartbeat duration counter
+   uint32_t hboct;   // Heartbeat duration count (swtim1 ticks)
+   uint32_t hboctr;  // Heartbeat duration counter
    uint32_t zspdct;  // Zero speed detection (1/64th sec ticks)
    uint32_t zspdctr; // Zero speed detection counter
    uint8_t hbstate;  // Hearbeat<->64Hz sending 

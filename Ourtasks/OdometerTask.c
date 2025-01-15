@@ -110,8 +110,8 @@ extern CAN_HandleTypeDef hcan1;
       if ((noteval & ODOMETERNOTBITSWT1) != 0)
 		{ // Software timer callback caused this
 debugodo1 += 1;         
-         if (p->hbctr > 0)
-            p->hbctr -= 1;
+//         if (p->hboctr > 0)
+//            p->hboctr -= 1;
 		}
 
       if ((noteval & ODOMETERNOTBITSYNC) != 0)
@@ -135,8 +135,6 @@ toggle_led();
          odometer_items_hearbeat();
       }
 
-	#define SCB_AIRCR 0xE000ED0C
-
       if ((noteval & ODOMETERNOTBITRESET) != 0)
       { // command/request: LDR_RESET ('AEC00000')
       	pcan = &p->pmbx_cid_cmd_uni_bms_pc_i->ncan.can;
@@ -144,8 +142,9 @@ toggle_led();
       	{
       		if (pcan->cd.ui[1] == I_AM_CANID)
       		{
+					#define SCB_AIRCR 0xE000ED0C
 					*(volatile unsigned int*)SCB_AIRCR = (0x5FA << 16) | 0x4;// Cause a RESET
-				//	while (1==1);// Redundant. Reset means it is "gone"
+					//	while (1==1);// Redundant. Reset means it is "gone"
 				}
       	}
 //			morse_trap(888);
