@@ -93,8 +93,9 @@ struct ODOMETERFUNCTION
    float drum_dia_change_per_rev; // Diameter change per rev
    float drum_cir_change_per_rev; // Circumference change per rev
    float drum_rev_ctr;   // Drum revolutions, zero = all line in.
-   float drum_width;     // (meters)
+   float en_cnts_per_drum_rev; // Encoder counts per drum revolution
    float en_drum_ratio;  // encoder to drum rev ratio for line out
+   float drum_cir_change_per_encoder_ct;
    int32_t line_out_ctr; // encoder counter
    int32_t line_out_ref; // encoder count for zero line out
 

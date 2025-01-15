@@ -38,7 +38,7 @@ void odometer_idx_v_struct_hardcode_params(struct ODOMETERLC* p)
    p->drum_outer_dia  = 0.975f; // Drum flange outer diameter(meters)
    p->drum_width      = 0.165f; // Drum inside width (meters)
    p->rim_to_cushion  = (p->drum_outer_dia - p->hub_bare_dia)*0.5f; // Temporary
-   p->encoder_ratio   =  6.44f; // Gear ratio--motor:drum
+   p->encoder_ratio   =  ((float)(53/32)*(float)(35/9)); // 6.4409722f; // Gear ratio--motor:drum
    p->scale_en_mtr    = ((float)1312500*60*64/(1440*4));// 875.0E3f; // encoder ct/time scale to motor rpm
    p->scale_mtr_drum  = 0.155279503f;// motor rpm scale to drum rpm
    p->scale_en_circum = 737.96964f; // encoder to drum circumference (meters)
