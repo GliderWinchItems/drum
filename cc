@@ -9,7 +9,7 @@
 cd ../../GliderWinchCommons/embed/svn_discoveryf4/PC/sensor/CANldr1/trunk
 echo "Start CANldr"
 pwd
-./CANldr $2 $3 $1 ~/GliderWinchItems/drum/build/drum.xbin
+./CANldr $2 $3 $1 ../../../../../../../GliderWinchItems/drum/build/drum.xbin
 echo $?
 
 cd -
