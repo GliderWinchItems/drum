@@ -33,10 +33,10 @@ void odometer_idx_v_struct_hardcode_params(struct ODOMETERLC* p)
 
    p->rim_to_rope_default =   150.0f; // Distance (mm), drum rim -to- loaded rope
    p->rope_total_default  =  1000.0f; // Total rope loaded on drum (meters)
-   p->hub_bare_dia    = 0.750f; // Drum without rope diameter (meters)
+   p->hub_bare_dia    = 0.725f; // Drum without rope diameter (meters)
    p->rope_dia        = 4.5f;   // Effective dia for drum loading computations (mm)
-   p->drum_outer_dia  = 0.975f; // Drum flange outer diameter(meters)
-   p->drum_width      = 0.165f; // Drum inside width (meters)
+   p->drum_outer_dia  = 0.957f; // Drum flange outer diameter(meters)
+   p->drum_width      = 0.175f; // Drum inside width (meters)
    p->rim_to_cushion  = (p->drum_outer_dia - p->hub_bare_dia)*0.5f; // Temporary
    p->encoder_ratio   =  ((float)(53/32)*(float)(35/9)); // 6.4409722f; // Gear ratio--motor:drum
    p->scale_en_mtr    = ((float)1312500*60*64/(1440*4));// 875.0E3f; // encoder ct/time scale to motor rpm
