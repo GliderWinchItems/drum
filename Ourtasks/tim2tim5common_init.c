@@ -70,7 +70,7 @@ void tim2tim5common_init(void)
    pT2base  = htim2.Instance;
    pT5base  = htim5.Instance;
 
-   /* TIM2 Shaft encoder input capture times & output caputre indexing interrupts. */
+   /* TIM2 Shaft encoder input capture times & output capture indexing interrupts. */
    pT2base->CCER |= 0x1110; // Input capture active: CH2,3,4
 #if LEVELWINDDEBUG   
    // Original: 0xE; // CH1,2,3 interrupt enable
@@ -106,9 +106,8 @@ void tim2tim5common_init(void)
    /* TIM2 Shaft encoder input capture times & output capture indexing interrupts. */
  //  pT2base->CCER |= 0x1110; // Input capture active: CH2,3,4
  //  pT2base->DIER  = 0x1A;    // CH1,3,4 interrupt enable
-   pT2base->CCR1  = pT2base->CNT + ODOMETER_T4C1_DUR; // 1/64 sec
-   pT2base->ARR   = 0xffffffff; // (Max count - 1)
-
+ //  pT2base->CCR1  = pT2base->CNT + ODOMETER_T4C1_DUR; // 1/64 sec
+ //
    /* Make sure channel A & B counters are the same. */
    pT5base->CCR1 = 0; // jic
    pT5base->CCR2 = 0; // jic

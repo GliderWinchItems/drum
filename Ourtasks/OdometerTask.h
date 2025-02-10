@@ -18,8 +18,8 @@
 #include "odometer_idx_v_struct.h"
 #include "odometer_items.h"
 
-/* TIM4 prescale = 13125; 42 MHz rate -> 3200 cts/sec */
-#define ODOMETER_T4C1_DUR 50 // TIM2 ticks for 1/64 sec duration
+/* TIM4 prescale = 13125; 84 MHz rate -> 1600 cts/sec */
+#define ODOMETER_T4C1_DUR 100 // TIM2 ticks for 1/64 sec duration
 
 // Task wait notification bits
 #define ODOMETERNOTBITSWT1 (1<<0) // Software timer1

@@ -395,14 +395,11 @@ extern CAN_HandleTypeDef hcan1;
          }               
       }
       
-
       /* see if status or super-state have changed or HB timer has expired
          and send appropriate status-state (HBX) message */
-      if ((p->state != p->state_prev) || (p->status != p->status_prev)
+      if (((noteval & LEVELWINDSWSNOTEBITISR) != 0) 
             || (xTaskGetTickCount() >= p->hbctr))
       {  // send status-state message 
-         p->state_prev = p->state;
-         p->status_prev = p->status;
          levelwind_items_CANsend_hb_levelwind_1();
          p->hbctr = xTaskGetTickCount() + p->hbct_k;
       }

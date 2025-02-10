@@ -330,6 +330,7 @@ switching to the slow heartbeat rate.
  * ISR routine for TIM4
  * CH1 - OC measurement duration for encoder measurement
  *####################################################################################### */
+uint32_t dbgtim4ctr;
 void odometer_items_TIM4_IRQHandler(void)
 {   
    struct ODOMETERFUNCTION* p = &odometerfunction; // Convenience pointer
@@ -337,7 +338,7 @@ void odometer_items_TIM4_IRQHandler(void)
      // TIM4CH1 OC: End of measurement duration (1/64 sec)
    if ((pT4base->SR & (1 << 1)) != 0) // CH1 Interrupt flag
    { // Yes, OC drive 
-      pT4base->SR = ~(1 << 1);  // Reset CH1 flag
+      pT4base->SR = ~(1 << 1);  // Reset CH1 flag      
 
       // Duration increment for next interrupt
       pT4base->CCR1 += ODOMETER_T4C1_DUR; // Next measurement
@@ -389,7 +390,7 @@ void odometer_items_TIM2_IRQHandler(void)
    /* TIM2CH4 IC: encodertimeB transition PA3 TIM5CH1 PA1  */
    if ((pT2base->SR & (1<<4)) != 0)  // CH4 Interrupt flag?
    { // Yes, encoder channel B
-//      pT2base->SR = ~(1<<4);   // Reset CH4 flag
+      pT2base->SR = ~(1<<4);   // Reset CH4 flag
 
       p->oe_B ^= 0x1;
       if (p->oe_B == 0)
@@ -406,6 +407,8 @@ void odometer_items_TIM2_IRQHandler(void)
 
    /* Levelwind will use TIM2 interrupts (and reset TIM2 flags). */
    levelwind_items_TIM2_IRQHandler();
+
+
 
    return;
 }

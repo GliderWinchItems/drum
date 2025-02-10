@@ -329,15 +329,15 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
 void levelwind_items_TIM2_IRQHandler(void)
 {
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+   
    /* This block for z channel (index) processing. It will be removed in operational
       code. */
-
-   // TIM2CH2 = encodertimeZ
-#if LEVELWINDDEBUG   
+   // TIM2CH2 = encodertimeZ 
    if ((pT2base->SR & (1 << 2)) != 0) // CH2 Interrupt flag?
    { // Yes, encoder channel Z transition
       pT2base->SR = ~(1 << 2);  // Reset CH2 flag
 
+#if LEVELWINDDEBUG        
       /* uncomment this overloaded use of orange LED to show index position is desired
       if ((GPIOB->IDR & (1 << 3)) == 0)
       {
@@ -349,8 +349,8 @@ void levelwind_items_TIM2_IRQHandler(void)
       }
       */
       return;
-   }
 #endif
+   }
 
 #if DTW
    // Capture DTW timer for cycle counting
