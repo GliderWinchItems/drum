@@ -116,7 +116,7 @@ void odometer_items_init(struct ODOMETERFUNCTION* p)
     HAL_NVIC_EnableIRQ(I2C3_ER_IRQn);
 
    /* Initialize TIM2 & TIM5 for odometer, levelwind, levelwind_switches. */
-   tim2tim5common_init();
+ //$  tim2tim5common_init();
 
    /* Save base addresses of timers for faster use later. */
    pT4base  = htim4.Instance;
@@ -351,10 +351,12 @@ void odometer_items_TIM4_IRQHandler(void)
       p->odotimct_buff[1] = p->odotimct[1];
       p->odotimct_buff[2] = p->odotimct[2];
       p->odotimct_buff[3] = p->odotimct[3];
-   }      
-      // Cause interrupt for lower FreeRTOS ISR level handling
+
+// Cause interrupt for lower FreeRTOS ISR level handling
       HAL_NVIC_SetPendingIRQ(I2C3_ER_IRQn);
 
+   }      
+      
       return;
 }
 /*#######################################################################################

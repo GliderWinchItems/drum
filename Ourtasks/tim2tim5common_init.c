@@ -79,7 +79,7 @@ void tim2tim5common_init(void)
    // Original: // 0xA; // CH1,3 interrupt enable
    pT2base->DIER  = 0x1A;    // CH1,3,4 interrupt enable
 #endif   
-   pT2base->CCR1  = pT2base->CNT + 10000; // Short delay
+   pT2base->CCR1  = pT2base->CNT + 160000000; // Short delay
    pT2base->ARR   = 0xffffffff; // (Max count - 1)
 
 /* ### NOTE ### These might override STM32CubeMX settings. ### */
