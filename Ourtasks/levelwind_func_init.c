@@ -227,7 +227,7 @@ void levelwind_func_init_init(struct LEVELWINDFUNCTION* p)
 
    p->drbit = p->drbit_prev = 0;    // Drum direction bit REVIST: Needed???   
 
-   p->hbctr = xTaskGetTickCount();
+   p->hbctr = xTaskGetTickCount() + p->hbct_k;
 
    // initialize state machines and status
    p->state = p->state_prev = LW_OFF;

@@ -86,8 +86,8 @@ void levelwind_switches_init(void)
 	tim2tim5common_init();
 
    /*	MX sets up switches for falling edge and enables interrupts
-   	We were unable to keep it from immediately enableing interrupts
-   	so disable all limit swithc interupts to prevent a possible
+   	We were unable to keep it from immediately enabling interrupts
+   	so disable all limit switch interupts to prevent a possible
    	race condtion 
    EXTI->IMR &= ~(LimitSw_MSN_NO_Pin | LimitSw_MSN_NC_Pin
    	| LimitSw_MS_NO_Pin | LimitSw_MS_NC_Pin); 

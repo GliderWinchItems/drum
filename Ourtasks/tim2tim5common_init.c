@@ -70,6 +70,8 @@ void tim2tim5common_init(void)
    pT2base  = htim2.Instance;
    pT5base  = htim5.Instance;
 
+/* ### NOTE ### These might override STM32CubeMX settings. ### */
+/* NOTE: TIM2 is used in levelwind, so this needs coordination */
    /* TIM2 Shaft encoder input capture times & output capture indexing interrupts. */
    pT2base->CCER |= 0x1110; // Input capture active: CH2,3,4
 #if LEVELWINDDEBUG   
@@ -81,14 +83,6 @@ void tim2tim5common_init(void)
 #endif   
    pT2base->CCR1  = pT2base->CNT + 160000000; // Short delay
    pT2base->ARR   = 0xffffffff; // (Max count - 1)
-
-/* ### NOTE ### These might override STM32CubeMX settings. ### */
-/* NOTE: TIM2 is used in levelwind, so this needs coordination */
-   /* TIM2 Shaft encoder input capture times & output capture indexing interrupts. */
-//   pT2base->CCER |= 0x1110; // Input capture active: CH2,3,4
-//   pT2base->DIER  = 0x1A;    // CH1,3,4 interrupt enable
-//   pT2base->CCR1  = pT2base->CNT + ODOMETER_T2C1_DUR; // 1/64 sec
-//   pT2base->ARR   = 0xffffffff; // (Max count - 1)
 
    /* Make sure channel A & B counters are the same. */
    pT5base->CCR1 = 0; // jic

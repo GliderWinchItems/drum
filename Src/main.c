@@ -1060,12 +1060,14 @@ void StartDefaultTask(void const * argument)
 osDelay(0); // Debugging HardFault
 
 /* Select code for testing/monitoring by uncommenting #defines */
-//#define DISPLAYSTACKUSAGEFORTASKS
+//#define DISPLAYSTACKUSAGEFORTASKS // Stack usage for tasks
 //#define ADCSHOW
 //#define SHOWADCCOMMONCOMPUTATIONS
 //#define STEPPERSHOW 1
 //#define ENCODERSHOW
-#define SHOWENTIMCT
+//#define SHOWENTIMCT // Encoder time/counts used for speed computation
+//define STATES       // Levelwind state machine states
+#define SHOWENCANMSG  // CAN msgs with encoder computations
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1131,6 +1133,33 @@ uint8_t ratepace = 0;
 	{
 	  xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
 
+#ifdef STATES
+    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
+static    uint8_t  zstate_prev;    // level-wind previous state
+static    uint8_t  zisr_state_prev;// level-wind ISR state, previous
+static    uint8_t  zmode_prev;          // level-wind mode (Off, Track, or Center)
+static    uint8_t  zindexed_prev;       // REVISIT: indexed status MAY NOT BE NEEDED
+static    uint8_t  zmc_state_prev;      // master controller state 
+static    uint8_t  zmc_state_sub_prev;  // master controller sub-state
+  if ((p->state        != zstate_prev)       ||
+      (p->isr_state    != zisr_state_prev)   ||
+      (p->mode         != zmode_prev)        ||
+      (p->indexed)     != zindexed_prev      ||
+      (p->mc_state     != zmc_state_prev)    ||
+      (p->mc_state_sub != zmc_state_sub_prev) )
+  { // Here, some state change, so output it.
+    zstate_prev        = p->state;
+    zisr_state_prev    = p->isr_state;
+    zmode_prev         = p->mode;
+    zindexed_prev      = p->indexed;
+    zmc_state_prev     = p->mc_state;
+    zmc_state_sub_prev = p->mc_state_sub;
+    yprintf(&pbuf4,"\n\r%02X %02X %02X %02X %02X %02X ",p->state,p->isr_state,p->mode,
+         p->indexed,p->mc_state,p->mc_state_sub);
+  }
+
+#endif    
+
     if ((noteval & DEFAULTTSKBIT01) != 0)
     {
 
@@ -1146,12 +1175,31 @@ uint8_t ratepace = 0;
       yprintf(&pbuf3," %9.3f", pe->en_cnt_speed);
       yprintf(&pbuf4," %9.3f", pe->en_cnt_accel_motor);
 #endif
+
+#ifdef SHOWENCANMSG   
+      static uint8_t oto_showcanmsg;
+      if (oto_showcanmsg == 0)  
+      {
+        oto_showcanmsg = 1;
+        yprintf(&pbuf3,"\n\rCOLUMNS\n\r1 en_cnt\n\r2 en_cnt_speed\n\r3 en_cnt_accel_motor");
+        yprintf(&pbuf2,"\n\r4 odo_speed_ave_motor\n\r5 accel_ave_motor\n\r6 line_out");
+      }
+      struct ODOMETERFUNCTION* pe = &odometerfunction; // Convenience pointer
+
+      yprintf(&pbuf4,"\n\r%7d", pe->en_cnt);
+      yprintf(&pbuf1," %9.3f", pe->en_cnt_speed);
+      yprintf(&pbuf2," %9.3f", pe->en_cnt_accel_motor);
+      yprintf(&pbuf3," %9.3f", pe->odo_speed_ave_motor);
+      yprintf(&pbuf4," %9.3f", pe->accel_ave_motor);
+      yprintf(&pbuf1," %9.3f", pe->line_out);
+#endif
+
     }
 
 		if ((noteval & DEFAULTTSKBIT00) != 0)
 		{
 
-// ================= Higest rate =======================================
+// ================= Highest rate =======================================
   
     ratepace += 1;
     if (ratepace > 32) // Slow down LCD output rate if desired

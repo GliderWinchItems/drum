@@ -397,8 +397,8 @@ extern CAN_HandleTypeDef hcan1;
       
       /* see if status or super-state have changed or HB timer has expired
          and send appropriate status-state (HBX) message */
-      if (((noteval & LEVELWINDSWSNOTEBITISR) != 0) 
-            || (xTaskGetTickCount() >= p->hbctr))
+      if ( ((noteval & LEVELWINDSWSNOTEBITISR) != 0)      ||
+           ((int32_t)(xTaskGetTickCount() - p->hbctr) > 0) )
       {  // send status-state message 
          levelwind_items_CANsend_hb_levelwind_1();
          p->hbctr = xTaskGetTickCount() + p->hbct_k;
