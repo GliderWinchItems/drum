@@ -150,7 +150,10 @@ static void send_msg1(struct ODOMETERFUNCTION* p)
    uf.f = p->line_out;
    pcan->cd.ui[0] = uf.ui;
 
-   uf.f = p->odo_speed_ave_drum;
+// Revert drum speed (computed on edges) to encoder speed   
+   uf.f = p->odo_speed_ave_drum * p->encoder_ratio;
+
+//   uf.f = p->odo_speed_ave_drum;
 //uf.f = p->working_circum; // Test/debugg
    pcan->cd.ui[1] = uf.ui;
 
@@ -194,7 +197,7 @@ static void send_msg3(struct ODOMETERFUNCTION* p)
       uint32_t ui;
    }uf;
 
-   uf.f = p->accel_ave_motor; 
+   uf.f = p->en_cnt_speed;   //p->accel_ave_motor; 
    pcan->cd.ui[0] = uf.ui;
 
    pcan->cd.ui[1] = p->en_cnt; // encoder counter +/-

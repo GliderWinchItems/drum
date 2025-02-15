@@ -48,9 +48,9 @@ void odometer_idx_v_struct_hardcode_params(struct ODOMETERLC* p)
    //                         CANID_NAME      CANID_HEX  CAN_MSG_FMT     DESCRIPTION
    // We send; Others receive
    p->cid_unit_encoder  = CANID_UNIT_ENCODER1; // 83200000 U8_VAR DiscoveryF4 encoder demo winch:
-   p->cid_msg1_encoder  = CANID_MSG1_ENCODER1; // 83A00000 FF_FF  DiscoveryF4 encoder demo winch: lineout, speed
-   p->cid_msg2_encoder  = CANID_MSG2_ENCODER1; // 83E00000 FF_FF  DiscoveryF4 encoder demo winch: accel, encoder speed
-   p->cid_msg3_encoder  = CANID_MSG3_ENCODER1; // 84200000 FF_S32 DiscoveryF4 encoder demo winch: drum speed, encoder counter
+   p->cid_msg1_encoder  = CANID_MSG1_ENCODER1; // 83A00000 FF_FF  DiscoveryF4 encoder demo winch: lineout                 | motor speed like edges
+   p->cid_msg2_encoder  = CANID_MSG2_ENCODER1; // 83E00000 FF_FF  DiscoveryF4 encoder demo winch: motor accel  like edges | motor accel 1/64th counts
+   p->cid_msg3_encoder  = CANID_MSG3_ENCODER1; // 84200000 FF_S32 DiscoveryF4 encoder demo winch: motor speed: 1/64th cts | encoder counter
 
    /* Enable sending of these msgs (which may be at high rate). 1 = enable; 0 = disable. */
    p->msg_enable[0] = 1; // MSG1
@@ -59,9 +59,9 @@ void odometer_idx_v_struct_hardcode_params(struct ODOMETERLC* p)
 
    // We receive
    p->cid_gps_sync         = CANID_HB_TIMESYNC;  // 00400000 U8     GPS time sync distribution msg-GPS time sync msg
-   p->cid_mc_state         = CANID_MC_STATE;     // 26000000 MC     MC Launch state msg
+   p->cid_mc_state         = CANID_MC_STATE;     // 26000000        MC Launch state msg
    p->cid_cmd_encoder      = CANID_CMD_ENCODER1; // 83600000 U8_VAR DiscoveryF4 encoder demo winch: command
-   p->cid_cmd_uni_bms_pc_i = CANID_UNI_BMS_PC_I; // AEC00000 PC  UNIversal From PC, Used for CAN loading reset');
+   p->cid_cmd_uni_bms_pc_i = CANID_UNI_BMS_PC_I; // AEC00000 PC     UNIversal From PC, Used for CAN loading reset');
 
 
 	return;
