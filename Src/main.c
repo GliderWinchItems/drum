@@ -1066,8 +1066,8 @@ osDelay(0); // Debugging HardFault
 //#define STEPPERSHOW 1
 //#define ENCODERSHOW
 //#define SHOWENTIMCT // Encoder time/counts used for speed computation
-//define STATES       // Levelwind state machine states
-#define SHOWENCANMSG  // CAN msgs with encoder computations
+#define STATES       // Levelwind state machine states
+//#define SHOWENCANMSG  // CAN msgs with encoder computations
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
@@ -1087,7 +1087,7 @@ osDelay(0); // Debugging HardFault
 	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);	
 	if (pbuf4 == NULL) morse_trap(12);
 
-  yprintf(&pbuf4,"\n\rDRUM REPO defaultTask starts 01/14/2025 #3\n\r");
+  yprintf(&pbuf4,"\n\rDRUM REPO defaultTask starts 02/14/2025 #1\n\r");
 
   
 #ifdef DISPLAYSTACKUSAGEFORTASKS
@@ -1133,7 +1133,7 @@ uint8_t ratepace = 0;
 	{
 	  xTaskNotifyWait(0,0xffffffff, &noteval, portMAX_DELAY);
 
-#ifdef STATES
+#ifdef STATES // Display levelwind states when any of them change
     struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
 static    uint8_t  zstate_prev;    // level-wind previous state
 static    uint8_t  zisr_state_prev;// level-wind ISR state, previous
@@ -1141,6 +1141,19 @@ static    uint8_t  zmode_prev;          // level-wind mode (Off, Track, or Cente
 static    uint8_t  zindexed_prev;       // REVISIT: indexed status MAY NOT BE NEEDED
 static    uint8_t  zmc_state_prev;      // master controller state 
 static    uint8_t  zmc_state_sub_prev;  // master controller sub-state
+static uint8_t oto_zstates;
+static char* pzhdr1 = {"\n\r1 state\n\r2 isr_state\n\r3 mode"};
+static char* pzhdr2 = {"\n\r4 indexed\n\r5 mc_state\n\r6 mc_state_sub"};
+static char* pzhdr3 = {"\n\r7 CCMR2\n\r8 emulation_run"};
+
+  if (oto_zstates == 0)
+  { // Print column description
+    oto_zstates = 1;
+    yprintf(&pbuf1,"%s",pzhdr1);
+    yprintf(&pbuf2,"%s",pzhdr2);
+    yprintf(&pbuf3,"%s",pzhdr3);
+  }
+
   if ((p->state        != zstate_prev)       ||
       (p->isr_state    != zisr_state_prev)   ||
       (p->mode         != zmode_prev)        ||
@@ -1156,6 +1169,8 @@ static    uint8_t  zmc_state_sub_prev;  // master controller sub-state
     zmc_state_sub_prev = p->mc_state_sub;
     yprintf(&pbuf4,"\n\r%02X %02X %02X %02X %02X %02X ",p->state,p->isr_state,p->mode,
          p->indexed,p->mc_state,p->mc_state_sub);
+extern uint8_t dbglvlem;    
+    yprintf(&pbuf3,"%04X %d",htim2.Instance->CCMR2, dbglvlem);
   }
 
 #endif    

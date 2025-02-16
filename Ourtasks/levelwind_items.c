@@ -74,6 +74,7 @@ TIM13 (84 MHz) Solenoid FET drive (no interrupt)
 
 #define DTW 1  // True to keep DTW timing Code
 
+uint8_t dbglvlem; // Debug levelwind emulation_run
 
 /* Union for various types of four byte CAN payloads. */
 union X4
@@ -561,6 +562,8 @@ void levelwind_items_TIM2_IRQHandler(void)
          }
       }      
    }  
+
+dbglvlem = emulation_run;
 
    /* reversing screw emulation code */
    if (emulation_run)

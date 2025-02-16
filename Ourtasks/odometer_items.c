@@ -151,7 +151,7 @@ static void send_msg1(struct ODOMETERFUNCTION* p)
    pcan->cd.ui[0] = uf.ui;
 
 // Revert drum speed (computed on edges) to encoder speed   
-   uf.f = p->odo_speed_ave_drum * p->encoder_ratio;
+   uf.f = p->odo_speed_ave_drum * p->lc.encoder_ratio;
 
 //   uf.f = p->odo_speed_ave_drum;
 //uf.f = p->working_circum; // Test/debugg
