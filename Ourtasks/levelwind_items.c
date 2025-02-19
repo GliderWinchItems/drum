@@ -376,7 +376,7 @@ void levelwind_items_TIM2_IRQHandler(void)
       uint8_t  ddir; // REVIST: temporary drum direction while we are using faux interrupts 
 
       pT2base->SR = ~(1 << 3);   // Reset CH3 flag
-HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
+//HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
       /* Was this interrupt due to encoder input capture or output compare?. */
       if ((pT2base->CCMR2 & 0x1) == 0)
       { // Here we are using TIM2CH3 as OC compare instead of input capture. */
