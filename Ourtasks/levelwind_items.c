@@ -74,7 +74,7 @@ TIM13 (84 MHz) Solenoid FET drive (no interrupt)
 
 #define DTW 1  // True to keep DTW timing Code
 
-uint8_t dbglvlem; // Debug levelwind emulation_run
+uint8_t dbglvlem; // Debug levelwind emulation
 
 /* Union for various types of four byte CAN payloads. */
 union X4
@@ -327,6 +327,12 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
  * CH3 - IC encoder channel A or, OC generates faux encoder interrupts
  * CH4 - IC encoder channel B not used in this version
  *####################################################################################### */
+
+/* NOTE: When odometer_items TIM2 ISR calls the following routine, odometer_items has
+   read the IC register, and this resets the interrupt flag. Therefore, the status register
+   is save in TIM2_SR, for use in the following IRQ handler. */
+extern uint16_t TIM2_SR; // odometer_items.c saves the SR.
+
 void levelwind_items_TIM2_IRQHandler(void)
 {
    struct LEVELWINDFUNCTION* p = &levelwindfunction; // Convenience pointer
@@ -334,7 +340,7 @@ void levelwind_items_TIM2_IRQHandler(void)
    /* This block for z channel (index) processing. It will be removed in operational
       code. */
    // TIM2CH2 = encodertimeZ 
-   if ((pT2base->SR & (1 << 2)) != 0) // CH2 Interrupt flag?
+   if ((TIM2_SR & (1 << 2)) != 0) // CH2 Interrupt flag?
    { // Yes, encoder channel Z transition
       pT2base->SR = ~(1 << 2);  // Reset CH2 flag
 
@@ -365,12 +371,12 @@ void levelwind_items_TIM2_IRQHandler(void)
    uint8_t  emulation_run = 0;   
 
    /* TIM2CH3 = encodertimeA PA2 TIM5CH1 PA0  */
-   if ((pT2base->SR & (1 << 3)) != 0)  // CH3 Interrupt flag?
+   if ((TIM2_SR & (1 << 3)) != 0)  // CH3 Interrupt flag?
    { // Yes, either encoder channel A, or output compare emulating an encoder edge
       uint8_t  ddir; // REVIST: temporary drum direction while we are using faux interrupts 
 
       pT2base->SR = ~(1 << 3);   // Reset CH3 flag
-
+HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
       /* Was this interrupt due to encoder input capture or output compare?. */
       if ((pT2base->CCMR2 & 0x1) == 0)
       { // Here we are using TIM2CH3 as OC compare instead of input capture. */

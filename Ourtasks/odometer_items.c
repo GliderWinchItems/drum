@@ -370,47 +370,51 @@ void odometer_items_TIM4_IRQHandler(void)
  * CH3 - IC encoder channel A 
  * CH4 - IC encoder channel B 
  *####################################################################################### */
+uint16_t TIM2_SR;
 void odometer_items_TIM2_IRQHandler(void)
 {
    struct ODOMETERFUNCTION* p = &odometerfunction; // Convenience pointer
 
+   TIM2_SR = pT2base->SR; // Save 
+/* NOTE: reading CCRx resets the SR flag. */   
+
    /* TIM2CH3 = encodertimeA transition PA2 TIM5CH1 PA0  */
-   if ((pT2base->SR & (1<<3)) != 0)  // CH3 Interrupt flag?
+   if ((TIM2_SR & (1<<3)) != 0)  // CH3 Interrupt flag?
    { // Yes, encoder channel A
 //      pT2base->SR = ~(1<<3);   // Reset CH3 flag
-
+//HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
   	  p->oe_A ^= 0x1; // Odd/even toggle
      if (p->oe_A == 0)
      {         
-        p->odotimct[0].tim  = pT2base->CCR3; // IC time edges
+        p->odotimct[0].tim  = pT2base->CCR3; // IC time edges, reset SR flag
         p->odotimct[0].ct   = pT5base->CCR1; // Encoder counter chan A
      }
 	  else
      {
-        p->odotimct[1].tim  = pT2base->CCR3; // IC time edges
+        p->odotimct[1].tim  = pT2base->CCR3; // IC time edges, reset SR flag
         p->odotimct[1].ct   = pT5base->CCR1; // Encoder counter chan A
      }
    }
 
    /* TIM2CH4 IC: encodertimeB transition PA3 TIM5CH1 PA1  */
-   if ((pT2base->SR & (1<<4)) != 0)  // CH4 Interrupt flag?
+   if ((TIM2_SR & (1<<4)) != 0)  // CH4 Interrupt flag?
    { // Yes, encoder channel B
-      pT2base->SR = ~(1<<4);   // Reset CH4 flag
-
+//      pT2base->SR = ~(1<<4);   // Reset CH4 flag
+//HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
       p->oe_B ^= 0x1;
       if (p->oe_B == 0)
      {         
-        p->odotimct[2].tim  = pT2base->CCR4; // IC time edges
+        p->odotimct[2].tim  = pT2base->CCR4; // IC time edges, reset SR flag
         p->odotimct[2].ct   = pT5base->CCR2; // Encoder counter chan B
      }
      else
      {
-        p->odotimct[3].tim  = pT2base->CCR4; // IC time edges
+        p->odotimct[3].tim  = pT2base->CCR4; // IC time edges, reset SR flag
         p->odotimct[3].ct   = pT5base->CCR2; // Encoder counter chan B
      }
    }
 
-   /* Levelwind will use TIM2 interrupts (and reset TIM2 flags). */
+   /* Levelwind will use TIM2 interrupts (and reset TIM2 flags). */  
    levelwind_items_TIM2_IRQHandler();
 
 
