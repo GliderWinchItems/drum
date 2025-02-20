@@ -133,10 +133,10 @@ extern CAN_HandleTypeDef hcan1;
          levelwind_CANrcv_cid_cmd_levelwind_i1(&p->pmbx_cid_cmd_levelwind_i1->ncan.can);
       }
       
-HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
 
       if (!(GPIOE->IDR & ManualSw_NO_Pin) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed; go to Manual state
+HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
          p->ocinc = p->ocman;
          p->isr_state = LW_ISR_MANUAL;
          p->state = LW_MANUAL;
