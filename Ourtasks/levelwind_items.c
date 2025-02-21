@@ -219,7 +219,11 @@ void levelwind_items_timeout(void)
             pT2base->SR = ~(1 << 3);      // Reset CH3 flag if on
             pT2base->CCER  |= (1 << 8);   // Capture enabled on pin.
          }
-         pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
+// NOTE: The following line was in the original (2021) code and is clearly incorrect         
+//         pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
+// This replaces the above line.         
+         pT2base->DIER |= 0x8; // Enable TIM2CH3 interrupt
+
       }
    }  
 #endif   
@@ -268,7 +272,10 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
       p->ocicbit_prev = p->ocicbit;
       if (p->ocicbit != 0)
       { // Here. PREP??? bit went from off to on
-         pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
+// NOTE: The following line was in the original (2021) code and is clearly incorrect                  
+//       pT2base->DIER &= ~0x80; // Disable TIM2CH3 interrupt
+// This replaces the above line.         
+         pT2base->DIER |= 0x8; // Enable TIM2CH3 interrupt
          if ((pT2base->CCMR2 & 0x1) != 0)
          { // Here, currently using encoder input capture
             // Setup for output c ompare
@@ -285,7 +292,10 @@ void levelwind_items_clupdate(struct CANRCVBUF* pcan)
             pT2base->SR = ~(1 << 3);      // Reset CH3 flag if on
             pT2base->CCER  |= (1 << 8);   // Capture enabled on pin.
          }
-         pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
+// NOTE: The following line was in the original (2021) code and is clearly incorrect         
+//          pT2base->DIER |= 0x80; // Enable TIM2CH3 interrupt
+// This replaces the above line.         
+            pT2base->DIER |= 0x8; // Enable TIM2CH3 interrupt
       }
    }
    /* Payload byte bits for direction and enable. */

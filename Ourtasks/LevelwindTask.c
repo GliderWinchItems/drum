@@ -22,6 +22,15 @@
 #include "levelwind_items.h"
 #include "levelwind_cmd.h"
 
+uint32_t dbgCR1;
+uint32_t dbgCNT;
+uint32_t dbgCCR1;
+uint32_t dbgDIER;
+uint32_t dbgCCER;
+uint32_t dbgCCMR1;
+uint32_t dbgCCMR2;
+
+
 /* Private functions and macros to the file */
 
 /* ************************************************************************/
@@ -48,6 +57,24 @@ osThreadId LevelwindTaskHandle;
 
 struct LEVELWINDFUNCTION levelwindfunction;
 struct CONTROLPANELSTATE cp_state;
+
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+static void TIM2_save(void);
+ * @brief  : Save registers for later output
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+extern TIM_TypeDef  *pT2base; // Register base address 
+static void TIM2_save(void)
+{
+   dbgCR1  = pT2base->CR1;
+   dbgCNT  = pT2base->CNT;
+   dbgCCR1 = pT2base->CCR1;
+   dbgDIER = pT2base->DIER;
+   dbgCCER = pT2base->CCER;
+   dbgCCMR1= pT2base->CCMR1;
+   dbgCCMR2= pT2base->CCMR2;
+   return;
+}
+
 
 /* *************************************************************************
  * void StartLevelwindTask(void const * argument);
@@ -95,6 +122,9 @@ void StartLevelwindTask(void const * argument)
 extern CAN_HandleTypeDef hcan1;
 	HAL_CAN_Start(&hcan1); // CAN1
 
+TIM2_save();
+//pT2base->CCR1 = pT2base->CNT + 168000000*0.1;
+
 	for (;;)
 	{
 		/* Wait for notifications 
@@ -132,11 +162,10 @@ extern CAN_HandleTypeDef hcan1;
       {  // CAN: cid_cmd_levelwind_i1; CANID_CMD_LEVELWIND_I1','B1000014','GENCMD',1,23,'U8_U8_U8_X4'
          levelwind_CANrcv_cid_cmd_levelwind_i1(&p->pmbx_cid_cmd_levelwind_i1->ncan.can);
       }
-      
 
       if (!(GPIOE->IDR & ManualSw_NO_Pin) && (p->state != LW_MANUAL))   // here test for Manual switch closure (no associated task notification)
       {  // Manual (bypass) switch is closed; go to Manual state
-HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
+//HAL_GPIO_TogglePin(GPIOD,LED_ORANGE_Pin);
          p->ocinc = p->ocman;
          p->isr_state = LW_ISR_MANUAL;
          p->state = LW_MANUAL;

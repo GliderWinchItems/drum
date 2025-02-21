@@ -346,13 +346,13 @@ int main(void)
   /* ADC summing, calibration, etc. */
   xADCTaskCreate(osPriorityNormal+1); // (arg) = priority
 
+/* Levelwind (stepper) task */
+  Thrdret = xLevelwindTaskCreate(osPriorityNormal+2); // (arg) = priority
+  if (Thrdret == NULL) morse_trap(2161); 
+
   /* Odometer (line speed and line out) task. */
   Thrdret = xOdometerTaskCreate(osPriorityNormal+2); // (arg) = priority
   if (Thrdret == NULL) morse_trap(2164); 
-
-  /* Levelwind (stepper) task */
-  Thrdret = xLevelwindTaskCreate(osPriorityNormal+2); // (arg) = priority
-  if (Thrdret == NULL) morse_trap(2161); 
 
   /* Drum task */
   Thrdret = xDrumTaskCreate(osPriorityNormal); // (arg) = priority
@@ -1087,7 +1087,7 @@ osDelay(0); // Debugging HardFault
 	struct SERIALSENDTASKBCB* pbuf4 = getserialbuf(&HUARTMON,96);	
 	if (pbuf4 == NULL) morse_trap(12);
 
-  yprintf(&pbuf4,"\n\rDRUM REPO defaultTask starts 02/14/2025 #1\n\r");
+  yprintf(&pbuf4,"\n\rDRUM REPO defaultTask starts 02/20/2025 #1\n\r");
 
   
 #ifdef DISPLAYSTACKUSAGEFORTASKS
@@ -1171,6 +1171,17 @@ static char* pzhdr3 = {"\n\r7 CCMR2\n\r8 emulation_run"};
          p->indexed,p->mc_state,p->mc_state_sub);
 extern uint8_t dbglvlem;    
     yprintf(&pbuf3,"%04X %d",htim2.Instance->CCMR2, dbglvlem);
+
+  #if 1
+    extern uint32_t dbgCR1;
+    extern uint32_t dbgCNT;
+    extern uint32_t dbgCCR1;
+    extern uint32_t dbgDIER;
+    extern uint32_t dbgCCER;
+    extern uint32_t dbgCCMR1;
+    extern uint32_t dbgCCMR2;
+    yprintf(&pbuf1," %04X %08X %08X %04X %04X %04X %04X",dbgCR1,dbgCNT,dbgCCR1,dbgDIER,dbgCCER,dbgCCMR1,dbgCCMR2);
+  #endif    
   }
 
 #endif    
@@ -1189,6 +1200,7 @@ extern uint8_t dbglvlem;
       yprintf(&pbuf2," %9.3f", pe->accel_ave_motor);
       yprintf(&pbuf3," %9.3f", pe->en_cnt_speed);
       yprintf(&pbuf4," %9.3f", pe->en_cnt_accel_motor);
+
 #endif
 
 #ifdef SHOWENCANMSG   
