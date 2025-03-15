@@ -1,6 +1,6 @@
 Configuration	drum
 STM32CubeMX 	6.12.1
-Date	01/14/2025
+Date	02/21/2025
 MCU	STM32F407VGTx
 
 
@@ -158,7 +158,7 @@ SOFTWARE PROJECT
 
 Project Settings : 
 Project Name : drum
-Project Folder : /home/deh/GliderWinchItems/drum
+Project Folder : /media/deh/fc65a06a-0110-42ac-85a6-0fda805fe4fd/home/deh/GliderWinchItems/drum
 Toolchain / IDE : Makefile
 Firmware Package Name and Version : STM32Cube FW_F4 V1.28.1
 

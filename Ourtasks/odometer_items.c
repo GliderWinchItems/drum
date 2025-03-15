@@ -150,11 +150,8 @@ static void send_msg1(struct ODOMETERFUNCTION* p)
    uf.f = p->line_out;
    pcan->cd.ui[0] = uf.ui;
 
-// Revert drum speed (computed on edges) to encoder speed   
+   // Scake drum speed to motor (encoder) speed
    uf.f = p->odo_speed_ave_drum * p->lc.encoder_ratio;
-
-//   uf.f = p->odo_speed_ave_drum;
-//uf.f = p->working_circum; // Test/debugg
    pcan->cd.ui[1] = uf.ui;
 
    // Place CAN msg on CanTask queue
@@ -177,7 +174,7 @@ static void send_msg2(struct ODOMETERFUNCTION* p)
    uf.f = p->accel_ave_motor; 
    pcan->cd.ui[0] = uf.ui;
 
-   uf.f = p->odo_speed_ave_drum;
+   uf.f = p->en_cnt_accel_motor;
    pcan->cd.ui[1] = uf.ui;   
 
    // Place CAN msg on CanTask queue

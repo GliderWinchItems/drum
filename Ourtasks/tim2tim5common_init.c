@@ -24,7 +24,7 @@
 extern TIM_HandleTypeDef htim2; // Timer FreeRTOS handle
 extern TIM_HandleTypeDef htim5; // Timer FreeRTOS handle
 
-static uint8_t oto;
+static uint8_t oto; // One time only: initialization
 /* *************************************************************************
  * void tim2tim5common_init(void);
  * @brief	: Init TIM2 & TIM5timers common to odometer and levelwind
@@ -81,7 +81,7 @@ void tim2tim5common_init(void)
    // Original: // 0xA; // CH1,3 interrupt enable
    pT2base->DIER  = 0x1A;    // CH1,3,4 interrupt enable
 #endif   
-   pT2base->CCR1  = pT2base->CNT + 160000000; // Short delay
+   pT2base->CCR1  = pT2base->CNT + 168000000*0.1; // Short delay
    pT2base->ARR   = 0xffffffff; // (Max count - 1)
 
    /* Make sure channel A & B counters are the same. */

@@ -1066,8 +1066,8 @@ osDelay(0); // Debugging HardFault
 //#define STEPPERSHOW 1
 //#define ENCODERSHOW
 //#define SHOWENTIMCT // Encoder time/counts used for speed computation
-#define STATES       // Levelwind state machine states
-//#define SHOWENCANMSG  // CAN msgs with encoder computations
+//#define STATES       // Levelwind state machine states
+#define SHOWENCANMSG  // CAN msgs with encoder computations
 
 	#define DEFAULTTSKBIT00	(1 << 0)  // Task notification bit for sw timer: stackusage
 	#define DEFAULTTSKBIT01	(1 << 1)  // Task notification bit for sw timer: something else
