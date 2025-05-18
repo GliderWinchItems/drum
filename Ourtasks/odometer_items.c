@@ -370,6 +370,7 @@ void odometer_items_TIM4_IRQHandler(void)
 uint16_t TIM2_SR;
 void odometer_items_TIM2_IRQHandler(void)
 {
+//morse_trap(333);
    struct ODOMETERFUNCTION* p = &odometerfunction; // Convenience pointer
 
    TIM2_SR = pT2base->SR; // Save 
@@ -464,7 +465,7 @@ task (OdometerTask) will use odotimct_buff before the next measurement interval 
          &xHigherPriorityTaskWoken );
 
 // Debugging
-#if 0
+#if 1
    p->ledctr1 += 1;
    if (p->ledctr1 >= 64)        
    {

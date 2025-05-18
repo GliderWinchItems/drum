@@ -41,6 +41,7 @@ echo $LVL_PARAM
 
 export I_AM_CANID=0x$1
 echo I_AM_CANID
+echo $I_AM_CANID
 make clean
 ./script-all drum $1
 
